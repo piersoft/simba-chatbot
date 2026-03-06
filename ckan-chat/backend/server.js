@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
-const MCP_URL = process.env.MCP_URL || "http://192.168.0.93:3000/mcp";
+const MCP_URL = process.env.MCP_URL || "http://192.168.0.126:3000/mcp";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -169,5 +169,5 @@ app.get("/api/health", async (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend pronto su http://localhost:${PORT}`);
-  console.log(`Raggiungibile su http://192.168.0.93:${PORT}`);
+  console.log(`Raggiungibile su http://192.168.0.126:${PORT}`);
 });
