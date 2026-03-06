@@ -32,7 +32,7 @@ services:
         condition: service_healthy
     environment:
       - OLLAMA_HOST=http://ollama:11434
-    entrypoint: ["/bin/sh", "-c", "ollama pull ${OLLAMA_MODEL:-qwen3:1.7b} && echo 'Modello pronto'"]
+    entrypoint: ["/bin/sh", "-c", "ollama pull ${OLLAMA_MODEL:-qwen2.5:0.5b} && echo 'Modello pronto'"]
     restart: "no"
 
   # ── CKAN MCP Server ───────────────────────────────────────────────────────
