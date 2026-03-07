@@ -1,6 +1,6 @@
 services:
 
-  # ── Ollama ────────────────────────────────────────────────────────────────
+  # ── Ollama ──────────────────────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -15,9 +15,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 3G
 
-  # ── Ollama model puller ───────────────────────────────────────────────────
+  # ── Ollama model puller ─────────────────────────────────────────────────────
   ollama-pull:
     image: ollama/ollama:latest
     container_name: ollama-pull
@@ -25,10 +25,10 @@ services:
       - ollama
     environment:
       - OLLAMA_HOST=http://ollama:11434
-    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:0.5b} && echo 'Modello pronto'"]
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:1.5b} && echo 'Modello pronto'"]
     restart: "no"
 
-  # ── CKAN MCP Server ───────────────────────────────────────────────────────
+  # ── CKAN MCP Server ─────────────────────────────────────────────────────────
   ckan-mcp-server:
     build:
       context: ./ckan-mcp-server
@@ -42,28 +42,35 @@ services:
       TRANSPORT: http
       PORT: 3000
 
-  # ── Backend Node.js ───────────────────────────────────────────────────────
+  # ── Backend Node.js ─────────────────────────────────────────────────────────
   backend:
     build:
       context: ./ckan-chat/backend
       dockerfile: Dockerfile
     container_name: ckan-chat-backend
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     environment:
       PORT: 3001
       SERVER_IP: ${SERVER_IP:-localhost}
       MCP_URL: http://ckan-mcp-server:3000/mcp
+      # ── Switch provider: cambia solo LLM_PROVIDER nel .env ──
+      LLM_PROVIDER: ${LLM_PROVIDER:-mistral}
+      # Mistral
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
+      # Ollama
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
-      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      # ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
     depends_on:
       - ckan-mcp-server
       - ollama
 
-  # ── Frontend React ────────────────────────────────────────────────────────
+  # ── Frontend React ──────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./ckan-chat/frontend
