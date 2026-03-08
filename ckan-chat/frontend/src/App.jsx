@@ -162,6 +162,10 @@ export default function App() {
       </aside>
 
       <main className="chat-area">
+        <div className="chat-header">
+          <span className="chat-header-title">🏛️ Esplora i Dati Aperti Italiani</span>
+          <span className="chat-header-subtitle">dati.gov.it · MCP Server by OnData</span>
+        </div>
         <div className="messages-container">
           {messages.length === 0 && (
             <div className="empty-state">
