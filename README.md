@@ -81,6 +81,9 @@ OLLAMA_MODEL=qwen2.5:1.5b
 
 **Per cambiare provider basta modificare `LLM_PROVIDER` nel `.env`** — nessun altro file va toccato.
 
+**FIX RATE LIMIT E SICUREZZA
+In [__server.js__](https://github.com/piersoft/ckan-mcp-server-docker-ollama/blob/main/ckan-chat/backend/server.js) riga 7, sostituire mcp.piersoftckan.biz con il proprio dominio, per bloccare il CORS.
+
 ## Avvio
 
 ```bash
