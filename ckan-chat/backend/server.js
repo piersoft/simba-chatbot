@@ -152,13 +152,80 @@ async function ollamaChat(history, tools, model) {
   return await res.json();
 }
 
+// ─── Guardrail: classificatore domanda ───────────────────────────────────────
+//
+// Prima di entrare nell'agentic loop, chiediamo al modello se la domanda
+// è pertinente al tema open data / CKAN. La risposta attesa è solo "SI" o "NO".
+// È una chiamata leggera, senza tools, con max_tokens bassissimo.
+
+const GUARDRAIL_PROMPT = `Sei un classificatore. Il tuo unico compito è decidere se la domanda dell'utente riguarda open data, dataset, portali dati, CKAN, dati aperti, statistiche pubbliche, API di dati, risorse informative pubbliche o argomenti correlati.
+Rispondi SOLO con la parola SI se la domanda è pertinente, oppure SOLO con la parola NO se non lo è.
+Non aggiungere nulla altro, nessuna spiegazione, nessun punto, nessuno spazio.`;
+
+async function isQuestionOnTopic(userMessage) {
+  try {
+    if (LLM_PROVIDER === "mistral") {
+      const response = await fetch(MISTRAL_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${MISTRAL_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MISTRAL_MODEL,
+          messages: [
+            { role: "system", content: GUARDRAIL_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+          max_tokens: 5,
+          temperature: 0,
+        }),
+      });
+      if (!response.ok) return true; // in caso di errore, lascia passare
+      const data = await response.json();
+      const answer = data.choices?.[0]?.message?.content?.trim().toUpperCase() ?? "SI";
+      console.log(`[guardrail] risposta classificatore: "${answer}"`);
+      return answer.startsWith("SI");
+    } else {
+      // Ollama - chiamata senza tools
+      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: OLLAMA_MODEL,
+          messages: [
+            { role: "system", content: GUARDRAIL_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+          stream: false,
+          options: { temperature: 0, num_predict: 5 },
+        }),
+      });
+      if (!res.ok) return true; // in caso di errore, lascia passare
+      const data = await res.json();
+      const answer = data.message?.content?.trim().toUpperCase() ?? "SI";
+      console.log(`[guardrail] risposta classificatore: "${answer}"`);
+      return answer.startsWith("SI");
+    }
+  } catch (e) {
+    console.error("[guardrail] errore classificatore, lascio passare:", e.message);
+    return true; // fallback permissivo in caso di errore di rete
+  }
+}
+
 // ─── Agentic loop (provider-agnostico) ───────────────────────────────────────
 
-const SYSTEM_PROMPT = `Sei un assistente esperto di open data. Hai accesso a strumenti per interrogare portali CKAN.
-Quando l'utente chiede di cercare dataset, usa SEMPRE gli strumenti disponibili per interrogare dati reali.
-Il portale principale è https://www.dati.gov.it/opendata (Italia), ma puoi usare qualsiasi URL CKAN.
-Rispondi sempre in italiano in modo chiaro e conciso. Presenta i risultati in modo leggibile.
-Se trovi dataset rilevanti, mostra: nome, organizzazione, descrizione breve e link.`;
+const SYSTEM_PROMPT = `Sei un assistente specializzato esclusivamente in open data e portali CKAN.
+Il tuo unico scopo è aiutare l'utente a cercare, esplorare e comprendere dataset e dati aperti.
+Hai accesso a strumenti per interrogare portali CKAN in tempo reale.
+
+REGOLE FONDAMENTALI:
+- Usa SEMPRE gli strumenti disponibili per rispondere con dati reali aggiornati.
+- Il portale principale è https://www.dati.gov.it/opendata (Italia), ma puoi usare qualsiasi URL CKAN.
+- Non rispondere mai a domande che non riguardano open data, dataset, portali CKAN o dati pubblici.
+- Se l'utente fa domande fuori tema (cucina, sport, intrattenimento, ecc.), declina educatamente.
+- Rispondi sempre in italiano in modo chiaro e conciso.
+- Quando trovi dataset rilevanti, mostra: nome, organizzazione, descrizione breve e link.`;
 
 async function chatWithTools(messages, model) {
   const tools = await getTools();
@@ -223,6 +290,15 @@ async function chatWithTools(messages, model) {
   return { reply: "Nessuna risposta ottenuta.", toolCalls: toolCallsLog };
 }
 
+// ─── Risposta di rifiuto fuori tema ──────────────────────────────────────────
+
+const OFF_TOPIC_REPLY = `Mi dispiace, posso aiutarti solo con domande relative a **open data**, **dataset** e **portali CKAN**.
+
+Prova a chiedermi, ad esempio:
+- 🔍 "Cerca dataset sulla qualità dell'aria"
+- 📊 "Quanti dataset ci sono su mobilità a Roma?"
+- 🌐 "Mostrami i dati aperti del comune di Milano"`;
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.get("/api/models", (req, res) => {
@@ -253,6 +329,7 @@ const BLOCKLIST = ["ignore previous", "system prompt", "forget instructions",
 app.post("/api/chat", async (req, res) => {
   const { messages, model } = req.body;
   if (!messages?.length) return res.status(400).json({ error: "messages required" });
+
   // Sanitizzazione prompt injection
   const lastMsg = messages[messages.length - 1]?.content ?? "";
   if (typeof lastMsg !== "string" || lastMsg.length > 2000) {
@@ -264,6 +341,14 @@ app.post("/api/chat", async (req, res) => {
   if (LLM_PROVIDER === "mistral" && !MISTRAL_API_KEY) {
     return res.status(500).json({ error: "MISTRAL_API_KEY non impostata nel .env" });
   }
+
+  // ── Guardrail: verifica pertinenza domanda ────────────────────────────────
+  const onTopic = await isQuestionOnTopic(lastMsg);
+  if (!onTopic) {
+    console.log(`[guardrail] domanda fuori tema bloccata: "${lastMsg.slice(0, 80)}"`);
+    return res.json({ reply: OFF_TOPIC_REPLY, toolCalls: [] });
+  }
+
   try {
     const { reply, toolCalls } = await chatWithTools(messages, model);
     res.json({ reply, toolCalls });
