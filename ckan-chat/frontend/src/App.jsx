@@ -3,7 +3,7 @@ import ChatMessage from "./components/ChatMessage";
 import ToolCallBadge from "./components/ToolCallBadge";
 import StatusBar from "./components/StatusBar";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL = "";
 
 const SUGGESTIONS = [
   "Cerca dataset sulla qualità dell'aria",
