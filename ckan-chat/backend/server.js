@@ -3,10 +3,10 @@ import cors from "cors";
 import fetch from "node-fetch";
 import rateLimit from "express-rate-limit";
 const app = express();
-app.use(cors({
-  origin: ["https://mcp.piersoftckan.biz"],
-  methods: ["GET", "POST"],
-}));
+//app.use(cors({
+//  origin: ["https://mcp.piersoftckan.biz"],
+//  methods: ["GET", "POST"],
+//}));
 
 app.use(express.json());
 
