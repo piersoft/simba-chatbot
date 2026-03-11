@@ -1,23 +1,26 @@
 # ckan-mcp-server-docker-ollama
 
-Chat in linguaggio naturale sui dati aperti CKAN, con LLM configurabile (Ollama locale o Mistral AI).
+Chat in linguaggio naturale sui dati aperti CKAN, con LLM configurabile (Mistral AI, Ollama locale o Ollama Cloud).
 
 ```
 [React Frontend :8080]
         ↓ HTTP
 [Node.js Backend :3001]
         ↓                        ↓
-[Ollama :11434]      [ckan-mcp-server :3000]
+[Mistral AI ☁️]      [ckan-mcp-server :3000]
   oppure                  (dati.gov.it, ecc.)
-[Mistral AI ☁️]
+[Ollama locale :11434]
+  oppure
+[Ollama Cloud ☁️]
 ```
 
 ## Struttura della repo
 
 ```
 ckan-mcp-server-docker-ollama/
-├── .env.example                  ← configurazione (copia in .env)
+├── .env                          ← configurazione (vedi sezione sotto)
 ├── docker-compose-full.yml       ← orchestrazione completa
+├── stdio-bridge.js               ← bridge per Claude Desktop
 ├── ckan-mcp-server/              ← MCP server CKAN (submodule/fork)
 │   ├── Dockerfile
 │   └── src/
@@ -43,63 +46,115 @@ ckan-mcp-server-docker-ollama/
 ## Prerequisiti
 
 - Docker + Docker Compose
-- Se usi Ollama: almeno **8 GB di RAM** disponibili per la VM/host
-- Se usi Mistral: una API key gratuita da [console.mistral.ai](https://console.mistral.ai)
+- Per Mistral AI: API key gratuita da [console.mistral.ai](https://console.mistral.ai)
+- Per Ollama Cloud: API key da [ollama.com](https://ollama.com)
+- Per Ollama locale: almeno **8 GB di RAM** disponibili per il modello
 
 ## Configurazione
 
-Copia il file di esempio e modificalo:
+Il file `.env` nella root del progetto controlla tutto lo stack. Crea il tuo partendo dall'esempio:
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-### Variabili disponibili
+### Contenuto del file `.env`
 
 ```env
-# ─── Rete ────────────────────────────────────────────────────────────────────
-SERVER_IP=192.168.0.126        # IP del server sulla rete locale
-
-# ─── Porte ───────────────────────────────────────────────────────────────────
-OLLAMA_PORT=11434
+# ── Rete ─────────────────────────────────────────────────────────────────────
+SERVER_IP=192.168.0.126
 MCP_PORT=3000
 BACKEND_PORT=3001
 FRONTEND_PORT=8080
 
-# ─── Provider LLM ────────────────────────────────────────────────────────────
-# Scegli il provider: "ollama" oppure "mistral"
+# ── Provider LLM: "mistral" oppure "ollama" ───────────────────────────────────
 LLM_PROVIDER=mistral
 
-# ─── Mistral AI (usato se LLM_PROVIDER=mistral) ──────────────────────────────
-MISTRAL_API_KEY=la_tua_key
+# ── Mistral API ───────────────────────────────────────────────────────────────
+MISTRAL_API_KEY=la-tua-chiave-mistral
 MISTRAL_MODEL=mistral-small-latest
 
-# ─── Ollama (usato se LLM_PROVIDER=ollama) ───────────────────────────────────
+# ── Ollama (locale o cloud) ───────────────────────────────────────────────────
+# Locale:   OLLAMA_URL=http://ollama:11434
+# Cloud:    OLLAMA_URL=https://ollama.com
+
+OLLAMA_URL=http://ollama:11434
+OLLAMA_API_KEY=
 OLLAMA_MODEL=qwen2.5:1.5b
 ```
 
 **Per cambiare provider basta modificare `LLM_PROVIDER` nel `.env`** — nessun altro file va toccato.
 
-## FIX CORS per SICUREZZA
-In [__server.js__](https://github.com/piersoft/ckan-mcp-server-docker-ollama/blob/main/ckan-chat/backend/server.js) riga 7, sostituire mcp.piersoftckan.biz con il proprio dominio, per bloccare il CORS.
+## Fix CORS per sicurezza
+
+In [`server.js`](https://github.com/piersoft/ckan-mcp-server-docker-ollama/blob/main/ckan-chat/backend/server.js) riga 7, sostituire `mcp.piersoftckan.biz` con il proprio dominio per bloccare il CORS:
+
+```js
+app.use(cors({
+  origin: ["https://tuo-dominio.it"],
+  methods: ["GET", "POST"],
+}));
+```
 
 ## Avvio
 
-```bash
-# Prima volta (build completa)
-docker compose -f docker-compose-full.yml up --build -d
+### Scenario 1 — Mistral AI (consigliato)
 
-# Aggiornamento solo del backend (dopo modifiche a server.js o .env)
+```bash
+# Nel .env: LLM_PROVIDER=mistral
+
+docker compose -f docker-compose-full.yml up --build -d
+```
+
+### Scenario 2 — Ollama Cloud
+
+```bash
+# Nel .env:
+# LLM_PROVIDER=ollama
+# OLLAMA_URL=https://ollama.com
+# OLLAMA_API_KEY=la-tua-key
+# OLLAMA_MODEL=qwen3:4b-cloud
+
+docker compose -f docker-compose-full.yml up --build -d
+```
+
+### Scenario 3 — Ollama locale
+
+```bash
+# Nel .env:
+# LLM_PROVIDER=ollama
+# OLLAMA_URL=http://ollama:11434
+# OLLAMA_MODEL=qwen2.5:3b
+
+docker compose --profile ollama-local -f docker-compose-full.yml up --build -d
+```
+
+> Il profilo `ollama-local` avvia anche i container `ollama` e `ollama-pull` che scaricano automaticamente il modello scelto.
+
+### Comandi utili
+
+```bash
+# Rebuild solo del backend (dopo modifiche a server.js o .env)
 docker compose -f docker-compose-full.yml up --build backend -d
 
-# Stop
+# Rebuild solo del frontend
+docker compose -f docker-compose-full.yml up --build frontend -d
+
+# Stop di tutto
 docker compose -f docker-compose-full.yml down
+
+# Stato container
+docker compose -f docker-compose-full.yml ps
 ```
 
 Il frontend sarà disponibile su `http://<SERVER_IP>:8080`
 
-## Usare Mistral AI (🇫🇷 europeo, gratuito)
+---
+
+## Usare Mistral AI 🇫🇷 (consigliato)
+
+Mistral è un provider europeo (Francia), gratuito per sviluppo e demo, e il più affidabile per il tool calling con CKAN.
 
 1. Registrati su [console.mistral.ai](https://console.mistral.ai)
 2. Crea una API key
@@ -111,47 +166,73 @@ MISTRAL_API_KEY=la_tua_key
 MISTRAL_MODEL=mistral-small-latest
 ```
 
-Modelli disponibili nel piano gratuito:
+### Modelli disponibili
 
-| Modello | Note |
-|---|---|
-| `mistral-small-latest` | Il più capace nel piano free |
-| `open-mistral-nemo` | Completamente open source |
-| `mistral-medium-latest` | Più potente, piano a pagamento |
+| Modello | Piano | Note |
+|---|---|---|
+| `mistral-small-latest` | Gratuito | Consigliato — ottimo tool calling |
+| `open-mistral-nemo` | Gratuito | Completamente open source |
+| `mistral-medium-latest` | A pagamento | Più potente |
 
 > Il piano gratuito ha un limite di 1 richiesta/secondo e ~500k token/mese — sufficiente per sviluppo e demo.
 
-## Usare Ollama (completamente locale)
+---
 
-Nel `.env` imposta:
+## Usare Ollama
+
+### Ollama Cloud ☁️
+
+Ollama offre un piano gratuito con GPU cloud potenti — nessun hardware necessario.
+
+1. Registrati su [ollama.com](https://ollama.com)
+2. Ottieni la API key
+3. Nel `.env` imposta:
 
 ```env
 LLM_PROVIDER=ollama
-OLLAMA_MODEL=qwen2.5:1.5b
+OLLAMA_URL=https://ollama.com
+OLLAMA_API_KEY=la-tua-key
+OLLAMA_MODEL=qwen3:4b-cloud
 ```
 
-Al primo avvio il container `ollama-pull` scarica automaticamente il modello scelto.
+### Ollama locale
+
+Richiede hardware adeguato (vedi tabella sotto). Al primo avvio il container `ollama-pull` scarica automaticamente il modello scelto.
+
+```env
+LLM_PROVIDER=ollama
+OLLAMA_URL=http://ollama:11434
+OLLAMA_MODEL=qwen2.5:3b
+```
+
+Avviare con il profilo apposito:
+
+```bash
+docker compose --profile ollama-local -f docker-compose-full.yml up --build -d
+```
 
 ### Modelli consigliati con tool calling
 
 | Modello | RAM necessaria | Tool calling | Note |
 |---|---|---|---|
-| `qwen2.5:1.5b` | 2 GB | ✅ | Minimo assoluto |
+| `qwen2.5:1.5b` | 2 GB | ✅ | Minimo assoluto, lento |
 | `qwen3:1.7b` | 2 GB | ✅ | Più recente |
 | `qwen3:4b` | 4 GB | ✅ | Buon equilibrio |
-| `qwen2.5:7b` | 8 GB | ✅ | Consigliato |
+| `qwen2.5:7b` | 8 GB | ✅ | Consigliato per produzione |
 | `mistral-nemo` | 8 GB | ✅ | 🇫🇷 europeo |
 
-> ⚠️ Su macchine virtuali con poca RAM (<4 GB disponibili) Ollama risulta molto lento o inutilizzabile. In quel caso usa Mistral AI.
+### Requisiti hardware minimi per Ollama locale in produzione
 
-### Requisiti hardware minimi per Ollama in produzione
-
-| Hardware | RAM | Modello usabile | Velocità |
+| Hardware | RAM | Modello usabile | Velocità stimata |
 |---|---|---|---|
-| VM base | 4 GB | `qwen2.5:1.5b` | Lenta (~1 tok/sec) |
-| Mini PC (es. Minisforum UM890) | 32 GB | `qwen2.5:7b` | ~15 tok/sec |
-| Mac Mini M2 | 16 GB | `qwen2.5:7b` | ~25 tok/sec |
-| PC con GPU RTX 3060 12GB | 16 GB + GPU | `qwen2.5:7b` | ~40 tok/sec |
+| VM con CPU virtuale | 4 GB | `qwen2.5:1.5b` | ~1 tok/sec (lenta) |
+| Mac Mini M2 8 GB | 8 GB | `qwen2.5:3b` | ~25 tok/sec |
+| Mac Mini M2 16 GB | 16 GB | `qwen2.5:7b` | ~30 tok/sec |
+| PC con RTX 3060 12 GB | 16 GB + GPU | `qwen2.5:7b` | ~40 tok/sec |
+
+> ⚠️ Su VM cloud senza GPU (es. VPS Aruba, Hetzner standard) Ollama è molto lento o inutilizzabile. In questi casi usa **Mistral AI** o **Ollama Cloud**.
+
+---
 
 ## Integrare con Claude Desktop
 
@@ -173,7 +254,9 @@ Per usare il CKAN MCP server anche da Claude Desktop, aggiungi al file di config
 }
 ```
 
-> Vedi `stdio-bridge.js` per il bridge stdio→HTTP necessario con Claude Desktop.
+> Vedi `stdio-bridge.js` per il bridge stdio→HTTP necessario con Claude Desktop (le versioni ≤1.1 non supportano URL MCP diretti).
+
+---
 
 ## API Backend
 
@@ -210,9 +293,11 @@ Per usare il CKAN MCP server anche da Claude Desktop, aggiungi al file di config
 }
 ```
 
+---
+
 ## Portali CKAN supportati
 
-Qualsiasi portale CKAN è interrogabile, esempi:
+Qualsiasi portale CKAN è interrogabile. Esempi:
 
 | Portale | URL |
 |---|---|
@@ -221,6 +306,8 @@ Qualsiasi portale CKAN è interrogabile, esempi:
 | Canada | `https://open.canada.ca/data` |
 | Australia | `https://data.gov.au` |
 | UK | `https://data.gov.uk` |
+
+---
 
 ## Log e troubleshooting
 
@@ -231,27 +318,31 @@ docker logs -f ckan-chat-backend
 # Log MCP server
 docker logs -f ckan-mcp-server
 
-# Log Ollama
+# Log Ollama (solo con profilo ollama-local)
 docker logs -f ollama
-
-# Stato di tutti i container
-docker compose -f docker-compose-full.yml ps
 ```
 
-**Errore 429 Mistral** → rate limit superato, il backend riprova automaticamente dopo 2 secondi.
+**Errore 429 Mistral** → rate limit superato; il backend riprova automaticamente dopo 2 secondi.
 
-**Errore EAI_AGAIN** → il container non risolve il DNS. Verificare che nel `docker-compose-full.yml` il servizio backend abbia:
+**Errore `EAI_AGAIN`** → il container non risolve il DNS. Verifica che nel `docker-compose-full.yml` il servizio backend abbia:
 ```yaml
 dns:
   - 8.8.8.8
   - 1.1.1.1
 ```
 
-**Ollama lento o bloccato** → RAM insufficiente. Usare Mistral AI oppure aumentare la RAM della VM.
+**Ollama lento o bloccato** → RAM insufficiente o CPU virtuale senza GPU. Usa Mistral AI o Ollama Cloud.
+
+**Link dataset sbagliati** → I link corretti di dati.gov.it usano il formato `https://www.dati.gov.it/view-dataset/dataset?id=<UUID>`. Il backend è configurato per usare il campo `view_url` restituito dalle API CKAN.
+
+**SyntaxError nel backend** → Controllare che i backtick nelle template literal in `server.js` siano tutti chiusi correttamente.
+
+---
 
 ## Licenza
 
 MIT
 
 ## Credits
-MCP server a cura di OnData
+
+MCP server a cura di [OnData](https://ondata.it)
