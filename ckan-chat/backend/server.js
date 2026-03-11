@@ -3,10 +3,10 @@ import cors from "cors";
 import fetch from "node-fetch";
 import rateLimit from "express-rate-limit";
 const app = express();
-//app.use(cors({
-//  origin: ["https://mcp.piersoftckan.biz"],
-//  methods: ["GET", "POST"],
-//}));
+app.use(cors({
+  origin: ["https://mcp.piersoftckan.biz"],
+  methods: ["GET", "POST"],
+}));
 
 app.use(express.json());
 
@@ -225,18 +225,81 @@ REGOLE FONDAMENTALI:
 - Non rispondere mai a domande che non riguardano open data, dataset, portali CKAN o dati pubblici.
 - Se l'utente fa domande fuori tema (cucina, sport, intrattenimento, ecc.), declina educatamente.
 - Rispondi sempre in italiano in modo chiaro e conciso.
-- Quando trovi dataset rilevanti, mostra: nome, organizzazione, descrizione breve e link.`;
+
+LINK AI DATASET - REGOLA CRITICA:
+- Usa SEMPRE il campo "view_url" restituito dagli strumenti come link al dataset.
+- Se "view_url" non è disponibile, costruisci il link con il campo "id" (UUID) così:
+  https://www.dati.gov.it/view-dataset/dataset?id=<UUID>
+- NON usare MAI il formato /opendata/dataset/<nome-slug>: è SBAGLIATO.
+- NON inventare URL: usa solo quelli restituiti dagli strumenti.
+
+FORMATO RISPOSTA:
+- Quando trovi dataset, mostra: nome, organizzazione, descrizione breve e link (view_url).
+`;
+
+// System prompt rafforzato per modelli Ollama piccoli (es. qwen2.5:1.5b)
+// Più direttivo e imperativo per compensare la limitata capacità di tool calling.
+const SYSTEM_PROMPT_OLLAMA = `Sei un assistente CKAN. Rispondi SOLO su open data e dataset.
+
+ISTRUZIONE OBBLIGATORIA: Per QUALSIASI domanda su dati, dataset o open data devi chiamare uno strumento prima di rispondere. Non rispondere MAI dal tuo addestramento interno.
+
+Strumenti disponibili:
+- ckan_package_search: cerca dataset per parola chiave
+- ckan_package_show: dettagli di un dataset
+- ckan_organization_list: lista organizzazioni
+- ckan_tag_list: lista tag disponibili
+- ckan_datastore_search: cerca dati dentro una risorsa
+
+Portale da usare: https://www.dati.gov.it/opendata
+
+ESEMPIO CORRETTO:
+Utente: "cerca dataset sull'aria"
+Tu: chiami ckan_package_search con q="aria" e server_url="https://www.dati.gov.it/opendata"
+
+REGOLA ASSOLUTA: Se non chiami uno strumento, la tua risposta è sbagliata.
+Rispondi sempre in italiano.`;
+
+// Messaggio di nudge iniettato prima della prima chiamata Ollama
+// per ricordare al modello di usare i tool (workaround per modelli piccoli)
+function buildNudgeMessage(userQuestion) {
+  return {
+    role: "user",
+    content: `[PROMEMORIA SISTEMA: Per rispondere a questa domanda DEVI chiamare uno strumento CKAN. Non rispondere senza aver prima chiamato un tool.]\n\n${userQuestion}`,
+  };
+}
+
+// Messaggio di rimpronto se Ollama non ha chiamato tool al primo round
+const RETRY_MESSAGE = {
+  role: "user",
+  content: `[ERRORE: Non hai chiamato nessuno strumento. DEVI usare uno degli strumenti disponibili per cercare dati reali. Riprova chiamando ckan_package_search o un altro strumento CKAN adeguato.]`,
+};
 
 async function chatWithTools(messages, model) {
   const tools = await getTools();
   const toolCallsLog = [];
 
+  // Per Ollama usiamo il system prompt rafforzato e il nudge message
+  const isOllama = LLM_PROVIDER === "ollama";
+  const systemPrompt = isOllama ? SYSTEM_PROMPT_OLLAMA : SYSTEM_PROMPT;
+
+  // Costruisci la history: per Ollama sostituiamo l'ultimo messaggio utente con il nudge
+  let historyMessages;
+  if (isOllama && messages.length > 0) {
+    const allButLast = messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }));
+    const lastMsg = messages[messages.length - 1];
+    historyMessages = [...allButLast, buildNudgeMessage(lastMsg.content)];
+  } else {
+    historyMessages = messages.map(m => ({ role: m.role, content: m.content }));
+  }
+
   const history = [
-    { role: "system", content: SYSTEM_PROMPT },
-    ...messages.map((m) => ({ role: m.role, content: m.content })),
+    { role: "system", content: systemPrompt },
+    ...historyMessages,
   ];
 
-  for (let round = 0; round < 5; round++) {
+  let ollamaToolMissedCount = 0; // contatore round senza tool call (solo Ollama)
+
+  for (let round = 0; round < 6; round++) {
     if (round > 0) await new Promise(r => setTimeout(r, 1200));
 
     let msg, finishReason;
@@ -251,13 +314,25 @@ async function chatWithTools(messages, model) {
       finishReason = msg.tool_calls?.length ? "tool_calls" : "stop";
     }
 
+    // ── Workaround Ollama: se al primo round non ha chiamato tool, rimpronta e riprova ──
+    if (isOllama && round === 0 && finishReason === "stop" && toolCallsLog.length === 0) {
+      ollamaToolMissedCount++;
+      console.log(`[ollama-nudge] round ${round}: nessun tool chiamato, inietto retry message`);
+      history.push(msg);           // tengo la risposta sbagliata in history
+      history.push(RETRY_MESSAGE); // aggiungo il rimpronto
+      continue;                    // riprova al prossimo round
+    }
+
     history.push(msg);
 
-    // Risposta finale
+    // Risposta finale (Mistral o Ollama dopo aver già usato tool o esaurito retry)
     if (finishReason === "stop" || finishReason === "end_turn" || !msg.tool_calls?.length) {
       const reply = typeof msg.content === "string"
         ? msg.content
         : msg.content?.filter(b => b.type === "text").map(b => b.text).join("\n") ?? "";
+      if (isOllama && toolCallsLog.length === 0) {
+        console.warn(`[ollama-nudge] risposta finale senza tool call dopo ${round + 1} round`);
+      }
       return { reply, toolCalls: toolCallsLog };
     }
 
