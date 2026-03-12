@@ -89,11 +89,11 @@ OLLAMA_MODEL=qwen2.5:1.5b
 # ── Produzione con nginx reverse proxy ───────────────────────────────────────
 # Se usi nginx come reverse proxy sullo stesso server (consigliato):
 #   VITE_BACKEND_URL=           ← lascia vuoto, le chiamate /api/ passano per nginx
-#   CORS_ORIGIN=http://31.14.139.9  ← il tuo IP o dominio pubblico
+#   CORS_ORIGIN=http://31.14.xxx.x  ← il tuo IP o dominio pubblico
 #
 # Se accedi direttamente senza nginx (sviluppo):
-#   VITE_BACKEND_URL=http://31.14.139.9:3001
-#   CORS_ORIGIN=http://31.14.139.9:8080
+#   VITE_BACKEND_URL=http://31.14.xxx.x:3001
+#   CORS_ORIGIN=http://31.14.xxx.x:8080
 VITE_BACKEND_URL=
 CORS_ORIGIN=
 ```
@@ -155,7 +155,7 @@ nginx -t && systemctl enable nginx && systemctl restart nginx
 # Con nginx sullo stesso server: VITE_BACKEND_URL vuoto (le chiamate /api/ passano per nginx)
 VITE_BACKEND_URL=
 # CORS: il tuo IP o dominio pubblico
-CORS_ORIGIN=http://31.14.139.9
+CORS_ORIGIN=http://31.14.xxx.x
 ```
 
 Poi rebuilda frontend e backend:
@@ -171,8 +171,8 @@ Il chatbot sarà disponibile su `http://<IP>/chatbot` (porta 80).
 Se preferisci accedere direttamente senza proxy, imposta l'IP nel `.env`:
 
 ```env
-VITE_BACKEND_URL=http://31.14.139.9:3001
-CORS_ORIGIN=http://31.14.139.9:8080
+VITE_BACKEND_URL=http://31.14.xxx.x:3001
+CORS_ORIGIN=http://31.14.xxx.x:8080
 ```
 
 E accedi su `http://<IP>:8080/chatbot`.
