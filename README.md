@@ -3,15 +3,17 @@
 Chat in linguaggio naturale sui dati aperti CKAN, con LLM configurabile (Mistral AI, Ollama locale o Ollama Cloud).
 
 ```
-[React Frontend :8080]
-        ↓ HTTP
-[Node.js Backend :3001]
-        ↓                        ↓
-[Mistral AI ☁️]      [ckan-mcp-server :3000]
-  oppure                  (dati.gov.it, ecc.)
-[Ollama locale :11434]
-  oppure
-[Ollama Cloud ☁️]
+[Browser]
+    ↓ HTTP :80
+[nginx reverse proxy]          ← consigliato in produzione
+    ↓ /chatbot         ↓ /api/
+[Frontend :8080]   [Backend :3001]
+                        ↓                    ↓
+               [Mistral AI ☁️]   [ckan-mcp-server :3000]
+                 oppure               (dati.gov.it, ecc.)
+               [Ollama locale :11434]
+                 oppure
+               [Ollama Cloud ☁️]
 ```
 
 ## Struttura della repo
@@ -46,6 +48,7 @@ ckan-mcp-server-docker-ollama/
 ## Prerequisiti
 
 - Docker + Docker Compose
+- **nginx** (per l'accesso via porta 80 in produzione — vedi sezione [Nginx reverse proxy](#nginx-reverse-proxy))
 - Per Mistral AI: API key gratuita da [console.mistral.ai](https://console.mistral.ai)
 - Per Ollama Cloud: API key da [ollama.com](https://ollama.com)
 - Per Ollama locale: almeno **8 GB di RAM** disponibili per il modello
@@ -82,19 +85,109 @@ MISTRAL_MODEL=mistral-small-latest
 OLLAMA_URL=http://ollama:11434
 OLLAMA_API_KEY=
 OLLAMA_MODEL=qwen2.5:1.5b
+
+# ── Produzione con nginx reverse proxy ───────────────────────────────────────
+# Se usi nginx come reverse proxy sullo stesso server (consigliato):
+#   VITE_BACKEND_URL=           ← lascia vuoto, le chiamate /api/ passano per nginx
+#   CORS_ORIGIN=http://31.14.139.9  ← il tuo IP o dominio pubblico
+#
+# Se accedi direttamente senza nginx (sviluppo):
+#   VITE_BACKEND_URL=http://31.14.139.9:3001
+#   CORS_ORIGIN=http://31.14.139.9:8080
+VITE_BACKEND_URL=
+CORS_ORIGIN=
 ```
 
 **Per cambiare provider basta modificare `LLM_PROVIDER` nel `.env`** — nessun altro file va toccato.
 
-## Fix CORS per sicurezza
+## Nginx reverse proxy
 
-In [`server.js`](https://github.com/piersoft/ckan-mcp-server-docker-ollama/blob/main/ckan-chat/backend/server.js) riga 7, sostituire `mcp.piersoftckan.biz` con il proprio dominio per bloccare il CORS:
+In produzione è **fortemente consigliato** usare nginx come reverse proxy davanti ai container Docker. Questo permette di:
+- Accedere al chatbot via porta **80** (standard) invece di `:8080`
+- Servire `/chatbot` (frontend) e `/api/` (backend) dallo stesso host
+- Gestire correttamente gli header `X-Forwarded-For` per il rate limiting
 
-```js
-app.use(cors({
-  origin: ["https://tuo-dominio.it"],
-  methods: ["GET", "POST"],
-}));
+### Installazione e configurazione
+
+```bash
+# Installa nginx
+apt install -y nginx
+
+# Crea la configurazione
+cat > /etc/nginx/sites-available/ckan << 'EOF'
+server {
+    listen 80;
+    server_name _;   # oppure il tuo dominio/IP pubblico
+
+    location /chatbot {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /assets/ {
+        proxy_pass http://127.0.0.1:8080/assets/;
+        proxy_set_header Host $host;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /favicon.ico { return 204; }
+    location / { return 444; }
+}
+EOF
+
+# Attiva la configurazione
+rm -f /etc/nginx/sites-enabled/default
+ln -sf /etc/nginx/sites-available/ckan /etc/nginx/sites-enabled/ckan
+nginx -t && systemctl enable nginx && systemctl restart nginx
+```
+
+### Configurazione `.env` con nginx
+
+```env
+# Con nginx sullo stesso server: VITE_BACKEND_URL vuoto (le chiamate /api/ passano per nginx)
+VITE_BACKEND_URL=
+# CORS: il tuo IP o dominio pubblico
+CORS_ORIGIN=http://31.14.139.9
+```
+
+Poi rebuilda frontend e backend:
+
+```bash
+docker compose -f docker-compose-full.yml up --build frontend backend -d
+```
+
+Il chatbot sarà disponibile su `http://<IP>/chatbot` (porta 80).
+
+### Senza nginx (sviluppo locale)
+
+Se preferisci accedere direttamente senza proxy, imposta l'IP nel `.env`:
+
+```env
+VITE_BACKEND_URL=http://31.14.139.9:3001
+CORS_ORIGIN=http://31.14.139.9:8080
+```
+
+E accedi su `http://<IP>:8080/chatbot`.
+
+### Firewall
+
+Se usi un firewall (UFW o firewall del provider cloud), assicurati di aprire la porta 80:
+
+```bash
+# UFW locale
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw reload
+
+# Su Aruba Cloud / altri provider: aprire la porta 80 nel pannello Security Groups
 ```
 
 ## Avvio
@@ -148,7 +241,9 @@ docker compose -f docker-compose-full.yml down
 docker compose -f docker-compose-full.yml ps
 ```
 
-Il frontend sarà disponibile su `http://<SERVER_IP>:8080`
+Il chatbot sarà disponibile su:
+- **`http://<SERVER_IP>/chatbot`** se usi nginx (consigliato)
+- `http://<SERVER_IP>:8080/chatbot` se accedi direttamente ai container
 
 ---
 
@@ -322,7 +417,13 @@ docker logs -f ckan-mcp-server
 docker logs -f ollama
 ```
 
-**Errore 429 Mistral** → rate limit superato; il backend riprova automaticamente dopo 2 secondi.
+**Pallini rossi nel frontend (backend/ollama/mcp non raggiungibili)** → Il frontend chiama `localhost:3001` invece di passare per nginx. Verifica che `VITE_BACKEND_URL` sia vuoto nel `.env` e che nginx abbia la `location /api/` configurata. Poi rebuilda il frontend.
+
+**Warning `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`** → Il backend non ha `trust proxy` abilitato. Il `server.js` aggiornato lo include già; se vedi questo warning dopo un aggiornamento, rebuilda il backend.
+
+**Porta 80 non raggiungibile dall'esterno** → Controlla il firewall locale (`ufw status`) e il pannello Security Groups del tuo provider cloud (es. Aruba Cloud → Virtual Private Cloud → Security Groups). Aggiungi la regola TCP porta 80 da `0.0.0.0/0`.
+
+ → rate limit superato; il backend riprova automaticamente dopo 2 secondi.
 
 **Errore `EAI_AGAIN`** → il container non risolve il DNS. Verifica che nel `docker-compose-full.yml` il servizio backend abbia:
 ```yaml

@@ -5,10 +5,20 @@ import rateLimit from "express-rate-limit";
 
 const app = express();
 
-//app.use(cors({
-//  origin: ["https://mcp.piersoftckan.biz"],
-//  methods: ["GET", "POST"],
-//}));
+// Necessario quando il backend è dietro un reverse proxy (nginx)
+// Permette a express-rate-limit di identificare correttamente l'IP del client
+app.set("trust proxy", 1);
+
+// CORS: sostituire con il proprio dominio o IP in produzione
+// Esempi:
+//   origin: ["https://mio-dominio.it"]
+//   origin: ["http://31.14.139.9"]
+app.use(cors({
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map(s => s.trim())
+    : true, // in sviluppo accetta tutto; in prod imposta CORS_ORIGIN nel .env
+  methods: ["GET", "POST"],
+}));
 
 app.use(express.json());
 
