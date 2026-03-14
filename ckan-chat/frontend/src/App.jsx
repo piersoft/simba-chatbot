@@ -177,7 +177,7 @@ export default function App() {
       <main className="chat-area">
         <div className="chat-header">
           <span className="chat-header-title">🏛️ Esplora i Dati Aperti Italiani</span>
-          <span className="chat-header-subtitle">dati.gov.it · MCP Server by OnData</span>
+          <span className="chat-header-subtitle"></span>
         </div>
         <div className="messages-container">
           {messages.length === 0 && (
@@ -227,7 +227,7 @@ export default function App() {
             </button>
           </div>
           <div className="input-hint">
-            Invio per inviare · Shift+Invio per andare a capo · MCP Server backend by <a href="https://ondata.it" target="_blank" rel="noopener">OnData</a>
+            Invio per inviare · Shift+Invio per andare a capo · MCP Server backend by <a href="https://ondata.github.io/ckan-mcp-server/" target="_blank" rel="noopener">OnData</a>
           </div>
         </div>
       </main>
