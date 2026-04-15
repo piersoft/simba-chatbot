@@ -28,6 +28,7 @@ export default function App() {
   const [csvTab,      setCsvTab]      = useState("url"); // "url" | "upload"
   const [csvFile,     setCsvFile]     = useState(null);
   const [showTtlBox,  setShowTtlBox]  = useState(false);
+  const [showHelp,    setShowHelp]    = useState(false);
   const [ttlUrl,      setTtlUrl]      = useState("");
   const [ttlFile,     setTtlFile]     = useState(null);
   const [ttlTab,      setTtlTab]      = useState("url");
@@ -708,6 +709,9 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
         <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
         <div className="input-area">
+          <button className="help-btn" aria-label="Guida all'uso" onClick={() => setShowHelp(v => !v)}>
+            <Icon name="question-circle" size={18} />
+          </button>
           <textarea
             ref={inputRef}
             className="chat-input"
@@ -723,6 +727,25 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             {loading ? <Icon name="hourglass-split" /> : <Icon name="send-fill" />}
           </button>
         </div>
+        {showHelp && (
+          <div className="help-popup" role="dialog" aria-label="Guida all'uso">
+            <button className="help-close" onClick={() => setShowHelp(false)} aria-label="Chiudi guida">
+              <Icon name="x-lg" size={14} />
+            </button>
+            <h4><Icon name="search" size={14} /> Cerca dataset</h4>
+            <p>Scrivi cosa vuoi trovare in linguaggio naturale:</p>
+            <ul>
+              <li><em>«cerca dati sulla qualità dell'aria»</em></li>
+              <li><em>«trovami dataset sui rifiuti a Milano»</em></li>
+              <li><em>«dati demografici Puglia»</em></li>
+            </ul>
+            <h4><Icon name="check2-circle" size={14} /> Valida CSV</h4>
+            <p>Clicca <strong>Valida CSV</strong> nella sidebar e incolla l'URL del file o caricalo direttamente.</p>
+            <h4><Icon name="diagram-3" size={14} /> Converti in RDF</h4>
+            <p>Clicca <strong>Trasforma in RDF TTL/XML</strong>, inserisci l'URL del CSV o carica il file, poi inserisci il <strong>Codice IPA</strong> e il <strong>Nome della PA</strong> (obbligatori).</p>
+            <p className="help-tip"><Icon name="lightbulb" size={12} /> Il sistema risponde solo a richieste riguardanti open data PA italiana.</p>
+          </div>
+        )}
       </main>
     </div>
   );

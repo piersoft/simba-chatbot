@@ -1094,3 +1094,42 @@ body {
   transition: color 0.15s;
 }
 .sidebar-github a:hover { color: var(--white); }
+
+/* ── Bottone ? e popup guida ─────────────────────────────────────────────── */
+.help-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); padding: 6px; border-radius: 50%;
+  display: flex; align-items: center; transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.help-btn:hover { color: #0066CC; background: #e8f0fe; }
+
+.help-popup {
+  position: absolute; bottom: 70px; left: 16px; right: 16px;
+  background: #fff; border: 1px solid #dee2e6; border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12); padding: 16px 18px;
+  z-index: 100; max-width: 520px;
+}
+.help-popup h4 {
+  font-size: 13px; font-weight: 700; color: #17324d;
+  margin: 10px 0 4px; display: flex; align-items: center; gap: 6px;
+}
+.help-popup h4:first-of-type { margin-top: 0; }
+.help-popup p { font-size: 13px; color: #5c6f82; margin: 0 0 6px; }
+.help-popup ul {
+  margin: 0 0 8px 16px; padding: 0;
+  font-size: 13px; color: #5c6f82;
+}
+.help-popup ul li { margin-bottom: 3px; }
+.help-popup em { color: #0066CC; font-style: normal; font-weight: 500; }
+.help-tip {
+  font-size: 12px; color: #888; border-top: 1px solid #eee;
+  padding-top: 8px; margin-top: 8px !important;
+  display: flex; align-items: center; gap: 5px;
+}
+.help-close {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: none; cursor: pointer;
+  color: #888; padding: 4px; border-radius: 4px;
+}
+.help-close:hover { background: #f0f0f0; color: #333; }
