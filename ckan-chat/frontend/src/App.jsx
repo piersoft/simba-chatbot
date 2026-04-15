@@ -311,34 +311,34 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
         <StatusBar health={health} onRefresh={fetchHealth} />
 
-        {/* Strumenti consigliati */}
-        <div className="sidebar-section">
-          <div className="section-label">Strumenti consigliati</div>
-          <a className="sidebar-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
-            🔌 CKAN MCP Server <span className="sidebar-link-tag">OnData</span>
-          </a>
-          <a className="sidebar-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
-            🔌 ISTAT MCP Server <span className="sidebar-link-tag">OnData</span>
-          </a>
-        </div>
-
-        {/* Strumenti disponibili */}
+        {/* Strumenti disponibili — card colorate */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti disponibili</div>
-          <button className="suggestion-btn" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")} disabled={loading}>
+          <button className="tool-card tool-search" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")} disabled={loading}>
             🔍 Cerca dataset
           </button>
-          <button className="suggestion-btn" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); }} disabled={loading}>
+          <button className="tool-card tool-validate" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); }} disabled={loading}>
             ✅ Valida CSV
           </button>
-          <button className="suggestion-btn" onClick={() => sendMessage("Converti CSV in RDF TTL")} disabled={loading}>
+          <button className="tool-card tool-ttl" onClick={() => sendMessage("Converti CSV in RDF TTL")} disabled={loading}>
             🔄 Trasforma in TTL
           </button>
-          <a className="sidebar-link sidebar-link-sm" href="https://github.com/piersoft/CSV-to-RDF" target="_blank" rel="noopener noreferrer">
-            📄 CSV to RDF <span className="sidebar-link-tag">AgID</span>
+        </div>
+
+        {/* Link strumenti — testo semplice */}
+        <div className="sidebar-section">
+          <div className="section-label">Strumenti consigliati</div>
+          <a className="sidebar-plain-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
+            🔌 CKAN MCP Server <span className="plain-tag">OnData</span>
           </a>
-          <a className="sidebar-link sidebar-link-sm" href="https://github.com/piersoft/CSV-to-RDF/blob/main/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
-            ✅ Validatore CSV <span className="sidebar-link-tag">AgID</span>
+          <a className="sidebar-plain-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
+            🔌 ISTAT MCP Server <span className="plain-tag">OnData</span>
+          </a>
+          <a className="sidebar-plain-link" href="https://github.com/piersoft/CSV-to-RDF" target="_blank" rel="noopener noreferrer">
+            📄 CSV to RDF <span className="plain-tag">AgID</span>
+          </a>
+          <a className="sidebar-plain-link" href="https://github.com/piersoft/CSV-to-RDF/blob/main/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
+            ✅ Validatore CSV <span className="plain-tag">AgID</span>
           </a>
         </div>
 
