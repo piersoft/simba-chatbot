@@ -476,13 +476,22 @@ Se trovi dataset mostra: nome, organizzazione, descrizione breve e link.`;
 // Output atteso: SEARCH | VALIDATE | ENRICH | OFF_TOPIC
 // ~1 secondo su CPU, nessun tool definition, prompt minimale.
 
-const INTENT_PROMPT = `Sei un classificatore di intenzioni. Rispondi con UNA SOLA parola tra:
-SEARCH - l'utente vuole cercare dataset o dati aperti
-VALIDATE - l'utente vuole validare un file CSV
-ENRICH - l'utente vuole convertire CSV in RDF/TTL o arricchire semanticamente
-OFF_TOPIC - la domanda non riguarda open data
+const INTENT_PROMPT = `Sei un classificatore per un assistente open data italiano. Rispondi con UNA SOLA parola.
 
-Rispondi SOLO con la parola, nessun'altra parola, nessun punto.`;
+SEARCH: cercare dataset, dati aperti, statistiche pubbliche, open data
+VALIDATE: validare, controllare, verificare qualità di un CSV
+ENRICH: convertire CSV in RDF, TTL, Turtle, Linked Data
+OFF_TOPIC: tutto il resto (cucina, sport, meteo, saluti, domande generali, ricette)
+
+Esempi:
+"cerca dataset qualità aria" → SEARCH
+"valida CSV" → VALIDATE
+"converti in TTL" → ENRICH
+"preparami la torta" → OFF_TOPIC
+"come stai" → OFF_TOPIC
+"chi ha vinto" → OFF_TOPIC
+
+Rispondi SOLO con una di queste parole: SEARCH VALIDATE ENRICH OFF_TOPIC`;
 
 async function classifyIntent(userMessage) {
   try {
@@ -604,11 +613,11 @@ app.post("/api/enrich", async (req, res) => {
       const params = new URLSearchParams({ url, ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
       rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
     } else {
-      // Chiama rdf-mcp con testo CSV via POST
+      // Chiama rdf-mcp con testo CSV via POST (body grezzo text/csv)
       const params = new URLSearchParams({ ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
       rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, {
         method: "POST",
-        headers: { "Content-Type": "text/csv" },
+        headers: { "Content-Type": "text/csv; charset=utf-8" },
         body: csv_text,
         signal: AbortSignal.timeout(60000),
       });

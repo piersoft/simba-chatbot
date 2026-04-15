@@ -93,12 +93,13 @@ export default function App() {
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?publisher }
   FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
       const url = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
@@ -113,29 +114,8 @@ SELECT DISTINCT ?d ?title ?description ?modified WHERE {
       bindings = await runQuery(useWords, true, offset);
     }
 
-    // Poi recupera publisher in parallelo (query separata per non sporcare DISTINCT)
-    const uris = [...new Set(bindings.map(b => b.d?.value).filter(Boolean))];
-    const pubMap = new Map();
-    if (uris.length > 0) {
-      try {
-        const pubQ = `PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT ?d ?rhName WHERE {
-  VALUES ?d { ${uris.map(u => `<${u}>`).join(" ")} }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
-}`;
-        const pubUrl = `${SPARQL_EP}?query=${encodeURIComponent(pubQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-        const pr = await fetch(pubUrl, { headers: { Accept: "application/sparql-results+json" } });
-        if (pr.ok) {
-          const pd = await pr.json();
-          (pd.results?.bindings ?? []).forEach(b => {
-            if (b.rhName?.value) pubMap.set(b.d?.value, b.rhName.value);
-          });
-        }
-      } catch {}
-    }
-
     // Deduplicazione e costruzione risultati
+    // Il publisher viene dalla query principale (rightsHolder opzionale)
     const seen = new Map();
     for (const b of bindings) {
       const uri = b.d?.value ?? "";
@@ -146,7 +126,7 @@ SELECT ?d ?rhName WHERE {
         title:       b.title?.value ?? "",
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
-        publisher:   pubMap.get(uri) ?? "",
+        publisher:   b.publisher?.value ?? "",
         viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
         csvResources: [],
       });
