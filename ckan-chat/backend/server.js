@@ -702,6 +702,29 @@ app.post("/api/validate-text", async (req, res) => {
   }
 });
 
+// ─── SPARQL proxy — il browser non può fare POST su lod.dati.gov.it
+// Il backend fa la chiamata GET e restituisce il JSON pulito
+app.post("/api/sparql", async (req, res) => {
+  const { query } = req.body;
+  if (!query) return res.status(400).json({ error: "query required" });
+  try {
+    const url = `https://lod.dati.gov.it/sparql?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const r = await fetch(url, {
+      headers: {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "Mozilla/5.0 (compatible; ckan-opendata-assistant/1.0)",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) throw new Error(`SPARQL ${r.status}`);
+    const data = await r.json();
+    res.json(data);
+  } catch (e) {
+    console.error("[sparql-proxy] errore:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.get("/api/models", (req, res) => {

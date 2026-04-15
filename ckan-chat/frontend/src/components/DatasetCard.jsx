@@ -1,32 +1,27 @@
 import { useState } from "react";
 
-const SPARQL_URL = "https://lod.dati.gov.it/sparql";
-const FT_BASE    = "http://publications.europa.eu/resource/authority/file-type/";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
+const FT_BASE     = "http://publications.europa.eu/resource/authority/file-type/";
 
 function val(b, k) {
   const v = b[k]?.value || "";
-  // L'endpoint SPARQL a volte restituisce & come &amp; nei valori URI
   return v.replace(/&amp;/g, "&");
 }
+
 function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
 
+// Proxy backend — il backend scarica da lod.dati.gov.it e restituisce JSON pulito
+// I & nei downloadURL vengono preservati perché non passano per un URL del browser
 async function sparql(query) {
-  // Usa POST per evitare problemi con URL lunghi o caratteri speciali nei valori
-  const endpoint = SPARQL_URL;
-  const r = await fetch(endpoint, {
+  const r = await fetch(`${BACKEND_URL}/api/sparql`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Accept": "application/sparql-results+json",
-    },
-    body: `query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
   });
-  if (!r.ok) throw new Error(`SPARQL ${r.status}`);
+  if (!r.ok) throw new Error(`SPARQL proxy ${r.status}`);
   return (await r.json()).results.bindings;
 }
 
-// Query identica a showDataset dell'assistente ckan-opendata-assistant
-// dUri = URI completo del dataset (es. https://dati.gov.it/resource/Dataset/...)
 async function loadDistributions(dUri) {
   const rows = await sparql(
 `PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -48,7 +43,6 @@ SELECT ?distTitle ?format (STR(?aURL) AS ?accessURL) (STR(?dURL) AS ?downloadURL
   rows.forEach(r => {
     const accessURL   = val(r, "accessURL");
     const downloadURL = val(r, "downloadURL");
-    // Priorità a downloadURL (file diretto) — accessURL è spesso pagina HTML
     const fileUrl = downloadURL || accessURL;
     const key = fileUrl;
     if (key && !distMap.has(key)) {
@@ -134,6 +128,11 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
                 <button className="btn-small btn-validate" onClick={() => onValidate(d.downloadURL, dataset.title)}>
                   ✅ Valida
                 </button>
+                {onEnrich && (
+                  <button className="btn-small btn-ttl" onClick={() => onEnrich(d.downloadURL, dataset.title)}>
+                    🔄 TTL
+                  </button>
+                )}
               </div>
             </div>
           ))}
