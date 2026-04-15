@@ -907,3 +907,10 @@ body {
 
 .btn-ttl { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
 .btn-ttl:hover { background: #e1bee7; }
+
+.ttl-box { border-color: #ce93d8; background: #fdf6ff; }
+.ttl-meta-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.ttl-meta-row .csv-url-input { flex: 1; }
+.btn-ttl-box { background: #6a1b9a; color: #fff; }
+.btn-ttl-box:hover { background: #4a148c; }
+.btn-ttl-box:disabled { background: #aaa; cursor: not-allowed; }

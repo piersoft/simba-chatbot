@@ -25,6 +25,12 @@ export default function App() {
   const [csvUrl,      setCsvUrl]      = useState("");
   const [csvTab,      setCsvTab]      = useState("url"); // "url" | "upload"
   const [csvFile,     setCsvFile]     = useState(null);
+  const [showTtlBox,  setShowTtlBox]  = useState(false);
+  const [ttlUrl,      setTtlUrl]      = useState("");
+  const [ttlFile,     setTtlFile]     = useState(null);
+  const [ttlTab,      setTtlTab]      = useState("url");
+  const [ttlIpa,      setTtlIpa]      = useState("");
+  const [ttlPa,       setTtlPa]       = useState("");
   const [showCsvBox,  setShowCsvBox]  = useState(false);
 
   const bottomRef = useRef(null);
@@ -224,7 +230,7 @@ SELECT ?d ?rhName WHERE {
       }
 
       if (intent === "ENRICH") {
-        addMsg("assistant", `🔄 La conversione CSV → RDF/Linked Data è in arrivo!\n\nNel frattempo usa il tool online: https://piersoft.github.io/CSV-to-RDF/`);
+        setShowTtlBox(true);
         return;
       }
 
@@ -336,6 +342,41 @@ ${lines.length > 20 ? "…" : ""}
     finally { setLoading(false); setCsvFile(null); }
   }
 
+  async function enrichFromBox() {
+    if (!ttlUrl.trim()) return;
+    setShowTtlBox(false);
+    const pa = ttlPa.trim() || "Ente Pubblico";
+    const ipa = ttlIpa.trim() || "ente";
+    await doEnrich(ttlUrl.trim(), pa, ipa);
+    setTtlUrl(""); setTtlIpa(""); setTtlPa("");
+  }
+
+  async function enrichFromUpload() {
+    if (!ttlFile) return;
+    setShowTtlBox(false);
+    const pa = ttlPa.trim() || "Ente Pubblico";
+    const ipa = ttlIpa.trim() || "ente";
+    addMsg("user", `Converti in TTL: ${ttlFile.name}`);
+    addMsg("assistant", `🔄 Conversione in RDF/Turtle di **"${pa}"** in corso…`);
+    setLoading(true);
+    try {
+      const csv_text = await ttlFile.text();
+      const r = await fetch(`${BACKEND_URL}/api/enrich`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv_text, pa, ipa }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const ttl = await r.text();
+      const lines = ttl.split("\n").filter(Boolean);
+      const preview = lines.slice(0, 15).join("\n");
+      const blob = new Blob([ttl], { type: "text/turtle" });
+      const blobUrl = URL.createObjectURL(blob);
+      addMsg("assistant", `✅ Conversione completata!\n\n\`\`\`turtle\n${preview}${lines.length > 15 ? "\n…" : ""}\n\`\`\``, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.ttl` });
+    } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
+    finally { setLoading(false); setTtlFile(null); setTtlIpa(""); setTtlPa(""); }
+  }
+
   async function validateFromBox() {
     if (!csvUrl.trim()) return;
     setShowCsvBox(false);
@@ -418,7 +459,7 @@ ${lines.length > 20 ? "…" : ""}
           <button className="tool-card tool-validate" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); }} disabled={loading}>
             ✅ Valida CSV
           </button>
-          <button className="tool-card tool-ttl" onClick={() => sendMessage("Converti CSV in RDF TTL")} disabled={loading}>
+          <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); }} disabled={loading}>
             🔄 Trasforma in TTL
           </button>
         </div>
@@ -440,7 +481,7 @@ ${lines.length > 20 ? "…" : ""}
           </a>
         </div>
 
-        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); }}>
+        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); setShowTtlBox(false); }}>
           Nuova conversazione
         </button>
       </aside>
@@ -507,6 +548,51 @@ ${lines.length > 20 ? "…" : ""}
                   {csvFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {csvFile.name} ({(csvFile.size/1024).toFixed(1)} KB)</p>}
                 </>
               )}
+            </div>
+          )}
+
+          {/* Box conversione TTL */}
+          {showTtlBox && (
+            <div className="csv-box ttl-box">
+              <div className="csv-box-tabs">
+                <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}>🔗 Da URL</button>
+                <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}>📁 Carica file</button>
+              </div>
+              <div className="ttl-meta-row">
+                <input type="text" className="csv-url-input" placeholder="Codice IPA (es. c_b220)"
+                  value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
+                <input type="text" className="csv-url-input" placeholder="Nome PA (es. Comune di Bari)"
+                  value={ttlPa} onChange={e => setTtlPa(e.target.value)} />
+              </div>
+              {ttlTab === "url" ? (
+                <>
+                  <p>URL del file CSV da convertire:</p>
+                  <div className="csv-box-row">
+                    <input type="url" className="csv-url-input"
+                      placeholder="https://esempio.it/dataset.csv"
+                      value={ttlUrl} onChange={e => setTtlUrl(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && enrichFromBox()} />
+                    <button className="btn-validate-box btn-ttl-box" onClick={enrichFromBox} disabled={!ttlUrl.trim()}>
+                      🔄 Converti
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p>Carica un file CSV da convertire:</p>
+                  <div className="csv-box-row">
+                    <input type="file" accept=".csv,.tsv,.txt" className="csv-url-input"
+                      onChange={e => setTtlFile(e.target.files[0] || null)} />
+                    <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
+                      🔄 Converti
+                    </button>
+                  </div>
+                  {ttlFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {ttlFile.name} ({(ttlFile.size/1024).toFixed(1)} KB)</p>}
+                </>
+              )}
+              <p style={{fontSize:"11px",color:"#888",marginTop:"8px"}}>
+                Ontologie rilevate automaticamente secondo dati-semantic-assets
+              </p>
             </div>
           )}
 
