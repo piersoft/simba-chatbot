@@ -17,12 +17,6 @@ async function sparql(query) {
   const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
   if (!r.ok) throw new Error(`SPARQL ${r.status}`);
   const data = await r.json();
-  // Debug: log primo binding per vedere formato downloadURL
-  if (data.results?.bindings?.length > 0) {
-    const b = data.results.bindings[0];
-    console.log("[SPARQL distrib] downloadURL raw:", b.downloadURL?.value);
-    console.log("[SPARQL distrib] accessURL raw:", b.accessURL?.value);
-  }
   return data.results.bindings;
 }
 
@@ -32,14 +26,12 @@ async function loadDistributions(dUri) {
 PREFIX dct: <http://purl.org/dc/terms/>
 SELECT ?distTitle ?format (STR(?aURL) AS ?accessURL) (STR(?dURL) AS ?downloadURL) ?resourceId WHERE {
   BIND(<${dUri}> AS ?d)
-  OPTIONAL {
-    ?d dcat:distribution ?dist .
-    OPTIONAL { ?dist dct:title ?distTitle }
-    OPTIONAL { ?dist dct:format ?format }
-    OPTIONAL { ?dist dcat:accessURL ?aURL }
-    OPTIONAL { ?dist dcat:downloadURL ?dURL }
-    OPTIONAL { ?dist dct:identifier ?resourceId }
-  }
+  ?d dcat:distribution ?dist .
+  OPTIONAL { ?dist dct:title ?distTitle }
+  OPTIONAL { ?dist dct:format ?format }
+  OPTIONAL { ?dist dcat:accessURL ?aURL }
+  OPTIONAL { ?dist dcat:downloadURL ?dURL }
+  OPTIONAL { ?dist dct:identifier ?resourceId }
 } LIMIT 30`
   );
 
