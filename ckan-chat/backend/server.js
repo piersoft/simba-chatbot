@@ -515,10 +515,24 @@ function preFilterIntent(text) {
   if (searchKw.some(k => t.includes(k))) return "SEARCH";
 
   // Se non c'è NESSUNA keyword open data → OFF_TOPIC
-  // Ollama non viene chiamato per testi che non parlano di open data
-  const openDataKw = ["dataset","csv","dati","file","rdf","ttl","catalogo","portale",
-    "sparql","pubblica amministrazione","pa ","open","linked","ontologi","distribuz",
-    "risorsa","formato","licenza","metadat"];
+  // Basato sul corpus fixtures_v9.json (468 dataset PA italiani reali)
+  const openDataKw = [
+    // termini tecnici open data
+    "dataset","csv","dati","open data","opendata","sparql","catalogo","portale",
+    "linked","ontologi","distribuz","licenza","metadat","rdf","ttl","formato",
+    // domini tematici PA italiani (dal corpus)
+    "residenti","incidenti","strutture","famiglie","statistiche","personale",
+    "anagrafe","servizi","monitoraggio","popolazione","trasparenza","stranieri",
+    "culturali","beni","istat","contratti","trasporto","demografico","iscritti",
+    "bilancio","importo","servizio","scuole","sanitari","sensori","appalti",
+    "biblioteche","scolastico","progetti","censimento","turistic","rifiuti",
+    "decessi","musei","turismo","consiglieri","parcheggi","fermate","ambiente",
+    "energia","salute","giustizia","economia","agricoltura","istruzione",
+    "mobilità","raccolta","impianti","strade","edifici","toponomastica",
+    "defibrillatori","aed","qualità aria","inquinamento","verde pubblico",
+    "disabili","sociale","welfare","tributi","tasse","tariffe","immobili",
+    "catasto","urbanistica","permessi","appalto","gara","cig","cup"
+  ];
   const hasOpenData = openDataKw.some(k => t.includes(k));
   if (!hasOpenData) return "OFF_TOPIC";
 
