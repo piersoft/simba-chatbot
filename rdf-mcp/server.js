@@ -1,0 +1,137 @@
+/**
+ * rdf-mcp — Adapter locale per worker.js CSV-to-RDF
+ *
+ * Scarica worker.js dalla repo CSV-to-RDF all'avvio (o usa la copia locale).
+ * Espone le stesse API dell'endpoint Cloudflare:
+ *   GET  /?url=<csv_url>&ipa=<ipa>&pa=<nome>&fmt=<ttl|json|rdfxml>
+ *   POST /  (body: text/csv)
+ *
+ * Si aggiorna automaticamente ogni notte scaricando il worker.js aggiornato.
+ */
+
+import express from "express";
+import { createRequire } from "module";
+import { writeFileSync, readFileSync, existsSync } from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WORKER_PATH = path.join(__dirname, "worker.js");
+const WORKER_URL  = "https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/worker.js";
+const PORT        = process.env.PORT || 3003;
+
+// ── Scarica/aggiorna worker.js ───────────────────────────────────────────────
+async function downloadWorker() {
+  try {
+    console.log("[rdf-mcp] Scarico worker.js aggiornato...");
+    const res = await fetch(WORKER_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    writeFileSync(WORKER_PATH, text, "utf-8");
+    console.log(`[rdf-mcp] worker.js aggiornato (${text.length} bytes)`);
+    return true;
+  } catch (e) {
+    console.warn("[rdf-mcp] Impossibile scaricare worker.js:", e.message);
+    return false;
+  }
+}
+
+// ── Carica il worker come modulo Cloudflare Worker emulato ──────────────────
+let workerHandler = null;
+
+async function loadWorker() {
+  if (!existsSync(WORKER_PATH)) {
+    const ok = await downloadWorker();
+    if (!ok) { console.error("[rdf-mcp] worker.js non disponibile — uscita"); process.exit(1); }
+  }
+
+  // Leggo il sorgente e converto l'export Cloudflare in funzione eseguibile
+  let src = readFileSync(WORKER_PATH, "utf-8");
+
+  // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
+  // Lo wrapping: rimuovo l'export default e assegno a una variabile
+  src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
+  src += "\n globalThis.__workerHandler = __workerExport;\n";
+
+  // Eseguo in un contesto isolato usando Function()
+  try {
+    new Function(src)();
+    workerHandler = globalThis.__workerHandler;
+    console.log("[rdf-mcp] worker.js caricato OK");
+  } catch (e) {
+    console.error("[rdf-mcp] Errore caricamento worker:", e.message);
+    process.exit(1);
+  }
+}
+
+// ── Express adapter ──────────────────────────────────────────────────────────
+const app = express();
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
+
+app.options("*", (req, res) => res.sendStatus(204));
+
+app.use(async (req, res) => {
+  try {
+    // Costruisco un oggetto Request compatibile con Cloudflare Worker
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const fullUrl  = `${protocol}://${req.headers.host}${req.url}`;
+
+    let bodyBuffer = null;
+    if (req.method === "POST") {
+      bodyBuffer = await new Promise((resolve) => {
+        const chunks = [];
+        req.on("data", c => chunks.push(c));
+        req.on("end", () => resolve(Buffer.concat(chunks)));
+      });
+    }
+
+    const cfRequest = new Request(fullUrl, {
+      method:  req.method,
+      headers: req.headers,
+      body:    bodyBuffer,
+    });
+
+    const cfResponse = await workerHandler.fetch(cfRequest, {}, {});
+
+    res.status(cfResponse.status);
+    cfResponse.headers.forEach((v, k) => {
+      if (!["content-encoding","transfer-encoding"].includes(k.toLowerCase()))
+        res.setHeader(k, v);
+    });
+
+    const body = await cfResponse.arrayBuffer();
+    res.end(Buffer.from(body));
+
+  } catch (e) {
+    console.error("[rdf-mcp] Errore handler:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Aggiornamento notturno (ore 3:00) ────────────────────────────────────────
+function scheduleNightlyUpdate() {
+  const now  = new Date();
+  const next = new Date();
+  next.setHours(3, 0, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const ms = next - now;
+  setTimeout(async () => {
+    await downloadWorker();
+    await loadWorker();
+    scheduleNightlyUpdate();
+  }, ms);
+  console.log(`[rdf-mcp] Prossimo aggiornamento: ${next.toLocaleString("it")}`);
+}
+
+// ── Avvio ────────────────────────────────────────────────────────────────────
+await loadWorker();
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[rdf-mcp] pronto su http://0.0.0.0:${PORT}`);
+  console.log(`[rdf-mcp] Uso: GET http://localhost:${PORT}/?url=<csv_url>&ipa=<ipa>&pa=<nome>`);
+  scheduleNightlyUpdate();
+});

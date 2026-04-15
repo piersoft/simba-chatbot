@@ -258,6 +258,37 @@ SELECT ?d ?rhName WHERE {
     }
   }
 
+  // ── Conversione CSV → RDF ────────────────────────────────────────────────────
+  async function doEnrich(url, datasetTitle, ipa = "ente") {
+    addMsg("user", `Converti in TTL: ${url}`);
+    addMsg("assistant", `🔄 Conversione in RDF/Turtle di **"${datasetTitle}"** in corso…`);
+    setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND_URL}/api/enrich`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, pa: datasetTitle, ipa }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const ttl = await r.text();
+      const lines = ttl.split("\n").filter(Boolean);
+      const preview = lines.slice(0, 20).join("\n");
+      const blob = new Blob([ttl], { type: "text/turtle" });
+      const blobUrl = URL.createObjectURL(blob);
+      addMsg("assistant", `✅ Conversione completata!
+
+\`\`\`turtle
+${preview}
+${lines.length > 20 ? "…" : ""}
+\`\`\`
+
+[⬇ Scarica .ttl](${blobUrl})`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.ttl` });
+    } catch (e) {
+      addMsg("assistant", `❌ Errore conversione: ${e.message}`);
+    }
+    setLoading(false);
+  }
+
   // ── "Carica altri" ────────────────────────────────────────────────────────
   async function loadMore(query, currentOffset) {
     const newOffset = currentOffset + 8;
@@ -325,7 +356,7 @@ SELECT ?d ?rhName WHERE {
             <p dangerouslySetInnerHTML={{ __html: mdToHtml(m.content) }} />
             <div className="dataset-list">
               {m.datasets.map((d, j) => (
-                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} />
+                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} />
               ))}
             </div>
             <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)}>

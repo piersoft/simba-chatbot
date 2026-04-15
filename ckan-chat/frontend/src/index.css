@@ -904,3 +904,6 @@ body {
 }
 .ac-item:hover { background: #f0f4ff; }
 .ac-count { font-size: 11px; color: #999; margin-left: 8px; flex-shrink: 0; }
+
+.btn-ttl { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
+.btn-ttl:hover { background: #e1bee7; }

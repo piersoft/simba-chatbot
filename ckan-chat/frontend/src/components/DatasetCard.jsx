@@ -52,7 +52,7 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL ?resourceId WHERE {
 
 const CSV_FMTS = new Set(["CSV","TSV"]);
 
-export default function DatasetCard({ dataset, onValidate }) {
+export default function DatasetCard({ dataset, onValidate, onEnrich }) {
   const [distributions, setDistributions] = useState(null);
   const [loading, setLoading]             = useState(false);
   const [expanded, setExpanded]           = useState(false);

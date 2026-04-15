@@ -590,6 +590,39 @@ app.post("/api/validate", async (req, res) => {
   }
 });
 
+// ─── Endpoint CSV → RDF/TTL ──────────────────────────────────────────────────
+const RDF_MCP_URL = process.env.MCP_URL_RDF || "http://rdf-mcp:3003";
+
+app.post("/api/enrich", async (req, res) => {
+  const { url, csv_text, ipa, pa, fmt } = req.body;
+  if (!url && !csv_text) return res.status(400).json({ error: "url o csv_text richiesto" });
+  console.log(`[enrich] url=${url || "testo"} ipa=${ipa} pa=${pa}`);
+  try {
+    let rdfRes;
+    if (url) {
+      // Chiama rdf-mcp con URL
+      const params = new URLSearchParams({ url, ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
+      rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
+    } else {
+      // Chiama rdf-mcp con testo CSV via POST
+      const params = new URLSearchParams({ ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
+      rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, {
+        method: "POST",
+        headers: { "Content-Type": "text/csv" },
+        body: csv_text,
+        signal: AbortSignal.timeout(60000),
+      });
+    }
+    const text = await rdfRes.text();
+    if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
+    res.setHeader("Content-Type", rdfRes.headers.get("Content-Type") || "text/turtle");
+    res.send(text);
+  } catch (e) {
+    console.error("[enrich] errore:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Validazione da testo CSV grezzo (upload file dal browser)
 app.post("/api/validate-text", async (req, res) => {
   const { csv_text, filename } = req.body;

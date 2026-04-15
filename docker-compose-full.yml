@@ -56,6 +56,19 @@ services:
     ports:
       - "3002:3002"
 
+  # ── RDF MCP — CSV to RDF/TTL ────────────────────────────────────────────────
+  rdf-mcp:
+    build:
+      context: ./rdf-mcp
+      dockerfile: Dockerfile
+    container_name: rdf-mcp
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
   # ── Backend Node.js ─────────────────────────────────────────────────────────
   backend:
     build:
@@ -73,7 +86,7 @@ services:
       SERVER_IP: ${SERVER_IP:-localhost}
       MCP_URL: http://ckan-mcp-server:3000/mcp
       MCP_URL_VALIDATORE: http://validatore-mcp:3002/mcp
-      # MCP_URL_RDF: http://rdf-mcp:3003/mcp   # attivare quando rdf-mcp sarà pronto
+      MCP_URL_RDF: http://rdf-mcp:3003
       LLM_PROVIDER: ${LLM_PROVIDER:-mistral}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
@@ -84,6 +97,7 @@ services:
     depends_on:
       - ckan-mcp-server
       - validatore-mcp
+      - rdf-mcp
 
   # ── Frontend React ──────────────────────────────────────────────────────────
   frontend:
