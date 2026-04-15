@@ -32,6 +32,7 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
     OPTIONAL { ?dist dct:format ?format }
     OPTIONAL { ?dist dcat:accessURL ?accessURL }
     OPTIONAL { ?dist dct:downloadURL ?downloadURL }
+    OPTIONAL { ?dist dcat:downloadURL ?downloadURL2 }
   }
 } LIMIT 30`
   );
@@ -39,7 +40,7 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
   const distMap = new Map();
   rows.forEach(r => {
     const accessURL   = val(r, "accessURL");
-    const downloadURL = val(r, "downloadURL");
+    const downloadURL = val(r, "downloadURL") || val(r, "downloadURL2");
     const fileUrl = downloadURL || accessURL;
     const key = fileUrl;
     if (key && !distMap.has(key)) {
