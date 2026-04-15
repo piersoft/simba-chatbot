@@ -958,8 +958,8 @@ body {
 .tool-search:hover   { background: #e8f0fe; }
 .tool-validate { background: #006b38; color: #fff; }
 .tool-validate:hover { filter: brightness(0.85); }
-.tool-ttl      { background: #5C6F82; color: #fff; }
-.tool-ttl:hover      { filter: brightness(0.88); }
+.tool-ttl      { background: rgba(255,255,255,0.15); color: #fff; border: 2px solid rgba(206,147,216,0.7); }
+.tool-ttl:hover      { background: rgba(206,147,216,0.25); }
 .tool-card:disabled  { opacity: 0.5; cursor: not-allowed; filter: none; }
 
 /* Bottoni azioni card */
