@@ -664,7 +664,7 @@ body {
 .dataset-card-title { font-weight: 600; font-size: 14px; flex: 1; }
 .dataset-card-title a { color: #0066cc; text-decoration: none; }
 .dataset-card-title a:hover { text-decoration: underline; }
-.dataset-card-toggle { color: #888; font-size: 12px; flex-shrink: 0; padding-top: 2px; }
+.dataset-card-toggle { color: #0066CC; font-size: 13px; font-weight: 600; flex-shrink: 0; display: flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer; }
 
 .dataset-card-meta { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 14px 6px; }
 .dataset-tag {
