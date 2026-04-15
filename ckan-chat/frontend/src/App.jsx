@@ -366,9 +366,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   }
 
   function openTtlBox(url, fmt = "ttl") {
-    setTtlUrl(url);
-    setTtlTab("url");
+    setTtlUrl(url || "");
+    setTtlTab(url ? "url" : "upload");
     setTtlFmt(fmt);
+    setTtlIpa("");
+    setTtlPa("");
     setShowTtlBox(true);
   }
 

@@ -90,12 +90,12 @@ export default function ValidateReport({ report, url, csvText, onEnrich, onEnric
         <div className="validate-convert-btns">
           <span className="convert-label">Converti in:</span>
           <button className="btn-small btn-ttl" onClick={() =>
-            csvText && onEnrichText ? onEnrichText(csvText, url, "ttl") : onEnrich(url, "ttl")
+            onEnrich(url, "ttl")
           }>
             🔄 RDF/Turtle
           </button>
           <button className="btn-small btn-ttl" onClick={() =>
-            csvText && onEnrichText ? onEnrichText(csvText, url, "rdfxml") : onEnrich(url, "rdfxml")
+            onEnrich(url, "rdfxml")
           }>
             🔄 RDF/XML
           </button>
