@@ -32,20 +32,6 @@ services:
     entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:1.5b} && echo 'Modello pronto'"]
     restart: "no"
 
-  # ── CKAN MCP Server ─────────────────────────────────────────────────────────
-  ckan-mcp-server:
-    build:
-      context: ./ckan-mcp-server
-      dockerfile: Dockerfile
-    image: ckan-mcp-server:latest
-    container_name: ckan-mcp-server
-    restart: unless-stopped
-    ports:
-      - "${MCP_PORT:-3000}:3000"
-    environment:
-      TRANSPORT: http
-      PORT: 3000
-
   # ── Validatore CSV MCP (NUOVO) ──────────────────────────────────────────────
   validatore-mcp:
     build:
@@ -84,7 +70,6 @@ services:
     environment:
       PORT: 3001
       SERVER_IP: ${SERVER_IP:-localhost}
-      MCP_URL: http://ckan-mcp-server:3000/mcp
       MCP_URL_VALIDATORE: http://validatore-mcp:3002/mcp
       MCP_URL_RDF: http://rdf-mcp:3003
       LLM_PROVIDER: ${LLM_PROVIDER:-mistral}
@@ -95,7 +80,6 @@ services:
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
     depends_on:
-      - ckan-mcp-server
       - validatore-mcp
       - rdf-mcp
 
