@@ -502,90 +502,18 @@ Rispondi SOLO con una di queste parole: SEARCH VALIDATE ENRICH OFF_TOPIC`;
 function preFilterIntent(text) {
   const t = text.toLowerCase().trim();
 
-  // Keyword VALIDATE — priorità massima
-  const validateKw = ["valida","valid","controlla il csv","verifica il csv","qualità csv",
-    "errori csv","controllo csv","check csv","analizza csv"];
+  // VALIDATE — univoco, intercetta con certezza
+  const validateKw = ["valida","valid","controlla il csv","verifica il csv",
+    "qualità csv","errori csv","controllo csv","check csv","analizza csv"];
   if (validateKw.some(k => t.includes(k))) return "VALIDATE";
 
-  // Keyword ENRICH — priorità alta
-  const enrichKw = ["ttl","turtle","rdf","linked data","ontolog","converti in","trasforma in",
-    "arricch","semantic","genera ttl","genera rdf"];
+  // ENRICH — univoco, intercetta con certezza
+  const enrichKw = ["ttl","turtle","rdf","linked data","ontolog",
+    "converti in","trasforma in","arricch","semantic","genera ttl","genera rdf"];
   if (enrichKw.some(k => t.includes(k))) return "ENRICH";
 
-  // Keyword SEARCH esplicite — ma solo se c'è anche un riferimento a dati/PA reali
-  // "cerca dataset su X" è SEARCH solo se X è un argomento open data PA
-  const searchTriggers = ["cerca","trovami","mostrami","elenca","dammi",
-    "open data","opendata","catalogo","portale dati","sparql"];
-  const hasSearchTrigger = searchTriggers.some(k => t.includes(k));
-
-  if (hasSearchTrigger) {
-    // Verifica che ci sia anche una keyword tematica open data
-    // altrimenti "cerca la torta della nonna" → Ollama decide
-    const topicKw = [
-      "dataset","dati","csv","statistic","pubblica","amministrazione","comune",
-      "regione","provincia","istat","catasto","anagrafe","servizi","rifiuti",
-      "ambiente","energia","salute","scuole","trasporto","bilancio","appalti",
-      "residenti","popolazione","demografic","culturali","musei","turismo",
-      "qualità","aria","acqua","suolo","incidenti","strade","parcheggi",
-      "defibrillatori","sensori","iot","monitoraggio","immobili","urbanistica",
-      "permessi","contratti","personale","disabili","sociale","welfare","tributi"
-    ];
-    if (topicKw.some(k => t.includes(k))) return "SEARCH";
-    // Ha trigger di ricerca ma nessun argomento open data → Ollama decide
-    return null;
-  }
-
-  // Blacklist esplicita — termini ambigui fuori contesto PA
-  const offTopicBlacklist = [
-    "ricett","cucina","gastronom","ristorante","aliment","cibo","mangiare",
-    "bevanda","vino","birra","pizza","pasta","dolce","torta","gelato",
-    "calcio","sport","partita","squadra","gol","campionato","serie a",
-    "meteo","temperatura","pioggia","neve","vento","clima",
-    "film","cinema","serie tv","musica","canzone","concerto","artista",
-    "politica","governo","partito","elezione","voto","deputato","senatore",
-    "oroscopo","zodiaco","astrolog",
-    "borsa","bitcoin","crypto","azioni","finanza personale",
-    "social","instagram","tiktok","facebook","twitter",
-  ];
-  // Se il testo contiene keyword blacklist E non ha keyword specifiche PA → OFF_TOPIC
-  const hasBlacklist = offTopicBlacklist.some(k => t.includes(k));
-  const hasPaContext = ["comune","regione","provincia","pubblica","amministrazione",
-    "istat","ente","pa ","ministero","prefettura"].some(k => t.includes(k));
-  if (hasBlacklist && !hasPaContext) return "OFF_TOPIC";
-
-  // Se non c'è NESSUNA keyword open data → OFF_TOPIC
-  // Basato sul corpus fixtures_v9.json (468 dataset PA italiani reali)
-  const openDataKw = [
-    // termini tecnici open data
-    "dataset","csv","dati","open data","opendata","sparql","catalogo","portale",
-    "linked","ontologi","distribuz","licenza","metadat","rdf","ttl","formato",
-    // domini tematici PA italiani (dal corpus)
-    "residenti","incidenti","strutture","famiglie","statistiche","personale",
-    "anagrafe","servizi","monitoraggio","popolazione","trasparenza","stranieri",
-    "culturali","beni","istat","contratti","trasporto","demografico","iscritti",
-    "bilancio","importo","servizio","scuole","sanitari","sensori","appalti",
-    "biblioteche","scolastico","progetti","censimento","turistic","rifiuti",
-    "decessi","musei","turismo","consiglieri","parcheggi","fermate","ambiente",
-    "energia","salute","giustizia","economia","agricoltura","istruzione",
-    "mobilità","raccolta","impianti","strade","edifici","toponomastica",
-    "defibrillatori","aed","qualità aria","inquinamento","verde pubblico",
-    "disabili","sociale","welfare","tributi","tasse","tariffe","immobili",
-    "catasto","urbanistica","permessi","appalto","gara","cig","cup"
-  ];
-  const hasOpenData = openDataKw.some(k => t.includes(k));
-  if (!hasOpenData) return "OFF_TOPIC";
-
-  // Ha keyword open data ma è una domanda generica senza verbo di ricerca/azione?
-  // Es: "i dataset sono tutti opendata?" → OFF_TOPIC
-  // Es: "cosa sono i dati aperti?" → OFF_TOPIC
-  const hasActionVerb = ["cerca","trova","mostra","elenca","dammi","scarica",
-    "valida","converti","trasforma","analizza","verifica","cerca","visualizza",
-    "hai","esiste","disponibile","quanti","quali"].some(k => t.includes(k));
-  const isQuestion = t.endsWith("?");
-  const isShort = t.split(" ").length <= 6;
-  if (isQuestion && !hasActionVerb && isShort) return "OFF_TOPIC";
-
-  // Ha keyword open data ma intent ambiguo → Ollama decide
+  // Tutto il resto → Ollama decide (SEARCH o OFF_TOPIC)
+  // Non blocchiamo nulla: se SPARQL non trova risultati l'utente lo capisce
   return null;
 }
 
