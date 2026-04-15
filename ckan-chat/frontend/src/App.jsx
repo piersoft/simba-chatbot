@@ -504,7 +504,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         {/* Strumenti disponibili — card colorate */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti disponibili</div>
-          <button className="tool-card tool-search" onClick={() => { setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
+          <button className="tool-card tool-search" onClick={() => { setSidebarOpen(false); setShowCsvBox(false); setShowTtlBox(false); inputRef.current?.focus(); }} disabled={loading}>
             🔍 Cerca dataset
           </button>
           <button className="tool-card tool-validate" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }} disabled={loading}>
