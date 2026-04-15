@@ -37,7 +37,9 @@ export default function App() {
   const [ttlCsvText,  setTtlCsvText]  = useState(null);
   const [showCsvBox,  setShowCsvBox]  = useState(false);
 
-  const bottomRef = useRef(null);
+  const bottomRef   = useRef(null);
+  const csvFileRef   = useRef(null);
+  const ttlFileRef   = useRef(null);
   const inputRef  = useRef(null);
 
   useEffect(() => { fetchHealth(); }, []);
@@ -594,11 +596,13 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
               <>
                 <p>Carica un file CSV dal tuo computer (max 5 MB):</p>
                 <div className="csv-box-row">
-                  <input type="file" accept=".csv,.tsv,.txt"
-                    className="csv-url-input"
+                  <input type="file" accept=".csv,.tsv,.txt" ref={csvFileRef} style={{display:"none"}}
                     onChange={e => setCsvFile(e.target.files[0] || null)} />
+                  <button className="btn-file-pick" onClick={() => csvFileRef.current?.click()}>
+                    <Icon name="upload" size={14} /> {csvFile ? csvFile.name : "Scegli file CSV…"}
+                  </button>
                   <button className="btn-validate-box" onClick={validateFromUpload} disabled={!csvFile}>
-                    ✅ Valida
+                    <Icon name="check2-circle" size={14} /> Valida
                   </button>
                 </div>
                 {csvFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {csvFile.name} ({(csvFile.size/1024).toFixed(1)} KB)</p>}
@@ -657,10 +661,13 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                   <>
                     <p>Carica un file CSV da convertire:</p>
                     <div className="csv-box-row">
-                      <input type="file" accept=".csv,.tsv,.txt" className="csv-url-input"
+                      <input type="file" accept=".csv,.tsv,.txt" ref={ttlFileRef} style={{display:"none"}}
                         onChange={e => setTtlFile(e.target.files[0] || null)} />
+                      <button className="btn-file-pick" onClick={() => ttlFileRef.current?.click()}>
+                        <Icon name="upload" size={14} /> {ttlFile ? ttlFile.name : "Scegli file CSV…"}
+                      </button>
                       <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
-                        🔄 Converti
+                        <Icon name="diagram-3" size={14} /> Converti
                       </button>
                     </div>
                     {ttlFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {ttlFile.name} ({(ttlFile.size/1024).toFixed(1)} KB)</p>}
