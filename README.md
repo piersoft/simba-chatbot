@@ -19,13 +19,43 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
 [Browser] ──SPARQL──→ lod.dati.gov.it   ← ricerca dataset (direttamente dal browser)
 ```
 
-### Ruolo dell'AI (Ollama)
+### Ruolo dell'AI (Ollama) — flusso di classificazione
 
-Ollama interviene **esclusivamente** per classificare l'intenzione dell'utente quando scrive nella casella di testo libera. Riceve il messaggio e risponde con una sola parola tra: `SEARCH`, `VALIDATE`, `ENRICH`, `OFF_TOPIC`.
+Quando l'utente scrive nella casella di testo libera, il sistema segue questo flusso a tre livelli:
 
-Prima di chiamare Ollama, il sistema applica un **pre-filtro deterministico** basato sulle keyword del corpus reale di 468 dataset PA italiani (`fixtures_v9.json`): se il testo non contiene nessuna parola riconducibile agli open data, viene classificato `OFF_TOPIC` senza coinvolgere l'AI.
+```
+Utente scrive un messaggio
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  1. PRE-FILTRO DETERMINISTICO (istantaneo)          │
+│     Keyword univoche → risposta certa               │
+│     "valida", "check csv"       → VALIDATE          │
+│     "ttl", "rdf", "converti in" → ENRICH            │
+└─────────────────┬───────────────────────────────────┘
+                  │ ambiguo
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  2. SPARQL ASK su lod.dati.gov.it (max 5 sec)       │
+│     Il catalogo reale decide se esistono dataset    │
+│     "torta della nonna" → ASK → false → OFF_TOPIC   │
+│     "defibrillatori"    → ASK → true  → continua   │
+│     "ricette pugliesi"  → ASK → true  → continua   │
+└─────────────────┬───────────────────────────────────┘
+                  │ dataset trovati, intent ancora ambiguo
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  3. OLLAMA (solo per disambiguare ~5% dei casi)     │
+│     "ho un file da controllare" → VALIDATE          │
+│     "voglio i linked data"      → ENRICH            │
+│     "defibrillatori Mesagne"    → SEARCH            │
+└─────────────────────────────────────────────────────┘
+```
 
-Tutto il resto — ricerca dataset, validazione CSV, conversione RDF — è **completamente deterministico** e non usa AI.
+**Il 95% delle richieste viene gestito deterministicamente** dai livelli 1 e 2.  
+**Ollama interviene solo** quando esistono dataset sull'argomento ma l'intenzione è ambigua.
+
+Tutto il resto — esecuzione della ricerca SPARQL, validazione CSV, conversione RDF — è **completamente deterministico** e non usa AI.
 
 ---
 
