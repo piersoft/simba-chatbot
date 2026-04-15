@@ -20,6 +20,9 @@ RUN echo 'server { \
     proxy_connect_timeout 30s; \
     proxy_send_timeout 300s; \
   } \
+  location = /chatbot { \
+    return 301 /chatbot/; \
+  } \
   location /chatbot/ { \
     alias /usr/share/nginx/html/chatbot/; \
     try_files $uri $uri/ /chatbot/index.html; \
