@@ -1,57 +1,62 @@
 import { useState } from "react";
 
-const SPARQL = "https://lod.dati.gov.it/sparql";
-const FT_BASE = "http://publications.europa.eu/resource/authority/file-type/";
-const CSV_FORMATS = new Set(["CSV","TSV","XLSX","XLS","ODS"]);
+const SPARQL_URL = "https://lod.dati.gov.it/sparql";
+const FT_BASE    = "http://publications.europa.eu/resource/authority/file-type/";
+
+function val(b, k) { return b[k]?.value || ""; }
+function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
 
 async function sparql(query) {
-  const url = `${SPARQL}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+  const url = `${SPARQL_URL}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
   const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
   if (!r.ok) throw new Error(`SPARQL ${r.status}`);
   return (await r.json()).results.bindings;
 }
 
-function val(b, k) { return b[k]?.value || ""; }
-
-function fmtLabel(uri) {
-  if (!uri) return "";
-  return uri.replace(FT_BASE, "").replace(/_/g, " ");
-}
-
-async function loadDistributions(datasetUri) {
+// Query identica a showDataset dell'assistente ckan-opendata-assistant
+// dUri = URI completo del dataset (es. https://dati.gov.it/resource/Dataset/...)
+async function loadDistributions(dUri) {
   const rows = await sparql(
-    `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+`PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
-SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
-  BIND(<${datasetUri}> AS ?d)
-  ?d dcat:distribution ?dist .
-  OPTIONAL { ?dist dct:title ?distTitle }
-  OPTIONAL { ?dist dct:format ?format }
-  OPTIONAL { ?dist dcat:accessURL ?accessURL }
-  OPTIONAL { ?dist dct:downloadURL ?downloadURL }
+SELECT ?distTitle ?format ?accessURL ?downloadURL ?resourceId WHERE {
+  BIND(<${dUri}> AS ?d)
+  OPTIONAL {
+    ?d dcat:distribution ?dist .
+    OPTIONAL { ?dist dct:title ?distTitle }
+    OPTIONAL { ?dist dct:format ?format }
+    OPTIONAL { ?dist dcat:accessURL ?accessURL }
+    OPTIONAL { ?dist dct:downloadURL ?downloadURL }
+    OPTIONAL { ?dist dct:identifier ?resourceId }
+  }
 } LIMIT 30`
   );
 
-  const seen = new Map();
+  const distMap = new Map();
   rows.forEach(r => {
-    const url = val(r, "downloadURL") || val(r, "accessURL");
-    if (url && !seen.has(url)) {
-      const fmt = fmtLabel(val(r, "format")).toUpperCase();
-      seen.set(url, {
-        name:   val(r, "distTitle") || fmt || "Risorsa",
-        format: fmt,
-        url,
+    const accessURL   = val(r, "accessURL");
+    const downloadURL = val(r, "downloadURL");
+    const key = accessURL || downloadURL;
+    if (key && !distMap.has(key)) {
+      distMap.set(key, {
+        title:      val(r, "distTitle") || fmtLabel(val(r, "format")) || "Risorsa",
+        format:     fmtLabel(val(r, "format")).toUpperCase(),
+        url:        accessURL || downloadURL,
+        downloadURL: downloadURL || accessURL,
+        resourceId: val(r, "resourceId"),
       });
     }
   });
-  return [...seen.values()];
+  return [...distMap.values()];
 }
 
+const CSV_FMTS = new Set(["CSV","TSV"]);
+
 export default function DatasetCard({ dataset, onValidate }) {
-  const [distributions, setDistributions] = useState(null); // null = non caricato
+  const [distributions, setDistributions] = useState(null);
   const [loading, setLoading]             = useState(false);
   const [expanded, setExpanded]           = useState(false);
-  const [showAll, setShowAll]             = useState(false);
+  const [showOther, setShowOther]         = useState(false);
 
   async function toggleExpand() {
     const next = !expanded;
@@ -59,9 +64,9 @@ export default function DatasetCard({ dataset, onValidate }) {
     if (next && distributions === null) {
       setLoading(true);
       try {
-        const dists = await loadDistributions(dataset.uri);
-        setDistributions(dists);
-      } catch {
+        setDistributions(await loadDistributions(dataset.uri));
+      } catch(e) {
+        console.error("loadDistributions error:", e);
         setDistributions([]);
       }
       setLoading(false);
@@ -72,8 +77,8 @@ export default function DatasetCard({ dataset, onValidate }) {
     ? dataset.description.slice(0, 200) + (dataset.description.length > 200 ? "…" : "")
     : "";
 
-  const csvDists = (distributions || []).filter(d => CSV_FORMATS.has(d.format));
-  const otherDists = (distributions || []).filter(d => !CSV_FORMATS.has(d.format));
+  const csvDists   = (distributions || []).filter(d => CSV_FMTS.has(d.format));
+  const otherDists = (distributions || []).filter(d => !CSV_FMTS.has(d.format));
 
   return (
     <div className="dataset-card">
@@ -102,30 +107,34 @@ export default function DatasetCard({ dataset, onValidate }) {
             <span className="no-csv">Nessuna distribuzione trovata</span>
           )}
 
-          {/* Risorse CSV — con bottone Valida */}
           {csvDists.map((d, i) => (
             <div key={i} className="csv-resource">
-              <span className="csv-name">📄 {d.name} <span className="fmt-badge">{d.format}</span></span>
+              <span className="csv-name">
+                📄 {d.title}
+                {d.format && <span className="fmt-badge">{d.format}</span>}
+              </span>
               <div className="csv-actions">
-                <a href={d.url} target="_blank" rel="noopener noreferrer" className="btn-small btn-download">
+                <a href={d.downloadURL} target="_blank" rel="noopener noreferrer" className="btn-small btn-download">
                   ⬇ Scarica
                 </a>
-                <button className="btn-small btn-validate" onClick={() => onValidate(d.url, dataset.title)}>
+                <button className="btn-small btn-validate" onClick={() => onValidate(d.downloadURL, dataset.title)}>
                   ✅ Valida
                 </button>
               </div>
             </div>
           ))}
 
-          {/* Altre distribuzioni */}
           {otherDists.length > 0 && (
             <>
-              <button className="show-all-btn" onClick={() => setShowAll(v => !v)}>
-                {showAll ? "▲ Nascondi" : `▼ Altre distribuzioni (${otherDists.length})`}
+              <button className="show-all-btn" onClick={() => setShowOther(v => !v)}>
+                {showOther ? "▲ Nascondi altre" : `▼ Altre distribuzioni (${otherDists.length})`}
               </button>
-              {showAll && otherDists.map((d, i) => (
+              {showOther && otherDists.map((d, i) => (
                 <div key={i} className="csv-resource">
-                  <span className="csv-name">📎 {d.name} {d.format && <span className="fmt-badge">{d.format}</span>}</span>
+                  <span className="csv-name">
+                    📎 {d.title}
+                    {d.format && <span className="fmt-badge">{d.format}</span>}
+                  </span>
                   <div className="csv-actions">
                     <a href={d.url} target="_blank" rel="noopener noreferrer" className="btn-small btn-download">
                       ↗ Apri
