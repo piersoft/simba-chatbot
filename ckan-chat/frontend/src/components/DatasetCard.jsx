@@ -29,7 +29,7 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
   OPTIONAL { ?dist dct:title ?distTitle }
   OPTIONAL { ?dist dct:format ?format }
   OPTIONAL { ?dist dcat:accessURL ?accessURL }
-  OPTIONAL { ?dist dct:downloadURL ?downloadURL }
+  OPTIONAL { ?dist dcat:downloadURL ?downloadURL }
 } LIMIT 30`
   );
 
