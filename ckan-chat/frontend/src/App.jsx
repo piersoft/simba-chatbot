@@ -33,6 +33,7 @@ export default function App() {
   const [ttlIpa,      setTtlIpa]      = useState("");
   const [ttlPa,       setTtlPa]       = useState("");
   const [ttlFmt,      setTtlFmt]      = useState("ttl");
+  const [ttlCsvText,  setTtlCsvText]  = useState(null);
   const [showCsvBox,  setShowCsvBox]  = useState(false);
 
   const bottomRef = useRef(null);
@@ -365,10 +366,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
     setLoading(false);
   }
 
-  function openTtlBox(url, fmt = "ttl") {
-    setShowCsvBox(false);  // chiude box CSV se aperto
-    setTtlUrl(url || "");
-    setTtlTab(url ? "url" : "upload");
+  function openTtlBox(url, fmt = "ttl", csvText = null) {
+    setShowCsvBox(false);
+    setTtlCsvText(csvText);
+    setTtlUrl(csvText ? "" : (url || ""));
+    setTtlTab(csvText ? "upload" : "url");
     setTtlFmt(fmt);
     setTtlIpa("");
     setTtlPa("");
@@ -385,15 +387,17 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   }
 
   async function enrichFromUpload() {
-    if (!ttlFile) return;
+    const hasMemory = !!ttlCsvText;
+    if (!ttlFile && !hasMemory) return;
     setShowTtlBox(false);
     const pa = ttlPa.trim() || "Ente Pubblico";
     const ipa = ttlIpa.trim() || "ente";
-    addMsg("user", `Converti in TTL: ${ttlFile.name}`);
+    const fname = ttlFile?.name || "CSV";
+    addMsg("user", `Converti in TTL: ${fname}`);
     addMsg("assistant", `🔄 Conversione in RDF/Turtle di **"${pa}"** in corso…`);
     setLoading(true);
     try {
-      const csv_text = await ttlFile.text();
+      const csv_text = hasMemory ? ttlCsvText : await ttlFile.text();
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -463,7 +467,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={openTtlBox} onEnrichText={doEnrichText} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText)} onEnrichText={doEnrichText} />
           </div>
         </div>
       );
@@ -626,15 +630,26 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                 </>
               ) : (
                 <>
-                  <p>Carica un file CSV da convertire:</p>
-                  <div className="csv-box-row">
-                    <input type="file" accept=".csv,.tsv,.txt" className="csv-url-input"
-                      onChange={e => setTtlFile(e.target.files[0] || null)} />
-                    <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
-                      🔄 Converti
-                    </button>
-                  </div>
-                  {ttlFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {ttlFile.name} ({(ttlFile.size/1024).toFixed(1)} KB)</p>}
+                  {ttlCsvText ? (
+                    <div className="csv-box-row">
+                      <span style={{fontSize:"13px",color:"#555",flex:1}}>📄 CSV già in memoria dalla validazione</span>
+                      <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload}>
+                        🔄 Converti
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p>Carica un file CSV da convertire:</p>
+                      <div className="csv-box-row">
+                        <input type="file" accept=".csv,.tsv,.txt" className="csv-url-input"
+                          onChange={e => setTtlFile(e.target.files[0] || null)} />
+                        <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
+                          🔄 Converti
+                        </button>
+                      </div>
+                      {ttlFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {ttlFile.name} ({(ttlFile.size/1024).toFixed(1)} KB)</p>}
+                    </>
+                  )}
                 </>
               )}
               <p style={{fontSize:"11px",color:"#888",marginTop:"8px"}}>
