@@ -535,10 +535,6 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       </aside>
 
       <main className="chat-area">
-        <div className="chat-header">
-          <span className="chat-header-title">{pageTitle}</span>
-        </div>
-
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome">
