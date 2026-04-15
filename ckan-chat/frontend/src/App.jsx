@@ -311,6 +311,17 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
         <StatusBar health={health} onRefresh={fetchHealth} />
 
+        {/* Strumenti consigliati */}
+        <div className="sidebar-section">
+          <div className="section-label">Strumenti consigliati</div>
+          <a className="sidebar-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
+            🔌 CKAN MCP Server <span className="sidebar-link-tag">OnData</span>
+          </a>
+          <a className="sidebar-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
+            🔌 ISTAT MCP Server <span className="sidebar-link-tag">OnData</span>
+          </a>
+        </div>
+
         {/* Strumenti disponibili */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti disponibili</div>
@@ -323,17 +334,6 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           <button className="suggestion-btn" onClick={() => sendMessage("Converti CSV in RDF TTL")} disabled={loading}>
             🔄 Trasforma in TTL
           </button>
-        </div>
-
-        {/* Strumenti consigliati */}
-        <div className="sidebar-section">
-          <div className="section-label">Strumenti consigliati</div>
-          <a className="sidebar-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
-            🔌 CKAN MCP Server
-          </a>
-          <a className="sidebar-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
-            🔌 ISTAT MCP Server
-          </a>
         </div>
 
         <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); }}>

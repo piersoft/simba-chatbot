@@ -805,3 +805,10 @@ body {
   text-decoration: none; transition: background .15s;
 }
 .sidebar-link:hover { background: var(--primary-light, #cce3f5); }
+
+.sidebar-link { justify-content: space-between; }
+.sidebar-link-tag {
+  font-size: 10px; font-weight: 700; color: #0066cc;
+  background: #e3f2fd; border-radius: 3px; padding: 1px 5px;
+  flex-shrink: 0;
+}
