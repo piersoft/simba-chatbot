@@ -493,7 +493,44 @@ Esempi:
 
 Rispondi SOLO con una di queste parole: SEARCH VALIDATE ENRICH OFF_TOPIC`;
 
+// Pre-filtro deterministico — intercetta i casi ovvi prima di chiamare Ollama/Mistral
+// Ollama viene chiamato solo se il pre-filtro non è sicuro (linguaggio ambiguo)
+function preFilterIntent(text) {
+  const t = text.toLowerCase().trim();
+
+  // Parole che indicano VALIDATE con certezza
+  const validateKw = ["valid","controlla","verifica qualità","qualità csv","errori csv",
+    "controllo csv","check csv","analizza csv","esamina csv"];
+  if (validateKw.some(k => t.includes(k))) return "VALIDATE";
+
+  // Parole che indicano ENRICH con certezza
+  const enrichKw = ["ttl","turtle","rdf","linked data","ontolog","converti","trasforma",
+    "arricch","semantic"];
+  if (enrichKw.some(k => t.includes(k))) return "ENRICH";
+
+  // Parole che indicano OFF_TOPIC con certezza (nessun riferimento a dati/dataset)
+  const offTopicKw = ["ricetta","torta","cucina","meteo","sport","calcio","partita",
+    "film","canzone","musica","salut","come stai","ciao","grazie","prego","aiuto",
+    "chi sei","cosa sei","cosa fai"];
+  if (offTopicKw.some(k => t.includes(k))) return "OFF_TOPIC";
+
+  // Parole che indicano SEARCH con certezza
+  const searchKw = ["cerca","trova","dataset","dati","open data","opendata","statistic",
+    "informazion","pubbl","catalogo","sparql","portale"];
+  if (searchKw.some(k => t.includes(k))) return "SEARCH";
+
+  return null; // ambiguo — passa ad Ollama/Mistral
+}
+
 async function classifyIntent(userMessage) {
+  // Prima prova il pre-filtro deterministico
+  const preFilter = preFilterIntent(userMessage);
+  if (preFilter) {
+    console.log(`[intent] pre-filtro → ${preFilter}`);
+    return preFilter;
+  }
+  // Ambiguo — chiede ad Ollama/Mistral
+  console.log(`[intent] ambiguo, chiedo all'AI...`);
   try {
     if (LLM_PROVIDER === "mistral") {
       const response = await fetch(MISTRAL_API_URL, {
