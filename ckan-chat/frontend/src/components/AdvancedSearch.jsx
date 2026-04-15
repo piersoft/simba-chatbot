@@ -80,7 +80,7 @@ ${triples}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)
 ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
 
-// Cache autocomplete publisher
+// Cache autocomplete rightsHolder (dct:rightsHolder)
 let acCache = null;
 async function loadAcCache() {
   if (acCache) return acCache;
@@ -110,7 +110,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
   const [q,       setQ]       = useState("");
   const [theme,   setTheme]   = useState("");
   const [hvd,     setHvd]     = useState("");
-  const [pub,     setPub]     = useState("");
+  const [rh,      setRh]      = useState("");
   const [format,  setFormat]  = useState("");
   const [license, setLicense] = useState("");
   const [sort,    setSort]    = useState("modified");
@@ -148,7 +148,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
           title:       val(b, "title"),
           description: val(b, "description"),
           modified:    val(b, "modified").slice(0, 10),
-          publisher:   "",
+          rightsHolder: "",
           viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
           csvResources: [],
         });
@@ -201,7 +201,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
             </div>
 
             <div className="adv-field" style={{ position: "relative" }}>
-              <label>Amministrazione</label>
+              <label>Amministrazione (titolare dati)</label>
               <input type="text" value={pub} onChange={e => handlePubInput(e.target.value)}
                 placeholder="es. Comune di Bari, Regione Puglia…"
                 onBlur={() => setTimeout(() => setShowAc(false), 200)}

@@ -100,13 +100,13 @@ export default function App() {
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?publisher }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rightsHolder }
   FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
       const url = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
@@ -122,7 +122,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
     }
 
     // Deduplicazione e costruzione risultati
-    // Il publisher viene dalla query principale (rightsHolder opzionale)
+    // Il rightsHolder (titolare dati) viene da dct:rightsHolder
     const seen = new Map();
     for (const b of bindings) {
       const uri = b.d?.value ?? "";
@@ -133,7 +133,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         title:       b.title?.value ?? "",
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
-        publisher:   b.publisher?.value ?? "",
+        publisher:   b.rightsHolder?.value ?? "",
         viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
         csvResources: [],
       });
