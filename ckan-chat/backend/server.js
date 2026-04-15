@@ -535,6 +535,24 @@ function preFilterIntent(text) {
     return null;
   }
 
+  // Blacklist esplicita — termini ambigui fuori contesto PA
+  const offTopicBlacklist = [
+    "ricett","cucina","gastronom","ristorante","aliment","cibo","mangiare",
+    "bevanda","vino","birra","pizza","pasta","dolce","torta","gelato",
+    "calcio","sport","partita","squadra","gol","campionato","serie a",
+    "meteo","temperatura","pioggia","neve","vento","clima",
+    "film","cinema","serie tv","musica","canzone","concerto","artista",
+    "politica","governo","partito","elezione","voto","deputato","senatore",
+    "oroscopo","zodiaco","astrolog",
+    "borsa","bitcoin","crypto","azioni","finanza personale",
+    "social","instagram","tiktok","facebook","twitter",
+  ];
+  // Se il testo contiene keyword blacklist E non ha keyword specifiche PA → OFF_TOPIC
+  const hasBlacklist = offTopicBlacklist.some(k => t.includes(k));
+  const hasPaContext = ["comune","regione","provincia","pubblica","amministrazione",
+    "istat","ente","pa ","ministero","prefettura"].some(k => t.includes(k));
+  if (hasBlacklist && !hasPaContext) return "OFF_TOPIC";
+
   // Se non c'è NESSUNA keyword open data → OFF_TOPIC
   // Basato sul corpus fixtures_v9.json (468 dataset PA italiani reali)
   const openDataKw = [
