@@ -270,22 +270,11 @@ SELECT ?d ?rhName WHERE {
     addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`);
     setLoading(true);
     try {
-      // Scarica CSV dal browser (evita blocchi 403 server-side)
-      let body;
-      try {
-        const csvRes = await fetch(url);
-        if (csvRes.ok) {
-          const csv_text = await csvRes.text();
-          body = JSON.stringify({ csv_text, pa: datasetTitle, ipa, fmt });
-        }
-      } catch {}
-      // Fallback: passa URL al backend
-      if (!body) body = JSON.stringify({ url, pa: datasetTitle, ipa, fmt });
-
+      // Passa sempre l'URL al backend — rdf-mcp lo scarica direttamente
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body,
+        body: JSON.stringify({ url, pa: datasetTitle, ipa, fmt }),
       });
       if (!r.ok) {
         const err = await r.text();
