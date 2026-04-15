@@ -137,11 +137,7 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
                 <button className="btn-small btn-validate" onClick={() => onValidate(d.downloadURL, dataset.title)}>
                   <Icon name="check2-circle" size={13} /> Valida
                 </button>
-                {onEnrich && (
-                  <button className="btn-small btn-ttl" onClick={() => onEnrich(d.downloadURL, dataset.title)}>
-                    <Icon name="diagram-3" size={13} /> RDF
-                  </button>
-                )}
+
               </div>
             </div>
           ))}
