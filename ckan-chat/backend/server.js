@@ -420,10 +420,15 @@ async function chatWithTools(messages, model) {
     }
 
     for (const tc of msg.tool_calls) {
-      const fnName = tc.function.name;
-      const fnArgs = typeof tc.function.arguments === "string"
-        ? JSON.parse(tc.function.arguments)
-        : tc.function.arguments;
+      const fnName = tc.function?.name ?? tc.name;
+      let fnArgs;
+      try {
+        const rawArgs = tc.function?.arguments ?? tc.arguments ?? {};
+        fnArgs = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+      } catch (e) {
+        console.error(`[tool] ERRORE parsing args di ${fnName}:`, e.message, "raw tc:", JSON.stringify(tc).slice(0, 200));
+        fnArgs = {};
+      }
 
       console.log(`[tool] ${fnName}`, JSON.stringify(fnArgs).slice(0, 120));
       toolCallsLog.push({ tool: fnName, args: fnArgs });
