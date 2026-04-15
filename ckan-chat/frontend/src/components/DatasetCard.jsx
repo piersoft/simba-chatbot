@@ -26,7 +26,7 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL ?resourceId WHERE {
     OPTIONAL { ?dist dct:title ?distTitle }
     OPTIONAL { ?dist dct:format ?format }
     OPTIONAL { ?dist dcat:accessURL ?accessURL }
-    OPTIONAL { ?dist dct:downloadURL ?downloadURL }
+    OPTIONAL { ?dist dcat:downloadURL ?downloadURL }
     OPTIONAL { ?dist dct:identifier ?resourceId }
   }
 } LIMIT 30`

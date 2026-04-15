@@ -137,12 +137,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
   async function doValidate(url) {
-    // Scarica sempre il CSV dal browser — segue redirect e bypassa blocchi server-side
+    // 1. Prima prova dal browser (segue redirect, nessun CORS problem su CSV diretti)
     try {
       const csvRes = await fetch(url);
       if (csvRes.ok) {
         const csv_text = await csvRes.text();
-        // Verifica che sia CSV e non HTML (es. redirect a login page)
         const isHtml = csv_text.trimStart().startsWith("<");
         const firstLine = csv_text.trim().split("\n")[0] || "";
         const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("\t");
@@ -157,9 +156,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         }
       }
     } catch(e) {
-      console.warn("[doValidate] download browser fallito:", e.message);
+      console.warn("[doValidate] browser fetch fallito:", e.message);
     }
-    // Fallback: passa URL al backend
+    // 2. Il browser ha ricevuto HTML (accessURL → pagina CKAN) o CORS bloccato
+    // Passa l URL al backend che scarica server-side e segue i redirect
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
