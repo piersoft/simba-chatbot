@@ -590,6 +590,21 @@ app.post("/api/validate", async (req, res) => {
   }
 });
 
+// Validazione da testo CSV grezzo (upload file dal browser)
+app.post("/api/validate-text", async (req, res) => {
+  const { csv_text, filename } = req.body;
+  if (!csv_text) return res.status(400).json({ error: "csv_text required" });
+  console.log(`[validate-text] ${filename || "upload"} (${csv_text.length} chars)`);
+  try {
+    if (!toolsRouteMap["csv_validate"]) { toolsCache = null; toolsRouteMap = {}; await getTools(); }
+    const result = await callTool("csv_validate", { csv_text, summary_only: false });
+    res.json({ report: result });
+  } catch (e) {
+    console.error("[validate-text] errore:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.get("/api/models", (req, res) => {

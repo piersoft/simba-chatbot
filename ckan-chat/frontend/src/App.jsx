@@ -22,6 +22,8 @@ export default function App() {
   const [health,      setHealth]      = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [csvUrl,      setCsvUrl]      = useState("");
+  const [csvTab,      setCsvTab]      = useState("url"); // "url" | "upload"
+  const [csvFile,     setCsvFile]     = useState(null);
   const [showCsvBox,  setShowCsvBox]  = useState(false);
 
   const bottomRef = useRef(null);
@@ -216,6 +218,26 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   }
 
   // ── Valida CSV da box manuale ─────────────────────────────────────────────
+  async function validateFromUpload() {
+    if (!csvFile) return;
+    setShowCsvBox(false);
+    addMsg("user", `Valida CSV: ${csvFile.name}`);
+    addMsg("assistant", `✅ Validazione CSV di **"${csvFile.name}"** in corso…`, { type: "validating" });
+    setLoading(true);
+    try {
+      const text = await csvFile.text();
+      const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv_text: text, filename: csvFile.name }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      addMsg("assistant", data.report ?? "Errore nella validazione", { type: "validate_report", url: csvFile.name });
+    } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
+    finally { setLoading(false); setCsvFile(null); }
+  }
+
   async function validateFromBox() {
     if (!csvUrl.trim()) return;
     setShowCsvBox(false);
@@ -335,23 +357,40 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             </div>
           )}
 
-          {/* Box validazione CSV manuale */}
+          {/* Box validazione CSV — URL o Upload */}
           {showCsvBox && (
             <div className="csv-box">
-              <p>📎 Incolla l'URL del file CSV da validare:</p>
-              <div className="csv-box-row">
-                <input
-                  type="url"
-                  className="csv-url-input"
-                  placeholder="https://esempio.com/dati.csv"
-                  value={csvUrl}
-                  onChange={e => setCsvUrl(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && validateFromBox()}
-                />
-                <button className="btn-validate-box" onClick={validateFromBox} disabled={!csvUrl.trim()}>
-                  ✅ Valida
-                </button>
+              <div className="csv-box-tabs">
+                <button className={`csv-tab ${csvTab==="url" ? "active":""}`} onClick={() => setCsvTab("url")}>🔗 Da URL</button>
+                <button className={`csv-tab ${csvTab==="upload" ? "active":""}`} onClick={() => setCsvTab("upload")}>📁 Carica file</button>
               </div>
+              {csvTab === "url" ? (
+                <>
+                  <p>Incolla l'URL del file CSV:</p>
+                  <div className="csv-box-row">
+                    <input type="url" className="csv-url-input"
+                      placeholder="https://esempio.com/dati.csv"
+                      value={csvUrl} onChange={e => setCsvUrl(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && validateFromBox()} />
+                    <button className="btn-validate-box" onClick={validateFromBox} disabled={!csvUrl.trim()}>
+                      ✅ Valida
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p>Carica un file CSV dal tuo computer (max 5 MB):</p>
+                  <div className="csv-box-row">
+                    <input type="file" accept=".csv,.tsv,.txt"
+                      className="csv-url-input"
+                      onChange={e => setCsvFile(e.target.files[0] || null)} />
+                    <button className="btn-validate-box" onClick={validateFromUpload} disabled={!csvFile}>
+                      ✅ Valida
+                    </button>
+                  </div>
+                  {csvFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {csvFile.name} ({(csvFile.size/1024).toFixed(1)} KB)</p>}
+                </>
+              )}
             </div>
           )}
 
