@@ -1080,3 +1080,5 @@ body {
 .ttl-preview-label {
   font-size: 11px; color: #888; font-style: italic; margin-bottom: 4px;
 }
+
+.ttl-required-note { font-size: 11px; color: #888; margin: -6px 0 8px; font-style: italic; }
