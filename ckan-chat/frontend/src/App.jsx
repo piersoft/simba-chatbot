@@ -288,7 +288,7 @@ export default function App() {
             <div className="embedded-panel">
               <iframe
                 ref={iframeRef}
-                src={`${BASE_PATH}assistant.html`}
+                src={`/chatbot/assistant.html`}
                 title="Assistente CKAN"
                 className="ckan-iframe"
                 onLoad={() => {
