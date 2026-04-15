@@ -101,13 +101,20 @@ CORS_ORIGIN=http://YOUR_SERVER_IP
 
 ### 3. Avvia i container
 
-**Con Ollama locale:**
+**Con Ollama incluso nel Docker (scarica il modello automaticamente):**
 
 ```bash
 docker compose --profile ollama-local -f docker-compose-full.yml up --build -d
 ```
 
-Il profilo `ollama-local` scarica automaticamente il modello `qwen2.5:1.5b` (~1 GB).
+Il profilo `ollama-local` avvia anche i container `ollama` e `ollama-pull` che scaricano automaticamente il modello `qwen2.5:1.5b` (~1 GB).
+
+**Con Ollama già installato e avviato sul server (senza profilo):**
+
+```bash
+# Nel .env: OLLAMA_URL=http://host-gateway:11434
+docker compose -f docker-compose-full.yml up --build -d
+```
 
 
 
