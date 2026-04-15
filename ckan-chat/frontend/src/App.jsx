@@ -560,6 +560,14 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         <button className="clear-btn" aria-label="Nuova conversazione" onClick={() => { resetChat(); }}>
           Nuova conversazione
         </button>
+
+        <div className="sidebar-github">
+          <a href="https://github.com/piersoft/ckan-mcp-server-docker-ollama"
+             target="_blank" rel="noopener noreferrer"
+             aria-label="Codice sorgente su GitHub">
+            <i className="bi bi-github" /> GitHub
+          </a>
+        </div>
       </aside>
 
       <main className="chat-area">
