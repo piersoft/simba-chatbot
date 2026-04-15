@@ -234,6 +234,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         .replace(/\b(dataset|open data)\b/gi, "")
         .replace(/\s+/g, " ").trim() || text;
 
+      setPageTitle("🔍 Ricerca Dataset — Open Data Italia");
       addMsg("assistant", `🔍 Ricerca di **"${query}"** in corso…`, { type: "searching" });
 
       const { datasets } = await doSearch(query);
@@ -261,6 +262,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   // ── Conversione CSV → RDF ────────────────────────────────────────────────────
   async function doEnrich(url, datasetTitle, ipa = "ente", fmt = "ttl") {
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${url}`);
+    setPageTitle("🔄 Conversione RDF — Open Data Italia");
     addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`);
     setLoading(true);
     try {
@@ -307,6 +309,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   // ── Valida CSV da card ────────────────────────────────────────────────────
   async function validateFromCard(url, datasetTitle) {
     addMsg("user",      `Valida CSV: ${url}`);
+    setPageTitle("✅ Validazione CSV — Open Data Italia");
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
@@ -526,7 +529,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           </a>
         </div>
 
-        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); setShowTtlBox(false); }}>
+        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); setShowTtlBox(false); setPageTitle("🏛️ Esplora i Dati Aperti Italiani"); }}>
           Nuova conversazione
         </button>
       </aside>
