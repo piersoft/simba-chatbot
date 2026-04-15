@@ -426,8 +426,7 @@ SELECT ?d ?rhName WHERE {
           <div className="message-bubble">
             <p>✅ Conversione completata!</p>
             {m.preview && (
-              <pre className="ttl-preview">{m.preview}{"
-…"}</pre>
+              <pre className="ttl-preview">{m.preview}{"\n…"}</pre>
             )}
             <div className="ttl-download-btns">
               <a href={m.blobUrl} download={m.filename} className="btn-small btn-download">
