@@ -61,7 +61,7 @@ body {
 .sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
-  background: var(--gray-900);
+  background: #0066CC;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1091,11 +1091,11 @@ body {
   margin-top: 8px;
 }
 .sidebar-github a {
-  color: var(--text3); font-size: 12px; text-decoration: none;
+  color: rgba(255,255,255,0.6); font-size: 12px; text-decoration: none;
   display: inline-flex; align-items: center; gap: 5px;
   transition: color 0.15s;
 }
-.sidebar-github a:hover { color: var(--white); }
+.sidebar-github a:hover { color: #fff; }
 
 /* ── Bottone ? e popup guida ─────────────────────────────────────────────── */
 .help-btn {
@@ -1146,11 +1146,11 @@ body {
 
 .help-sidebar-btn {
   width: 100%; padding: 8px 14px; border-radius: 6px; cursor: pointer;
-  background: none; border: 1px solid rgba(255,255,255,0.2); color: var(--text3);
+  background: none; border: 1px solid rgba(255,255,255,0.35); color: rgba(255,255,255,0.85);
   font-size: 13px; font-weight: 500; text-align: left; margin-bottom: 8px;
   display: flex; align-items: center; gap: 8px; transition: all 0.15s;
 }
-.help-sidebar-btn:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+.help-sidebar-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
 /* Popup guida — si apre sopra l'area input nella chat */
 .help-popup {
