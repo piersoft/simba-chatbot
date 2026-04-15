@@ -769,3 +769,14 @@ body {
   cursor: pointer; padding: 4px 0; text-align: left;
 }
 .show-all-btn:hover { color: #0066cc; }
+
+.validate-section-title {
+  font-size: 12px; font-weight: 700; color: #555;
+  text-transform: uppercase; letter-spacing: .05em;
+  margin: 10px 0 4px; padding-top: 6px;
+  border-top: 1px solid #eee;
+}
+.check-ok   { color: #2e7d32; }
+.check-warn { color: #e65100; }
+.check-fail { color: #c62828; }
+.check-info { color: #1565c0; }

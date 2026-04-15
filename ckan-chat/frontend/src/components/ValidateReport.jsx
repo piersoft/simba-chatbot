@@ -1,13 +1,22 @@
+import { useState } from "react";
+
 export default function ValidateReport({ report, url }) {
+  const [showAll, setShowAll] = useState(false);
   const lines = (report || "").split("\n").filter(Boolean);
 
-  const verdict = lines.find(l => l.includes("Verdict:")) ?? "";
-  const score   = lines.find(l => l.includes("Score")) ?? "";
-  const summary = lines.find(l => l.includes("Check superati:")) ?? "";
+  // Parsing flessibile — cerca le righe chiave nel report testuale
+  const verdictLine  = lines.find(l => l.includes("Verdict:")) ?? "";
+  const scoreLine    = lines.find(l => l.includes("Score")) ?? "";
+  const summaryLine  = lines.find(l => l.includes("Check superati:")) ?? "";
 
-  const isOk   = verdict.includes("buona_qualita");
-  const isWarn = verdict.includes("con_riserva");
-  const isFail = verdict.includes("non_accettabile");
+  // Score numerico
+  const scoreMatch = scoreLine.match(/(\d+)\s*\/\s*100/);
+  const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+
+  // Verdict
+  const isOk   = verdictLine.includes("buona_qualita")   || verdictLine.includes("Buona qualità") || score >= 80;
+  const isWarn = verdictLine.includes("con_riserva")      || verdictLine.includes("con riserva")   || (score >= 50 && score < 80);
+  const isFail = verdictLine.includes("non_accettabile")  || verdictLine.includes("Non accettabile") || (score !== null && score < 50);
 
   const verdictLabel = isOk   ? "✅ Buona qualità"
                      : isWarn ? "⚠️ Accettabile con riserva"
@@ -16,27 +25,63 @@ export default function ValidateReport({ report, url }) {
 
   const colorClass = isOk ? "verdict-ok" : isWarn ? "verdict-warn" : "verdict-fail";
 
-  const checks = lines.filter(l => /^[✅⚠️❌ℹ️]/.test(l));
+  // Tutti i check — righe che iniziano con emoji di stato
+  const checks = lines.filter(l => /^[✅⚠️❌ℹ️⏭]/.test(l));
+  const visibleChecks = showAll ? checks : checks.slice(0, 20);
 
   return (
     <div className="validate-report">
+      {/* Verdict header */}
       <div className={`validate-verdict ${colorClass}`}>
         <strong>{verdictLabel}</strong>
-        {score && <span className="validate-score">{score.replace("Score qualità:", "").trim()}</span>}
+        {score !== null && <span className="validate-score">{score}/100</span>}
       </div>
-      {summary && <p className="validate-summary">{summary}</p>}
+
+      {/* Summary */}
+      {summaryLine && <p className="validate-summary">{summaryLine}</p>}
+
+      {/* URL file */}
       {url && (
         <p className="validate-url">
           File: <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>
         </p>
       )}
+
+      {/* Sezioni dal report (Struttura, Contenuto, ecc.) */}
       {checks.length > 0 && (
         <div className="validate-checks">
-          {checks.slice(0, 12).map((c, i) => (
-            <div key={i} className="validate-check-line">{c}</div>
-          ))}
-          {checks.length > 12 && (
-            <div className="validate-check-line muted">…e altri {checks.length - 12} check</div>
+          {lines.map((line, i) => {
+            // Titoli di sezione (es. **Struttura**)
+            if (/^\*\*[^*]+\*\*$/.test(line)) {
+              return (
+                <div key={i} className="validate-section-title">
+                  {line.replace(/\*\*/g, "")}
+                </div>
+              );
+            }
+            // Righe check
+            if (/^[✅⚠️❌ℹ️⏭]/.test(line)) {
+              // Determina classe in base all'emoji
+              const cls = line.startsWith("✅") ? "check-ok"
+                        : line.startsWith("⚠️") ? "check-warn"
+                        : line.startsWith("❌") ? "check-fail"
+                        : "check-info";
+              // Visibilità
+              const checkIdx = checks.indexOf(line);
+              if (!showAll && checkIdx >= 20) return null;
+              return (
+                <div key={i} className={`validate-check-line ${cls}`}>
+                  {line}
+                </div>
+              );
+            }
+            return null;
+          })}
+
+          {checks.length > 20 && (
+            <button className="show-all-btn" onClick={() => setShowAll(v => !v)}>
+              {showAll ? "▲ Mostra meno" : `▼ Mostra tutti i ${checks.length} check`}
+            </button>
           )}
         </div>
       )}
