@@ -334,6 +334,12 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           <button className="suggestion-btn" onClick={() => sendMessage("Converti CSV in RDF TTL")} disabled={loading}>
             🔄 Trasforma in TTL
           </button>
+          <a className="sidebar-link sidebar-link-sm" href="https://github.com/piersoft/CSV-to-RDF" target="_blank" rel="noopener noreferrer">
+            📄 CSV to RDF <span className="sidebar-link-tag">AgID</span>
+          </a>
+          <a className="sidebar-link sidebar-link-sm" href="https://github.com/piersoft/CSV-to-RDF/blob/main/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
+            ✅ Validatore CSV <span className="sidebar-link-tag">AgID</span>
+          </a>
         </div>
 
         <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); }}>
