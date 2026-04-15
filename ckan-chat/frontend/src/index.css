@@ -1009,19 +1009,22 @@ body {
 
 /* ── Logo e brand sidebar ─────────────────────────────────────────────────── */
 .sidebar-brand {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
-  padding: 4px 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  padding: 0; margin: -16px -16px 16px -16px;
+  background: #0066CC; border-radius: 0;
 }
 .sidebar-logo {
-  height: 40px; width: auto; max-width: 180px;
+  height: 52px; width: 100%; object-fit: contain; object-position: left center;
+  padding: 6px 12px;
 }
 .sidebar-agid {
-  font-size: 10px; font-weight: 600; color: #5C6F82;
-  text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.2;
+  font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.75);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0 12px 6px; line-height: 1.2;
 }
 
 /* ── Welcome logo ─────────────────────────────────────────────────────────── */
 .welcome-logo {
-  height: 64px; width: auto; margin-bottom: 8px;
-  filter: drop-shadow(0 2px 8px rgba(0,102,204,0.15));
+  height: 80px; width: auto; margin-bottom: 12px;
+  filter: drop-shadow(0 2px 12px rgba(0,102,204,0.2));
 }
