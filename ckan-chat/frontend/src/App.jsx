@@ -542,9 +542,9 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
 
         <StatusBar health={health} onRefresh={fetchHealth} />
 
-        {/* Strumenti disponibili — card colorate */}
+        {/* Strumenti integrati — card colorate */}
         <div className="sidebar-section">
-          <div className="section-label">Strumenti disponibili</div>
+          <div className="section-label">Strumenti integrati</div>
           <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
             <Icon name="search" size={18} /> Cerca dataset
           </button>
