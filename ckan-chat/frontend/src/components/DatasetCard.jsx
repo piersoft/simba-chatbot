@@ -10,16 +10,20 @@ function val(b, k) {
 
 function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
 
-// Proxy backend — il backend scarica da lod.dati.gov.it e restituisce JSON pulito
-// I & nei downloadURL vengono preservati perché non passano per un URL del browser
+const SPARQL_URL = "https://lod.dati.gov.it/sparql";
+
 async function sparql(query) {
-  const r = await fetch(`${BACKEND_URL}/api/sparql`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
-  if (!r.ok) throw new Error(`SPARQL proxy ${r.status}`);
-  return (await r.json()).results.bindings;
+  const url = `${SPARQL_URL}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+  const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+  if (!r.ok) throw new Error(`SPARQL ${r.status}`);
+  const data = await r.json();
+  // Debug: log primo binding per vedere formato downloadURL
+  if (data.results?.bindings?.length > 0) {
+    const b = data.results.bindings[0];
+    console.log("[SPARQL distrib] downloadURL raw:", b.downloadURL?.value);
+    console.log("[SPARQL distrib] accessURL raw:", b.accessURL?.value);
+  }
+  return data.results.bindings;
 }
 
 async function loadDistributions(dUri) {
