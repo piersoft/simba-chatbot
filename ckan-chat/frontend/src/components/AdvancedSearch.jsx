@@ -1,0 +1,257 @@
+import { useState, useRef, useEffect } from "react";
+
+const SPARQL_EP  = "https://lod.dati.gov.it/sparql";
+const THEME_BASE = "http://publications.europa.eu/resource/authority/data-theme/";
+const HVD_BASE   = "http://data.europa.eu/bna/";
+const FT_BASE    = "http://publications.europa.eu/resource/authority/file-type/";
+const LICENSE_MAP = {
+  CC_BY:   ["https://creativecommons.org/licenses/by/4.0/","http://creativecommons.org/licenses/by/4.0/","http://creativecommons.org/licenses/by/4.0/it/"],
+  CC_ZERO: ["https://creativecommons.org/publicdomain/zero/1.0/","http://creativecommons.org/publicdomain/zero/1.0/"],
+  IODL:    ["https://www.dati.gov.it/content/italian-open-data-license-v20"],
+  CC_BYSA: ["https://creativecommons.org/licenses/by-sa/4.0/"],
+};
+
+const THEMES = [
+  { code:"AGRI", label:"🌾 Agricoltura" },
+  { code:"ECON", label:"📈 Economia" },
+  { code:"EDUC", label:"📚 Istruzione" },
+  { code:"ENER", label:"⚡ Energia" },
+  { code:"ENVI", label:"🌍 Ambiente" },
+  { code:"GOVE", label:"🏛️ Governo" },
+  { code:"HEAL", label:"❤️ Salute" },
+  { code:"INTR", label:"🌐 Relazioni int." },
+  { code:"JUST", label:"⚖️ Giustizia" },
+  { code:"REGI", label:"🗺️ Regioni" },
+  { code:"SOCI", label:"👥 Società" },
+  { code:"TECH", label:"💻 Tecnologia" },
+  { code:"TRAN", label:"🚌 Trasporti" },
+];
+
+const HVD_CATS = [
+  { code:"c_ac64a52d", label:"🗺️ Geospaziali" },
+  { code:"c_dd313021", label:"🌍 Terra e Ambiente" },
+  { code:"c_e1da4e07", label:"📊 Statistici" },
+  { code:"c_164e0bf5", label:"🌤️ Meteorologici" },
+  { code:"c_b79e35eb", label:"🚗 Mobilità" },
+  { code:"c_a9135398", label:"🏢 Imprese" },
+];
+
+const FORMATS = ["CSV","JSON","XML","SHP","GEOJSON","RDF_XML","TURTLE","PDF","XLSX","ZIP","WMS","WFS"];
+const FETCH_SIZE = 32;
+
+async function sparqlFetch(query) {
+  const url = `${SPARQL_EP}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+  const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+  if (!r.ok) throw new Error(`SPARQL ${r.status}`);
+  return (await r.json()).results.bindings;
+}
+
+function val(b, k) { return b[k]?.value || ""; }
+
+function kwFilter(words) {
+  return words.map((w, i) => {
+    const wl = w.toLowerCase().replace(/"/g, "");
+    return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+  }).join(" && ");
+}
+
+function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
+  let triples = "  ?d a dcat:Dataset . ?d dct:title ?title .\n";
+  if (theme)   triples += `  ?d <http://www.w3.org/ns/dcat#theme> <${THEME_BASE}${theme}> .\n`;
+  if (hvd)     triples += `  ?d <http://data.europa.eu/r5r/hvdCategory> <${HVD_BASE}${hvd}> .\n`;
+  if (format)  triples += `  ?d <http://www.w3.org/ns/dcat#distribution> ?distFmt . ?distFmt <http://purl.org/dc/terms/format> <${FT_BASE}${format}> .\n`;
+  if (license) {
+    const uris = (LICENSE_MAP[license] || []).map(u => `<${u}>`).join(" ");
+    if (uris) triples += `  ?d <http://www.w3.org/ns/dcat#distribution> ?distLic . ?distLic <http://purl.org/dc/terms/license> ?lic . VALUES ?lic { ${uris} }\n`;
+  }
+  if (pub) triples += "  ?d <http://purl.org/dc/terms/rightsHolder> ?rh . ?rh <http://xmlns.com/foaf/0.1/name> ?rhName .\n";
+
+  let filters = "  FILTER(LANG(?title)='it'||LANG(?title)='')\n";
+  if (q)   filters += `  FILTER(${kwFilter(q.trim().split(/\s+/))})\n`;
+  if (pub) filters += `  FILTER(CONTAINS(LCASE(STR(?rhName)),"${pub.toLowerCase().replace(/"/g,"")}"))\n`;
+
+  const orderBy = sort === "title" ? "?title" : "DESC(?modified)";
+  return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?d ?title ?description ?modified WHERE {
+${triples}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:modified ?modified }
+${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+}
+
+// Cache autocomplete publisher
+let acCache = null;
+async function loadAcCache() {
+  if (acCache) return acCache;
+  const rows = await sparqlFetch(
+    `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:rightsHolder ?rh .
+  ?rh foaf:name ?name .
+} GROUP BY ?name ORDER BY DESC(?count) LIMIT 500`
+  );
+  const byName = new Map();
+  rows.forEach(r => {
+    const n = val(r, "name").trim();
+    const c = parseInt(val(r, "count") || "0");
+    const key = n.toLowerCase();
+    if (!byName.has(key) || c > byName.get(key).count) byName.set(key, { name: n, count: c });
+  });
+  acCache = [...byName.values()].sort((a, b) => b.count - a.count);
+  return acCache;
+}
+
+export default function AdvancedSearch({ onResults, onLoading }) {
+  const [open,    setOpen]    = useState(false);
+  const [q,       setQ]       = useState("");
+  const [theme,   setTheme]   = useState("");
+  const [hvd,     setHvd]     = useState("");
+  const [pub,     setPub]     = useState("");
+  const [format,  setFormat]  = useState("");
+  const [license, setLicense] = useState("");
+  const [sort,    setSort]    = useState("modified");
+  const [acList,  setAcList]  = useState([]);
+  const [showAc,  setShowAc]  = useState(false);
+  const acTimer = useRef(null);
+
+  async function handlePubInput(v) {
+    setPub(v);
+    clearTimeout(acTimer.current);
+    if (v.length < 2) { setShowAc(false); return; }
+    acTimer.current = setTimeout(async () => {
+      try {
+        const data = await loadAcCache();
+        const matches = data.filter(d => d.name.toLowerCase().includes(v.toLowerCase())).slice(0, 10);
+        setAcList(matches);
+        setShowAc(matches.length > 0);
+      } catch {}
+    }, 250);
+  }
+
+  async function doSearch() {
+    if (!q && !theme && !hvd && !pub && !format && !license) return;
+    setOpen(false);
+    onLoading(true);
+    try {
+      const rows = await sparqlFetch(buildAdvQuery(q, theme, hvd, pub, format, license, sort, 0));
+      const seen = new Map();
+      for (const b of rows) {
+        const uri = val(b, "d");
+        if (!uri || seen.has(uri)) continue;
+        const id = uri.split("/").pop();
+        seen.set(uri, {
+          uri, id,
+          title:       val(b, "title"),
+          description: val(b, "description"),
+          modified:    val(b, "modified").slice(0, 10),
+          publisher:   "",
+          viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
+          csvResources: [],
+        });
+      }
+      const datasets = [...seen.values()].slice(0, 8);
+      const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, pub].filter(Boolean).join(" · ");
+      onResults(datasets, label || "Ricerca avanzata");
+    } catch(e) {
+      onResults([], `Errore: ${e.message}`);
+    }
+    onLoading(false);
+  }
+
+  function reset() {
+    setQ(""); setTheme(""); setHvd(""); setPub("");
+    setFormat(""); setLicense(""); setSort("modified");
+    setAcList([]); setShowAc(false);
+  }
+
+  return (
+    <div className="adv-container">
+      <button className="adv-toggle-btn" onClick={() => setOpen(v => !v)}>
+        ⚙️ Ricerca avanzata {open ? "▲" : "▼"}
+      </button>
+
+      {open && (
+        <div className="adv-panel">
+          <div className="adv-grid">
+            <div className="adv-field">
+              <label>Parole chiave</label>
+              <input type="text" value={q} onChange={e => setQ(e.target.value)}
+                placeholder="es. parcheggi, aria, covid…"
+                onKeyDown={e => e.key === "Enter" && doSearch()} />
+            </div>
+
+            <div className="adv-field">
+              <label>Tema DCAT-AP</label>
+              <select value={theme} onChange={e => setTheme(e.target.value)}>
+                <option value="">— tutti —</option>
+                {THEMES.map(t => <option key={t.code} value={t.code}>{t.label}</option>)}
+              </select>
+            </div>
+
+            <div className="adv-field">
+              <label>Categoria HVD</label>
+              <select value={hvd} onChange={e => setHvd(e.target.value)}>
+                <option value="">— tutte —</option>
+                {HVD_CATS.map(h => <option key={h.code} value={h.code}>{h.label}</option>)}
+              </select>
+            </div>
+
+            <div className="adv-field" style={{ position: "relative" }}>
+              <label>Amministrazione</label>
+              <input type="text" value={pub} onChange={e => handlePubInput(e.target.value)}
+                placeholder="es. Comune di Bari, Regione Puglia…"
+                onBlur={() => setTimeout(() => setShowAc(false), 200)}
+                autoComplete="off" />
+              {showAc && (
+                <div className="ac-dropdown">
+                  {acList.map((m, i) => (
+                    <div key={i} className="ac-item" onMouseDown={() => { setPub(m.name); setShowAc(false); }}>
+                      <span>{m.name}</span>
+                      <span className="ac-count">{m.count.toLocaleString("it")} ds</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="adv-field">
+              <label>Formato distribuzione</label>
+              <select value={format} onChange={e => setFormat(e.target.value)}>
+                <option value="">— tutti —</option>
+                {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+
+            <div className="adv-field">
+              <label>Licenza</label>
+              <select value={license} onChange={e => setLicense(e.target.value)}>
+                <option value="">— tutte —</option>
+                <option value="CC_BY">CC BY 4.0</option>
+                <option value="CC_ZERO">CC0 / Public Domain</option>
+                <option value="IODL">IODL 2.0</option>
+                <option value="CC_BYSA">CC BY-SA 4.0</option>
+              </select>
+            </div>
+
+            <div className="adv-field">
+              <label>Ordinamento</label>
+              <select value={sort} onChange={e => setSort(e.target.value)}>
+                <option value="modified">Più recenti</option>
+                <option value="title">Titolo A→Z</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="adv-actions">
+            <button className="adv-btn-primary" onClick={doSearch}>🔍 Cerca</button>
+            <button className="adv-btn-secondary" onClick={reset}>✕ Reset</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

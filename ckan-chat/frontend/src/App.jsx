@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import StatusBar from "./components/StatusBar";
 import DatasetCard from "./components/DatasetCard";
 import ValidateReport from "./components/ValidateReport";
+import AdvancedSearch from "./components/AdvancedSearch";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
 
@@ -156,6 +157,17 @@ SELECT ?d ?rhName WHERE {
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return (await r.json()).report ?? "";
+  }
+
+  // ── Callback per risultati ricerca avanzata ─────────────────────────────
+  function handleAdvResults(datasets, label) {
+    if (!datasets.length) {
+      addMsg("assistant", `Nessun dataset trovato per **"${label}"**.`);
+      return;
+    }
+    addMsg("assistant", `Trovati risultati per **"${label}"**:`, {
+      type: "search_results", datasets, query: label, offset: 0,
+    });
   }
 
   // ── Aggiunge un messaggio alla chat ───────────────────────────────────────
@@ -455,6 +467,7 @@ SELECT ?d ?rhName WHERE {
           <div ref={bottomRef} />
         </div>
 
+        <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
         <div className="input-area">
           <textarea
             ref={inputRef}
