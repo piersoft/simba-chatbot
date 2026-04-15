@@ -17,10 +17,11 @@ function extractCsvUrl(text) {
   return m ? m[0] : null;
 }
 
-// Estrae la query di ricerca togliendo le parole chiave di comando
+// Estrae la query di ricerca togliendo solo le parole di comando iniziali
 function extractQuery(text) {
   return text
-    .replace(/cerca|dataset|dati|mostrami|trovami|dammi|su|sulla|sullo|sulle|degli|del|della|dello|i dati|open data|portale|cerca su/gi, "")
+    .replace(/^(cerca|trovami|mostrami|dammi|elenca|mostra|trova)\s+/i, "")
+    .replace(/\b(dataset|dati aperti|open data|portale ckan)\b/gi, "")
     .replace(/https?:\/\/[^\s]+/g, "")
     .replace(/\s+/g, " ")
     .trim();
