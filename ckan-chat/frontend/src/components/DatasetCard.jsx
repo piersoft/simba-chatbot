@@ -25,7 +25,7 @@ async function loadDistributions(dUri) {
 `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
-  BIND(<${dUri}> AS ?d)
+  VALUES ?d { <${dUri}> }
   ?d dcat:distribution ?dist .
   OPTIONAL { ?dist dct:title ?distTitle }
   OPTIONAL { ?dist dct:format ?format }
