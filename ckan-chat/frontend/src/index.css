@@ -1176,7 +1176,7 @@ body {
 /* ── Header sidebar AgID ────────────────────────────────────────────────── */
 .sidebar-agid-logo {
   height: 28px; width: auto; object-fit: contain; flex-shrink: 0;
-  filter: brightness(0) invert(1);
+  mix-blend-mode: lighten;
 }
 .sidebar-agid-title {
   display: flex; flex-direction: column; gap: 1px;
