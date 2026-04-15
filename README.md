@@ -19,43 +19,6 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
 [Browser] ──SPARQL──→ lod.dati.gov.it   ← ricerca dataset (direttamente dal browser)
 ```
 
-### Ruolo dell'AI (Ollama) — flusso di classificazione
-
-Quando l'utente scrive nella casella di testo libera, il sistema segue questo flusso a tre livelli:
-
-```
-Utente scrive un messaggio
-         │
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  1. PRE-FILTRO DETERMINISTICO (istantaneo)          │
-│     Keyword univoche → risposta certa               │
-│     "valida", "check csv"       → VALIDATE          │
-│     "ttl", "rdf", "converti in" → ENRICH            │
-└─────────────────┬───────────────────────────────────┘
-                  │ ambiguo
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  2. SPARQL ASK su lod.dati.gov.it (max 5 sec)       │
-│     Il catalogo reale decide se esistono dataset    │
-│     "torta della nonna" → ASK → false → OFF_TOPIC   │
-│     "defibrillatori"    → ASK → true  → continua   │
-│     "ricette pugliesi"  → ASK → true  → continua   │
-└─────────────────┬───────────────────────────────────┘
-                  │ dataset trovati, intent ancora ambiguo
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  3. OLLAMA (solo per disambiguare ~5% dei casi)     │
-│     "ho un file da controllare" → VALIDATE          │
-│     "voglio i linked data"      → ENRICH            │
-│     "defibrillatori Mesagne"    → SEARCH            │
-└─────────────────────────────────────────────────────┘
-```
-
-**Il 95% delle richieste viene gestito deterministicamente** dai livelli 1 e 2.  
-**Ollama interviene solo** quando esistono dataset sull'argomento ma l'intenzione è ambigua.
-
-Tutto il resto — esecuzione della ricerca SPARQL, validazione CSV, conversione RDF — è **completamente deterministico** e non usa AI.
 
 ---
 
@@ -258,6 +221,47 @@ docker compose -f docker-compose-full.yml down --remove-orphans
 **Ollama lento** → Normale su CPU senza GPU (5-15s). Considera un modello più piccolo o hardware con GPU.
 
 **Orphan containers** → `docker compose -f docker-compose-full.yml up -d --remove-orphans`
+
+---
+
+### Ruolo dell'AI (Ollama) — flusso di classificazione
+
+Quando l'utente scrive nella casella di testo libera, il sistema segue questo flusso a tre livelli:
+
+```
+Utente scrive un messaggio
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  1. PRE-FILTRO DETERMINISTICO (istantaneo)          │
+│     Keyword univoche → risposta certa               │
+│     "valida", "check csv"       → VALIDATE          │
+│     "ttl", "rdf", "converti in" → ENRICH            │
+└─────────────────┬───────────────────────────────────┘
+                  │ ambiguo
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  2. SPARQL ASK su lod.dati.gov.it (max 5 sec)       │
+│     Il catalogo reale decide se esistono dataset    │
+│     "torta della nonna" → ASK → false → OFF_TOPIC   │
+│     "defibrillatori"    → ASK → true  → continua   │
+│     "ricette pugliesi"  → ASK → true  → continua   │
+└─────────────────┬───────────────────────────────────┘
+                  │ dataset trovati, intent ancora ambiguo
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  3. OLLAMA (solo per disambiguare ~5% dei casi)     │
+│     "ho un file da controllare" → VALIDATE          │
+│     "voglio i linked data"      → ENRICH            │
+│     "defibrillatori Mesagne"    → SEARCH            │
+└─────────────────────────────────────────────────────┘
+```
+
+**Il 95% delle richieste viene gestito deterministicamente** dai livelli 1 e 2.  
+**Ollama interviene solo** quando esistono dataset sull'argomento ma l'intenzione è ambigua.
+
+Tutto il resto — esecuzione della ricerca SPARQL, validazione CSV, conversione RDF — è **completamente deterministico** e non usa AI.
+
 
 ---
 
