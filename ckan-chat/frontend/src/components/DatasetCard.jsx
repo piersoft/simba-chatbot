@@ -101,7 +101,12 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
             {dataset.title}
           </a>
         </div>
-        <span className="dataset-card-toggle">{expanded ? "▲" : "▼"}</span>
+        <span className="dataset-card-toggle">
+          {expanded
+            ? <><i className="bi bi-chevron-up"/> Nascondi risorse</>
+            : <><i className="bi bi-chevron-down"/> Vedi risorse</>
+          }
+        </span>
       </div>
 
       <div className="dataset-card-meta">
