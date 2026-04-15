@@ -777,7 +777,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
             className="chat-input"
             aria-label="Scrivi un messaggio"
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={e => {
+              setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+            }}
             onKeyDown={handleKey}
             placeholder="Cerca dataset open data italiani…"
             rows={1}
