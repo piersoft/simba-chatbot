@@ -9,7 +9,7 @@ ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 RUN npm run build
 
 FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html/chatbot
 RUN echo 'server { \
   listen 80; \
   root /usr/share/nginx/html; \
@@ -20,12 +20,12 @@ RUN echo 'server { \
     proxy_connect_timeout 30s; \
     proxy_send_timeout 300s; \
   } \
-  location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|map)$ { \
-    try_files $uri =404; \
-    add_header Cache-Control "public, max-age=31536000, immutable"; \
+  location /chatbot/ { \
+    alias /usr/share/nginx/html/chatbot/; \
+    try_files $uri $uri/ /chatbot/index.html; \
   } \
   location / { \
-    try_files $uri $uri/ /index.html; \
+    return 404; \
   } \
 }' > /etc/nginx/conf.d/default.conf
 EXPOSE 80
