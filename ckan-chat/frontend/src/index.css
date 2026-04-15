@@ -847,7 +847,8 @@ body {
 .sidebar-plain-link:nth-child(2) .plain-tag,
 .sidebar-plain-link:nth-child(3) .plain-tag { background: #1e3a5f; color: #90caf9; }
 .sidebar-plain-link:nth-child(4) .plain-tag,
-.sidebar-plain-link:nth-child(5) .plain-tag { background: #1b5e20; color: #a5d6a7; }
+.sidebar-plain-link:nth-child(5) .plain-tag,
+.sidebar-plain-link:nth-child(6) .plain-tag { background: #1b5e20; color: #a5d6a7; }
 
 /* ── Ricerca avanzata ───────────────────────────────────────────────────── */
 .adv-container { border-top: 1px solid var(--border, #ddd); background: #fff; }
