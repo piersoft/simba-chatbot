@@ -137,21 +137,29 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
   async function doValidate(url) {
-    // Prima prova a scaricare il CSV dal browser (aggira blocchi server-side tipo 403)
+    // Scarica sempre il CSV dal browser — segue redirect e bypassa blocchi server-side
     try {
       const csvRes = await fetch(url);
       if (csvRes.ok) {
         const csv_text = await csvRes.text();
-        const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ csv_text, filename: url.split("/").pop() }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return (await r.json()).report ?? "";
+        // Verifica che sia CSV e non HTML (es. redirect a login page)
+        const isHtml = csv_text.trimStart().startsWith("<");
+        const firstLine = csv_text.trim().split("\n")[0] || "";
+        const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("\t");
+        if (!isHtml && hasSep) {
+          const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ csv_text, filename: url.split("/").pop() }),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return (await r.json()).report ?? "";
+        }
       }
-    } catch {}
-    // Fallback: passa l'URL al backend (funziona se il server non blocca)
+    } catch(e) {
+      console.warn("[doValidate] download browser fallito:", e.message);
+    }
+    // Fallback: passa URL al backend
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
