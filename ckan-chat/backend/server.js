@@ -5,18 +5,12 @@ import rateLimit from "express-rate-limit";
 
 const app = express();
 
-// Necessario quando il backend è dietro un reverse proxy (nginx)
-// Permette a express-rate-limit di identificare correttamente l'IP del client
 app.set("trust proxy", 1);
 
-// CORS: sostituire con il proprio dominio o IP in produzione
-// Esempi:
-//   origin: ["https://mio-dominio.it"]
-//   origin: ["http://31.14.139.9"]
 app.use(cors({
   origin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(",").map(s => s.trim())
-    : true, // in sviluppo accetta tutto; in prod imposta CORS_ORIGIN nel .env
+    : true,
   methods: ["GET", "POST"],
 }));
 
@@ -37,8 +31,14 @@ app.use("/api/chat", rateLimit({
 }));
 
 // ─── Configurazione provider ──────────────────────────────────────────────────
-const LLM_PROVIDER = process.env.LLM_PROVIDER || "mistral"; // "mistral" | "ollama"
-const MCP_URL = process.env.MCP_URL || "http://ckan-mcp-server:3000/mcp";
+const LLM_PROVIDER = process.env.LLM_PROVIDER || "mistral";
+
+// Lista MCP server: CKAN obbligatorio, validatore e rdf opzionali
+const MCP_URLS = [
+  process.env.MCP_URL              || "http://ckan-mcp-server:3000/mcp",
+  process.env.MCP_URL_VALIDATORE   || null,
+  process.env.MCP_URL_RDF          || null,
+].filter(Boolean);
 
 // Mistral
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
@@ -50,14 +50,15 @@ const OLLAMA_URL   = process.env.OLLAMA_URL   || "http://ollama:11434";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:1.5b";
 
 console.log(`Motore LLM: ${LLM_PROVIDER === "mistral" ? `Mistral (${MISTRAL_MODEL})` : `Ollama (${OLLAMA_URL} - ${OLLAMA_MODEL})`}`);
-console.log(`MCP URL: ${MCP_URL}`);
+console.log(`MCP servers: ${MCP_URLS.join(", ")}`);
 
-// ─── MCP helpers ──────────────────────────────────────────────────────────────
+// ─── MCP helpers (multi-server) ───────────────────────────────────────────────
 
 let toolsCache = null;
+let toolsRouteMap = {}; // { toolName → mcpUrl }
 
-async function mcpCall(method, params = {}) {
-  const res = await fetch(MCP_URL, {
+async function mcpCallTo(url, method, params = {}) {
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -77,15 +78,35 @@ async function mcpCall(method, params = {}) {
   return JSON.parse(raw);
 }
 
+// mcpCall sul primo server (CKAN) — usato da /api/health
+async function mcpCall(method, params = {}) {
+  return mcpCallTo(MCP_URLS[0], method, params);
+}
+
 async function getTools() {
   if (toolsCache) return toolsCache;
-  const res = await mcpCall("tools/list");
-  toolsCache = res.result?.tools ?? [];
+  const allTools = [];
+  toolsRouteMap = {};
+  for (const url of MCP_URLS) {
+    try {
+      const res = await mcpCallTo(url, "tools/list");
+      const tools = res.result?.tools ?? [];
+      for (const t of tools) {
+        toolsRouteMap[t.name] = url;
+        allTools.push(t);
+      }
+      console.log(`[tools] ${url} → ${tools.length} tool`);
+    } catch (e) {
+      console.warn(`[tools] ${url} non raggiungibile: ${e.message}`);
+    }
+  }
+  toolsCache = allTools;
   return toolsCache;
 }
 
 async function callTool(name, args) {
-  const res = await mcpCall("tools/call", { name, arguments: args });
+  const url = toolsRouteMap[name] || MCP_URLS[0];
+  const res = await mcpCallTo(url, "tools/call", { name, arguments: args });
   const content = res.result?.content ?? [];
   return content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
 }
@@ -172,7 +193,7 @@ async function ollamaChat(history, tools, model) {
 
 // ─── Guardrail: classificatore domanda ───────────────────────────────────────
 
-const GUARDRAIL_PROMPT = `Sei un classificatore. Il tuo unico compito è decidere se la domanda dell'utente riguarda open data, dataset, portali dati, CKAN, dati aperti, statistiche pubbliche, API di dati, risorse informative pubbliche o argomenti correlati.
+const GUARDRAIL_PROMPT = `Sei un classificatore. Il tuo unico compito è decidere se la domanda dell'utente riguarda open data, dataset, portali dati, CKAN, dati aperti, statistiche pubbliche, API di dati, validazione CSV, conversione RDF, ontologie PA o argomenti correlati.
 Rispondi SOLO con la parola SI se la domanda è pertinente, oppure SOLO con la parola NO se non lo è.
 Non aggiungere nulla altro, nessuna spiegazione, nessun punto, nessuno spazio.`;
 
@@ -226,11 +247,11 @@ async function isQuestionOnTopic(userMessage) {
   }
 }
 
-// ─── Agentic loop (provider-agnostico) ───────────────────────────────────────
+// ─── Agentic loop ─────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Sei un assistente specializzato esclusivamente in open data e portali CKAN.
 Il tuo unico scopo è aiutare l'utente a cercare, esplorare e comprendere dataset e dati aperti.
-Hai accesso a strumenti per interrogare portali CKAN in tempo reale.
+Hai accesso a strumenti per interrogare portali CKAN, validare CSV e convertire in RDF.
 
 REGOLE FONDAMENTALI:
 - Usa SEMPRE gli strumenti disponibili per rispondere con dati reali aggiornati.
@@ -248,6 +269,7 @@ LINK AI DATASET - REGOLA CRITICA:
 
 FORMATO RISPOSTA:
 - Quando trovi dataset, mostra: nome, organizzazione, descrizione breve e link (view_url).
+- Per validazioni CSV, riporta score, verdict e i principali problemi trovati.
 `;
 
 const SYSTEM_PROMPT_OLLAMA = `Sei un assistente CKAN. Rispondi SOLO su open data e dataset.
@@ -260,6 +282,8 @@ Strumenti disponibili:
 - ckan_organization_list: lista organizzazioni
 - ckan_tag_list: lista tag disponibili
 - ckan_datastore_search: cerca dati dentro una risorsa
+- csv_validate: valida un CSV da URL o testo grezzo
+- csv_validate_url: scarica e valida un CSV da URL risorsa CKAN
 
 Portale da usare: https://www.dati.gov.it/opendata
 
@@ -269,7 +293,7 @@ Tu: chiami ckan_package_search con q="aria" e server_url="https://www.dati.gov.i
 
 LINK AI DATASET - REGOLA CRITICA:
 - Usa SEMPRE il campo "view_url" restituito dagli strumenti come link al dataset.
-- Se "view_url" non è disponibile, costruisci il link con il campo "id" (UUID) così:
+- Se "view_url" non è disponibile, costruisci il link con "id" (UUID):
   https://www.dati.gov.it/view-dataset/dataset?id=<UUID>
 - NON usare MAI il formato /opendata/dataset/<nome-slug>: è SBAGLIATO.
 
@@ -285,7 +309,7 @@ function buildNudgeMessage(userQuestion) {
 
 const RETRY_MESSAGE = {
   role: "user",
-  content: `[ERRORE: Non hai chiamato nessuno strumento. DEVI usare uno degli strumenti disponibili per cercare dati reali. Riprova chiamando ckan_package_search o un altro strumento CKAN adeguato.]`,
+  content: `[ERRORE: Non hai chiamato nessuno strumento. DEVI usare uno degli strumenti disponibili per cercare dati reali. Riprova chiamando ckan_package_search o un altro strumento adeguato.]`,
 };
 
 async function chatWithTools(messages, model) {
@@ -377,15 +401,14 @@ const OFF_TOPIC_REPLY = `Mi dispiace, posso aiutarti solo con domande relative a
 Prova a chiedermi, ad esempio:
 - 🔍 "Cerca dataset sulla qualità dell'aria"
 - 📊 "Quanti dataset ci sono su mobilità a Roma?"
+- ✅ "Valida questo CSV: <url>"
 - 🌐 "Mostrami i dati aperti del comune di Milano"`;
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.get("/api/models", (req, res) => {
   if (LLM_PROVIDER === "mistral") {
-    res.json([
-      { name: "mistral-medium-latest" },
-    ]);
+    res.json([{ name: "mistral-medium-latest" }]);
   } else {
     fetch(`${OLLAMA_URL}/api/tags`)
       .then(r => r.json())
@@ -397,6 +420,7 @@ app.get("/api/models", (req, res) => {
 app.get("/api/tools", async (req, res) => {
   try {
     toolsCache = null;
+    toolsRouteMap = {};
     res.json(await getTools());
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -437,7 +461,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 app.get("/api/health", async (req, res) => {
-  const status = { backend: "ok", ollama: "n/a", mcp: "unknown" };
+  const status = { backend: "ok", ollama: "n/a", mcp: "unknown", mcp_servers: MCP_URLS };
   if (LLM_PROVIDER === "ollama") {
     try {
       await fetch(`${OLLAMA_URL}/api/tags`);

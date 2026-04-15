@@ -1,4 +1,5 @@
 services:
+
   # ── Ollama locale (solo se usi --profile ollama-local) ──────────────────────
   ollama:
     image: ollama/ollama:latest
@@ -45,6 +46,16 @@ services:
       TRANSPORT: http
       PORT: 3000
 
+  # ── Validatore CSV MCP (NUOVO) ──────────────────────────────────────────────
+  validatore-mcp:
+    build:
+      context: ./validatore-mcp
+      dockerfile: Dockerfile
+    container_name: validatore-mcp
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+
   # ── Backend Node.js ─────────────────────────────────────────────────────────
   backend:
     build:
@@ -61,17 +72,18 @@ services:
       PORT: 3001
       SERVER_IP: ${SERVER_IP:-localhost}
       MCP_URL: http://ckan-mcp-server:3000/mcp
+      MCP_URL_VALIDATORE: http://validatore-mcp:3002/mcp
+      # MCP_URL_RDF: http://rdf-mcp:3003/mcp   # attivare quando rdf-mcp sarà pronto
       LLM_PROVIDER: ${LLM_PROVIDER:-mistral}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
-      # CORS: lascia vuoto per sviluppo locale, imposta dominio/IP per produzione
-      # Es: CORS_ORIGIN=https://mio-dominio.it oppure CORS_ORIGIN=http://31.14.XX.X
       CORS_ORIGIN: ${CORS_ORIGIN:-}
     depends_on:
       - ckan-mcp-server
+      - validatore-mcp
 
   # ── Frontend React ──────────────────────────────────────────────────────────
   frontend:
@@ -79,9 +91,6 @@ services:
       context: ./ckan-chat/frontend
       dockerfile: Dockerfile
       args:
-        # Lascia vuoto se usi nginx reverse proxy sullo stesso server (consigliato)
-        # Imposta lIP/dominio pubblico se accedi direttamente senza proxy
-        # Es: VITE_BACKEND_URL: http://31.14.XX.X
         VITE_BACKEND_URL: ${VITE_BACKEND_URL:-}
         VITE_BASE_PATH: /chatbot/
     container_name: ckan-chat-frontend
