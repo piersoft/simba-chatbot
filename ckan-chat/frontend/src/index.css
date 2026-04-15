@@ -75,8 +75,8 @@ body {
   align-items: center;
   gap: 12px;
   padding: 18px 16px;
-  background: #004D99;
-  border-bottom: 2px solid rgba(255,255,255,0.15);
+  background: #ffffff;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .logo-icon {
@@ -1182,9 +1182,9 @@ body {
 }
 .sidebar-agid-name {
   font-family: 'Titillium Web', Arial, sans-serif;
-  font-size: 15px; font-weight: 700; color: #ffffff; line-height: 1.1;
+  font-size: 15px; font-weight: 700; color: #004D99; line-height: 1.1;
 }
 .sidebar-agid-sub {
   font-family: 'Titillium Web', Arial, sans-serif;
-  font-size: 10px; font-weight: 300; color: rgba(255,255,255,0.75); line-height: 1.2;
+  font-size: 10px; font-weight: 300; color: #5c6f82; line-height: 1.2;
 }
