@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function ValidateReport({ report, url }) {
+export default function ValidateReport({ report, url, onEnrich }) {
   const [showAll, setShowAll] = useState(false);
   const lines = (report || "").split("\n").filter(Boolean);
 
@@ -83,6 +83,18 @@ export default function ValidateReport({ report, url }) {
               {showAll ? "▲ Mostra meno" : `▼ Mostra tutti i ${checks.length} check`}
             </button>
           )}
+        </div>
+      )}
+      {/* Bottoni conversione RDF — mostrati solo se CSV è accettabile */}
+      {(isOk || isWarn) && url && onEnrich && (
+        <div className="validate-convert-btns">
+          <span className="convert-label">Converti in:</span>
+          <button className="btn-small btn-ttl" onClick={() => onEnrich(url, "CSV", "ente", "ttl")}>
+            🔄 RDF/Turtle
+          </button>
+          <button className="btn-small btn-ttl" onClick={() => onEnrich(url, "CSV", "ente", "rdfxml")}>
+            🔄 RDF/XML
+          </button>
         </div>
       )}
     </div>

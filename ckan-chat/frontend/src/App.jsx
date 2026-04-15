@@ -265,30 +265,42 @@ SELECT ?d ?rhName WHERE {
   }
 
   // ── Conversione CSV → RDF ────────────────────────────────────────────────────
-  async function doEnrich(url, datasetTitle, ipa = "ente") {
-    addMsg("user", `Converti in TTL: ${url}`);
-    addMsg("assistant", `🔄 Conversione in RDF/Turtle di **"${datasetTitle}"** in corso…`);
+  async function doEnrich(url, datasetTitle, ipa = "ente", fmt = "ttl") {
+    addMsg("user", `Converti in ${fmt.toUpperCase()}: ${url}`);
+    addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`);
     setLoading(true);
     try {
+      // Scarica CSV dal browser (evita blocchi 403 server-side)
+      let body;
+      try {
+        const csvRes = await fetch(url);
+        if (csvRes.ok) {
+          const csv_text = await csvRes.text();
+          body = JSON.stringify({ csv_text, pa: datasetTitle, ipa, fmt });
+        }
+      } catch {}
+      // Fallback: passa URL al backend
+      if (!body) body = JSON.stringify({ url, pa: datasetTitle, ipa, fmt });
+
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, pa: datasetTitle, ipa }),
+        body,
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        const err = await r.text();
+        throw new Error(`HTTP ${r.status}: ${err.slice(0,200)}`);
+      }
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 20).join("\n");
-      const blob = new Blob([ttl], { type: "text/turtle" });
+      const preview = lines.slice(0, 15).join("\n");
+      const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
+      const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
+      const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
-      addMsg("assistant", `✅ Conversione completata!
-
-\`\`\`turtle
-${preview}
-${lines.length > 20 ? "…" : ""}
-\`\`\`
-
-[⬇ Scarica .ttl](${blobUrl})`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.ttl` });
+      addMsg("assistant", `✅ Conversione completata! ${lines.length} triple generate.`, {
+        type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt
+      });
     } catch (e) {
       addMsg("assistant", `❌ Errore conversione: ${e.message}`);
     }
@@ -408,11 +420,30 @@ ${lines.length > 20 ? "…" : ""}
       );
     }
 
+    if (m.type === "ttl_result") {
+      return (
+        <div key={i} className="message assistant">
+          <div className="message-bubble">
+            <p>✅ Conversione completata!</p>
+            {m.preview && (
+              <pre className="ttl-preview">{m.preview}{"
+…"}</pre>
+            )}
+            <div className="ttl-download-btns">
+              <a href={m.blobUrl} download={m.filename} className="btn-small btn-download">
+                ⬇ Scarica {m.fmt === "rdfxml" ? "RDF/XML" : "Turtle (.ttl)"}
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (m.type === "validate_report") {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} />
+            <ValidateReport report={m.content} url={m.url} onEnrich={doEnrich} />
           </div>
         </div>
       );

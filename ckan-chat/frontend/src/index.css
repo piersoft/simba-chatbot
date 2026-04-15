@@ -914,3 +914,17 @@ body {
 .btn-ttl-box { background: #6a1b9a; color: #fff; }
 .btn-ttl-box:hover { background: #4a148c; }
 .btn-ttl-box:disabled { background: #aaa; cursor: not-allowed; }
+
+.validate-convert-btns {
+  display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  padding-top: 10px; border-top: 1px solid #eee; flex-wrap: wrap;
+}
+.convert-label { font-size: 12px; color: #666; font-weight: 600; }
+
+.ttl-preview {
+  background: #1e1e2e; color: #cdd6f4; border-radius: 6px;
+  padding: 10px 14px; font-size: 11px; line-height: 1.6;
+  overflow-x: auto; max-height: 200px; overflow-y: auto;
+  margin: 8px 0; white-space: pre;
+}
+.ttl-download-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
