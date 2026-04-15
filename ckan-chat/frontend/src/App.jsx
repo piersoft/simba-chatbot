@@ -558,6 +558,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           </a>
         </div>
 
+        <button className="help-sidebar-btn" onClick={() => setShowHelp(v => !v)} aria-label="Istruzioni brevi">
+          <Icon name="question-circle" size={14} /> Istruzioni brevi
+        </button>
+
         <button className="clear-btn" aria-label="Nuova conversazione" onClick={() => { resetChat(); }}>
           Nuova conversazione
         </button>
@@ -707,26 +711,6 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         )}
 
 
-        <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
-        <div className="input-area">
-          <button className="help-btn" aria-label="Guida all'uso" onClick={() => setShowHelp(v => !v)}>
-            <Icon name="question-circle" size={18} />
-          </button>
-          <textarea
-            ref={inputRef}
-            className="chat-input"
-            aria-label="Scrivi un messaggio"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="Cerca dataset, valida un CSV, converti in RDF…"
-            rows={1}
-            disabled={loading}
-          />
-          <button className="send-btn" aria-label="Invia messaggio" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
-            {loading ? <Icon name="hourglass-split" /> : <Icon name="send-fill" />}
-          </button>
-        </div>
         {showHelp && (
           <div className="help-popup" role="dialog" aria-label="Guida all'uso">
             <button className="help-close" onClick={() => setShowHelp(false)} aria-label="Chiudi guida">
@@ -764,6 +748,24 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             <p className="help-tip"><Icon name="lightbulb" size={12} /> Questo assistente risponde <strong>esclusivamente</strong> a richieste riguardanti open data della Pubblica Amministrazione italiana. Domande su altri argomenti verranno rifiutate.</p>
           </div>
         )}
+        <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
+        <div className="input-area">
+          <textarea
+            ref={inputRef}
+            className="chat-input"
+            aria-label="Scrivi un messaggio"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Cerca dataset, valida un CSV, converti in RDF…"
+            rows={1}
+            disabled={loading}
+          />
+          <button className="send-btn" aria-label="Invia messaggio" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
+            {loading ? <Icon name="hourglass-split" /> : <Icon name="send-fill" />}
+          </button>
+        </div>
+
       </main>
     </div>
   );
