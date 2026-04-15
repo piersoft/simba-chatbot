@@ -22,6 +22,7 @@ export default function App() {
   const [pageTitle,   setPageTitle]   = useState("Esplora i Dati Aperti Italiani");
   const [input,       setInput]       = useState("");
   const [loading,     setLoading]     = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [health,      setHealth]      = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [csvUrl,      setCsvUrl]      = useState("");
@@ -277,7 +278,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   async function doEnrich(url, datasetTitle, ipa = "ente", fmt = "ttl") {
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${url}`);
     setPageTitle("🔄 Conversione RDF — Open Data Italia");
-    addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`);
+    addMsg("assistant", `Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`, { type: "loading_ttl" });
     setLoading(true);
     try {
       // Passa sempre l'URL al backend — rdf-mcp lo scarica direttamente
@@ -309,7 +310,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   // ── "Carica altri" ────────────────────────────────────────────────────────
   async function loadMore(query, currentOffset) {
     const newOffset = currentOffset + 8;
-    setLoading(true);
+    setLoadingMore(true);
     try {
       const { datasets } = await doSearch(query, newOffset);
       if (!datasets.length) { addMsg("assistant", "Nessun altro risultato disponibile."); return; }
@@ -317,7 +318,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         type: "search_results", datasets, query, offset: newOffset,
       });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
-    finally { setLoading(false); }
+    finally { setLoadingMore(false); }
   }
 
   // ── Valida CSV da card ────────────────────────────────────────────────────
@@ -457,9 +458,23 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                 <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} />
               ))}
             </div>
-            <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)}>
-              Carica altri risultati ↓
+            <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)} disabled={loadingMore}>
+              {loadingMore
+                ? <><i className="bi bi-arrow-repeat spin" /> Caricamento…</>
+                : <><i className="bi bi-chevron-down" /> Carica altri risultati</>
+              }
             </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (m.type === "loading_ttl") {
+      return (
+        <div key={i} className="message assistant">
+          <div className="message-bubble loading-ttl-bubble">
+            <i className="bi bi-arrow-repeat spin" style={{fontSize:"18px",color:"#0066CC"}} />
+            <span>{m.content}</span>
           </div>
         </div>
       );

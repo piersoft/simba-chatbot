@@ -1157,3 +1157,16 @@ body {
   box-shadow: 0 4px 20px rgba(0,0,0,0.12); padding: 16px 18px;
   max-height: 400px; overflow-y: auto;
 }
+
+/* ── Spinner animazione ──────────────────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin { display: inline-block; animation: spin 0.8s linear infinite; }
+
+/* ── Bubble loading TTL ──────────────────────────────────────────────────── */
+.loading-ttl-bubble {
+  display: flex !important; align-items: center; gap: 10px;
+  color: #5c6f82; font-style: italic;
+}
