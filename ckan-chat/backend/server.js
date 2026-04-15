@@ -83,6 +83,18 @@ async function mcpCall(method, params = {}) {
   return mcpCallTo(MCP_URLS[0], method, params);
 }
 
+// Tool esposti a Ollama: lista ridotta per non sovraccaricare modelli piccoli.
+// Mistral riceve tutti i tool senza filtro.
+const OLLAMA_TOOL_WHITELIST = new Set([
+  "ckan_package_search",
+  "ckan_package_show",
+  "ckan_datastore_search",
+  "ckan_organization_list",
+  "ckan_tag_list",
+  "csv_validate",
+  "csv_validate_url",
+]);
+
 async function getTools() {
   if (toolsCache) return toolsCache;
   const allTools = [];
@@ -102,6 +114,13 @@ async function getTools() {
   }
   toolsCache = allTools;
   return toolsCache;
+}
+
+function getToolsForProvider(allTools) {
+  if (LLM_PROVIDER !== "ollama") return allTools;
+  const filtered = allTools.filter(t => OLLAMA_TOOL_WHITELIST.has(t.name));
+  console.log(`[tools] Ollama riceve ${filtered.length}/${allTools.length} tool (whitelist)`);
+  return filtered;
 }
 
 async function callTool(name, args) {
@@ -238,17 +257,21 @@ async function isQuestionOnTopic(userMessage) {
             { role: "user", content: userMessage },
           ],
           stream: false,
-          options: { temperature: 0, num_predict: 150 },
+          options: { temperature: 0, num_predict: 512 },
         }),
       });
       if (!res.ok) return true;
       const data = await res.json();
-      const raw = data.message?.content ?? "SI";
-      const answer = stripThinkTags(raw).toUpperCase();
-      console.log(`[guardrail] risposta classificatore: "${answer}"`);
-      // fallback: se ancora vuota dopo strip, lascia passare
-      if (!answer) return true;
-      return answer.startsWith("SI");
+      const raw = data.message?.content ?? "";
+      const stripped = stripThinkTags(raw).toUpperCase();
+      // Cerca SI o NO ovunque nel testo (qwen3 a volte aggiunge punteggiatura)
+      const hasNo  = /\bNO\b/.test(stripped);
+      const hasSi  = /\bSI\b/.test(stripped) || stripped.includes("YES");
+      const answer = stripped.slice(0, 10); // per il log
+      console.log(`[guardrail] raw="${raw.slice(0,60).replace(/\n/g," ")}" → stripped="${answer}"`);
+      if (!stripped) return true; // fallback permissivo se vuoto
+      if (hasNo && !hasSi) return false;
+      return true;
     }
   } catch (e) {
     console.error("[guardrail] errore classificatore, lascio passare:", e.message);
@@ -322,7 +345,8 @@ const RETRY_MESSAGE = {
 };
 
 async function chatWithTools(messages, model) {
-  const tools = await getTools();
+  const allTools = await getTools();
+  const tools = getToolsForProvider(allTools);
   const toolCallsLog = [];
 
   const isOllama = LLM_PROVIDER === "ollama";
