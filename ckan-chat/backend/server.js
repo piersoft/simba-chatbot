@@ -174,13 +174,30 @@ async function mistralChat(history, tools, model) {
 
 // ─── Ollama chat ──────────────────────────────────────────────────────────────
 
+// Mappa tool per Ollama: schema minimale per ridurre i token.
+// I modelli piccoli non leggono le descrizioni dei parametri — gli basta sapere il nome.
+const OLLAMA_TOOL_SCHEMAS = {
+  ckan_package_search:  { q: "string", server_url: "string", rows: "number" },
+  ckan_package_show:    { id: "string", server_url: "string" },
+  ckan_datastore_search:{ resource_id: "string", server_url: "string", q: "string", limit: "number" },
+  ckan_organization_list:{ server_url: "string" },
+  ckan_tag_list:        { server_url: "string" },
+  csv_validate:         { csv_url: "string", csv_text: "string", summary_only: "boolean" },
+  csv_validate_url:     { url: "string" },
+};
+
 function mcpToolToOllama(tool) {
+  const knownParams = OLLAMA_TOOL_SCHEMAS[tool.name] ?? {};
+  const properties = {};
+  for (const [k, type] of Object.entries(knownParams)) {
+    properties[k] = { type };
+  }
   return {
     type: "function",
     function: {
       name: tool.name,
       description: tool.description,
-      parameters: tool.inputSchema ?? { type: "object", properties: {} },
+      parameters: { type: "object", properties },
     },
   };
 }
