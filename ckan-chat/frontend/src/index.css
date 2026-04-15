@@ -75,8 +75,8 @@ body {
   align-items: center;
   gap: 12px;
   padding: 18px 16px;
-  background: #fff;
-  border-bottom: 2px solid var(--gray-200);
+  background: #004D99;
+  border-bottom: 3px solid rgba(255,255,255,0.2);
 }
 
 .logo-icon {
@@ -1176,16 +1176,16 @@ body {
 /* ── Header sidebar AgID ────────────────────────────────────────────────── */
 .sidebar-agid-logo {
   height: 28px; width: auto; object-fit: contain; flex-shrink: 0;
-  mix-blend-mode: screen;
+  filter: brightness(0) invert(1);
 }
 .sidebar-agid-title {
   display: flex; flex-direction: column; gap: 1px;
 }
 .sidebar-agid-name {
   font-family: 'Titillium Web', Arial, sans-serif;
-  font-size: 15px; font-weight: 700; color: #0066CC; line-height: 1.1;
+  font-size: 15px; font-weight: 700; color: #fff; line-height: 1.1;
 }
 .sidebar-agid-sub {
   font-family: 'Titillium Web', Arial, sans-serif;
-  font-size: 10px; font-weight: 300; color: #5c6f82; line-height: 1.2;
+  font-size: 10px; font-weight: 300; color: rgba(255,255,255,0.75); line-height: 1.2;
 }
