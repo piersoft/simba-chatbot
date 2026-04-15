@@ -197,6 +197,11 @@ const GUARDRAIL_PROMPT = `Sei un classificatore. Il tuo unico compito è decider
 Rispondi SOLO con la parola SI se la domanda è pertinente, oppure SOLO con la parola NO se non lo è.
 Non aggiungere nulla altro, nessuna spiegazione, nessun punto, nessuno spazio.`;
 
+// Rimuove i tag <think>...</think> che qwen3 aggiunge prima della risposta
+function stripThinkTags(text) {
+  return (text || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+}
+
 async function isQuestionOnTopic(userMessage) {
   try {
     if (LLM_PROVIDER === "mistral") {
@@ -218,7 +223,8 @@ async function isQuestionOnTopic(userMessage) {
       });
       if (!response.ok) return true;
       const data = await response.json();
-      const answer = data.choices?.[0]?.message?.content?.trim().toUpperCase() ?? "SI";
+      const raw = data.choices?.[0]?.message?.content ?? "SI";
+      const answer = stripThinkTags(raw).toUpperCase();
       console.log(`[guardrail] risposta classificatore: "${answer}"`);
       return answer.startsWith("SI");
     } else {
@@ -232,13 +238,16 @@ async function isQuestionOnTopic(userMessage) {
             { role: "user", content: userMessage },
           ],
           stream: false,
-          options: { temperature: 0, num_predict: 5 },
+          options: { temperature: 0, num_predict: 150 },
         }),
       });
       if (!res.ok) return true;
       const data = await res.json();
-      const answer = data.message?.content?.trim().toUpperCase() ?? "SI";
+      const raw = data.message?.content ?? "SI";
+      const answer = stripThinkTags(raw).toUpperCase();
       console.log(`[guardrail] risposta classificatore: "${answer}"`);
+      // fallback: se ancora vuota dopo strip, lascia passare
+      if (!answer) return true;
       return answer.startsWith("SI");
     }
   } catch (e) {
@@ -358,9 +367,10 @@ async function chatWithTools(messages, model) {
     history.push(msg);
 
     if (finishReason === "stop" || finishReason === "end_turn" || !msg.tool_calls?.length) {
-      const reply = typeof msg.content === "string"
+      const rawReply = typeof msg.content === "string"
         ? msg.content
         : msg.content?.filter(b => b.type === "text").map(b => b.text).join("\n") ?? "";
+      const reply = isOllama ? stripThinkTags(rawReply) : rawReply;
       if (isOllama && toolCallsLog.length === 0) {
         console.warn(`[ollama-nudge] risposta finale senza tool call dopo ${round + 1} round`);
       }
