@@ -393,25 +393,28 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
     const pa = ttlPa.trim() || "Ente Pubblico";
     const ipa = ttlIpa.trim() || "ente";
     const fname = ttlFile?.name || "CSV";
-    addMsg("user", `Converti in TTL: ${fname}`);
-    addMsg("assistant", `🔄 Conversione in RDF/Turtle di **"${pa}"** in corso…`);
+    const fmt = ttlFmt || "ttl";
+    const ext = fmt === "rdfxml" ? "rdf" : "ttl";
+    const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
+    addMsg("user", `Converti in ${fmt.toUpperCase()}: ${fname}`);
+    addMsg("assistant", `🔄 Conversione in RDF/${fmt === "rdfxml" ? "XML" : "Turtle"} di **"${pa}"** in corso…`);
     setLoading(true);
     try {
       const csv_text = hasMemory ? ttlCsvText : await ttlFile.text();
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv_text, pa, ipa }),
+        body: JSON.stringify({ csv_text, pa, ipa, fmt }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
       const preview = lines.slice(0, 30).join("\n");
-      const blob = new Blob([ttl], { type: "text/turtle" });
+      const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
-      addMsg("assistant", `✅ Conversione completata!\n\n\`\`\`turtle\n${preview}${lines.length > 15 ? "\n…" : ""}\n\`\`\``, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.ttl` });
+      addMsg("assistant", `✅ Conversione completata!`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
-    finally { setLoading(false); setTtlFile(null); setTtlIpa(""); setTtlPa(""); }
+    finally { setLoading(false); setTtlFile(null); setTtlIpa(""); setTtlPa(""); setTtlCsvText(null); }
   }
 
   async function validateFromBox() {
