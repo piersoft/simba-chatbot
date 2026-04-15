@@ -780,3 +780,11 @@ body {
 .check-warn { color: #e65100; }
 .check-fail { color: #c62828; }
 .check-info { color: #1565c0; }
+
+/* Link nei messaggi utente (sfondo blu) — bianco con sottolineatura */
+.message.user .message-bubble a {
+  color: #fff;
+  text-decoration: underline;
+  opacity: 0.9;
+}
+.message.user .message-bubble a:hover { opacity: 1; }

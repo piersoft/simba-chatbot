@@ -14,11 +14,11 @@ export default function ValidateReport({ report, url }) {
   const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
 
   // Verdict
-  const isOk   = verdictLine.includes("buona_qualita")   || verdictLine.includes("Buona qualità") || score >= 80;
-  const isWarn = verdictLine.includes("con_riserva")      || verdictLine.includes("con riserva")   || (score >= 50 && score < 80);
+  const isOk   = verdictLine.includes("buona_qualita")   || verdictLine.includes("Buona qualità") || score >= 95;
+  const isWarn = verdictLine.includes("con_riserva")      || verdictLine.includes("con riserva")   || (score >= 50 && score < 95);
   const isFail = verdictLine.includes("non_accettabile")  || verdictLine.includes("Non accettabile") || (score !== null && score < 50);
 
-  const verdictLabel = isOk   ? "✅ Buona qualità"
+  const verdictLabel = isOk   ? "✅ Ottima qualità"
                      : isWarn ? "⚠️ Accettabile con riserva"
                      : isFail ? "❌ Non accettabile"
                      : "📋 Risultato";
