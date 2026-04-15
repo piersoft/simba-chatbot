@@ -568,112 +568,113 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             </div>
           )}
 
-          {/* Box validazione CSV — URL o Upload */}
-          {showCsvBox && (
-            <div className="csv-box">
-              <div className="csv-box-tabs">
-                <button className={`csv-tab ${csvTab==="url" ? "active":""}`} onClick={() => setCsvTab("url")}>🔗 Da URL</button>
-                <button className={`csv-tab ${csvTab==="upload" ? "active":""}`} onClick={() => setCsvTab("upload")}>📁 Carica file</button>
-              </div>
-              {csvTab === "url" ? (
-                <>
-                  <p>Incolla l'URL del file CSV:</p>
-                  <div className="csv-box-row">
-                    <input type="url" className="csv-url-input"
-                      placeholder="https://esempio.com/dati.csv"
-                      value={csvUrl} onChange={e => setCsvUrl(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && validateFromBox()} />
-                    <button className="btn-validate-box" onClick={validateFromBox} disabled={!csvUrl.trim()}>
-                      ✅ Valida
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p>Carica un file CSV dal tuo computer (max 5 MB):</p>
-                  <div className="csv-box-row">
-                    <input type="file" accept=".csv,.tsv,.txt"
-                      className="csv-url-input"
-                      onChange={e => setCsvFile(e.target.files[0] || null)} />
-                    <button className="btn-validate-box" onClick={validateFromUpload} disabled={!csvFile}>
-                      ✅ Valida
-                    </button>
-                  </div>
-                  {csvFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {csvFile.name} ({(csvFile.size/1024).toFixed(1)} KB)</p>}
-                </>
-              )}
-            </div>
-          )}
+          <div ref={bottomRef} />
+        </div>
 
-          {/* Box conversione TTL */}
-          {showTtlBox && (
-            <div className="csv-box ttl-box">
-              {!ttlCsvText && (
-                <div className="csv-box-tabs">
-                  <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}>🔗 Da URL</button>
-                  <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}>📁 Carica file</button>
+        {/* Box validazione CSV — URL o Upload */}
+        {showCsvBox && (
+          <div className="csv-box">
+            <div className="csv-box-tabs">
+              <button className={`csv-tab ${csvTab==="url" ? "active":""}`} onClick={() => setCsvTab("url")}>🔗 Da URL</button>
+              <button className={`csv-tab ${csvTab==="upload" ? "active":""}`} onClick={() => setCsvTab("upload")}>📁 Carica file</button>
+            </div>
+            {csvTab === "url" ? (
+              <>
+                <p>Incolla l'URL del file CSV:</p>
+                <div className="csv-box-row">
+                  <input type="url" className="csv-url-input"
+                    placeholder="https://esempio.com/dati.csv"
+                    value={csvUrl} onChange={e => setCsvUrl(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && validateFromBox()} />
+                  <button className="btn-validate-box" onClick={validateFromBox} disabled={!csvUrl.trim()}>
+                    ✅ Valida
+                  </button>
                 </div>
-              )}
-              <div className="ttl-meta-row">
-                <input type="text" className="csv-url-input" placeholder="Codice IPA (es. c_b220)"
-                  value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
-                <input type="text" className="csv-url-input" placeholder="Nome PA (es. Comune di Bari)"
-                  value={ttlPa} onChange={e => setTtlPa(e.target.value)} />
+              </>
+            ) : (
+              <>
+                <p>Carica un file CSV dal tuo computer (max 5 MB):</p>
+                <div className="csv-box-row">
+                  <input type="file" accept=".csv,.tsv,.txt"
+                    className="csv-url-input"
+                    onChange={e => setCsvFile(e.target.files[0] || null)} />
+                  <button className="btn-validate-box" onClick={validateFromUpload} disabled={!csvFile}>
+                    ✅ Valida
+                  </button>
+                </div>
+                {csvFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {csvFile.name} ({(csvFile.size/1024).toFixed(1)} KB)</p>}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Box conversione TTL */}
+        {showTtlBox && (
+          <div className="csv-box ttl-box">
+            {!ttlCsvText && (
+              <div className="csv-box-tabs">
+                <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}>🔗 Da URL</button>
+                <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}>📁 Carica file</button>
               </div>
-              <div className="ttl-fmt-row">
-                <span className="convert-label">Formato output:</span>
-                <button className={`fmt-btn ${ttlFmt==="ttl" ? "active" : ""}`} onClick={() => setTtlFmt("ttl")}>
-                  🐢 RDF/Turtle (.ttl)
-                </button>
-                <button className={`fmt-btn ${ttlFmt==="rdfxml" ? "active" : ""}`} onClick={() => setTtlFmt("rdfxml")}>
-                  📄 RDF/XML (.rdf)
-                </button>
-              </div>
-              {ttlTab === "url" ? (
-                <>
-                  <p>URL del file CSV da convertire {ttlFmt === "rdfxml" ? "(→ RDF/XML)" : "(→ RDF/Turtle)"}:</p>
+            )}
+            <div className="ttl-meta-row">
+              <input type="text" className="csv-url-input" placeholder="Codice IPA (es. c_b220)"
+                value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
+              <input type="text" className="csv-url-input" placeholder="Nome PA (es. Comune di Bari)"
+                value={ttlPa} onChange={e => setTtlPa(e.target.value)} />
+            </div>
+            <div className="ttl-fmt-row">
+              <span className="convert-label">Formato output:</span>
+              <button className={`fmt-btn ${ttlFmt==="ttl" ? "active" : ""}`} onClick={() => setTtlFmt("ttl")}>
+                🐢 RDF/Turtle (.ttl)
+              </button>
+              <button className={`fmt-btn ${ttlFmt==="rdfxml" ? "active" : ""}`} onClick={() => setTtlFmt("rdfxml")}>
+                📄 RDF/XML (.rdf)
+              </button>
+            </div>
+            {ttlTab === "url" ? (
+              <>
+                <p>URL del file CSV da convertire {ttlFmt === "rdfxml" ? "(→ RDF/XML)" : "(→ RDF/Turtle)"}:</p>
+                <div className="csv-box-row">
+                  <input type="url" className="csv-url-input"
+                    placeholder="https://esempio.it/dataset.csv"
+                    value={ttlUrl} onChange={e => setTtlUrl(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && enrichFromBox()} />
+                  <button className="btn-validate-box btn-ttl-box" onClick={enrichFromBox} disabled={!ttlUrl.trim()}>
+                    🔄 Converti
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {ttlCsvText ? (
                   <div className="csv-box-row">
-                    <input type="url" className="csv-url-input"
-                      placeholder="https://esempio.it/dataset.csv"
-                      value={ttlUrl} onChange={e => setTtlUrl(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && enrichFromBox()} />
-                    <button className="btn-validate-box btn-ttl-box" onClick={enrichFromBox} disabled={!ttlUrl.trim()}>
+                    <span style={{fontSize:"13px",color:"#555",flex:1}}>📄 CSV già in memoria dalla validazione</span>
+                    <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload}>
                       🔄 Converti
                     </button>
                   </div>
-                </>
-              ) : (
-                <>
-                  {ttlCsvText ? (
+                ) : (
+                  <>
+                    <p>Carica un file CSV da convertire:</p>
                     <div className="csv-box-row">
-                      <span style={{fontSize:"13px",color:"#555",flex:1}}>📄 CSV già in memoria dalla validazione</span>
-                      <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload}>
+                      <input type="file" accept=".csv,.tsv,.txt" className="csv-url-input"
+                        onChange={e => setTtlFile(e.target.files[0] || null)} />
+                      <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
                         🔄 Converti
                       </button>
                     </div>
-                  ) : (
-                    <>
-                      <p>Carica un file CSV da convertire:</p>
-                      <div className="csv-box-row">
-                        <input type="file" accept=".csv,.tsv,.txt" className="csv-url-input"
-                          onChange={e => setTtlFile(e.target.files[0] || null)} />
-                        <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
-                          🔄 Converti
-                        </button>
-                      </div>
-                      {ttlFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {ttlFile.name} ({(ttlFile.size/1024).toFixed(1)} KB)</p>}
-                    </>
-                  )}
-                </>
-              )}
-              <p style={{fontSize:"11px",color:"#888",marginTop:"8px"}}>
-                Ontologie rilevate automaticamente secondo dati-semantic-assets
-              </p>
-            </div>
-          )}
+                    {ttlFile && <p style={{fontSize:"12px",color:"#555",marginTop:"6px"}}>📄 {ttlFile.name} ({(ttlFile.size/1024).toFixed(1)} KB)</p>}
+                  </>
+                )}
+              </>
+            )}
+            <p style={{fontSize:"11px",color:"#888",marginTop:"8px"}}>
+              Ontologie rilevate automaticamente secondo dati-semantic-assets
+            </p>
+          </div>
+        )}
 
-          <div ref={bottomRef} />
-        </div>
 
         <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
         <div className="input-area">
