@@ -84,7 +84,7 @@ nano .env
 Contenuto minimo:
 
 ```env
-SERVER_IP=31.14.139.9
+SERVER_IP=YOUR_SERVER_IP
 
 LLM_PROVIDER=ollama
 OLLAMA_URL=http://ollama:11434
@@ -92,11 +92,11 @@ OLLAMA_MODEL=qwen2.5:1.5b
 
 # Con nginx (consigliato):
 VITE_BACKEND_URL=
-CORS_ORIGIN=http://31.14.139.9
+CORS_ORIGIN=http://YOUR_SERVER_IP
 
 # Senza nginx (sviluppo):
-# VITE_BACKEND_URL=http://31.14.139.9:3001
-# CORS_ORIGIN=http://31.14.139.9:8080
+# VITE_BACKEND_URL=http://YOUR_SERVER_IP:3001
+# CORS_ORIGIN=http://YOUR_SERVER_IP:8080
 ```
 
 ### 3. Avvia i container
@@ -109,12 +109,7 @@ docker compose --profile ollama-local -f docker-compose-full.yml up --build -d
 
 Il profilo `ollama-local` scarica automaticamente il modello `qwen2.5:1.5b` (~1 GB).
 
-**Con Mistral AI:**
 
-```bash
-# Nel .env: LLM_PROVIDER=mistral, MISTRAL_API_KEY=la-tua-key
-docker compose -f docker-compose-full.yml up --build -d
-```
 
 ### 4. Configura nginx (produzione)
 
@@ -147,7 +142,7 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 ```
 
-Il chatbot sarà disponibile su `http://<SERVER_IP>/chatbot`.
+Il chatbot sarà disponibile su `http://YOUR_SERVER_IP/chatbot`.
 
 ---
 
@@ -223,7 +218,7 @@ docker compose -f docker-compose-full.yml down --remove-orphans
 
 **Ricerca SPARQL lenta o assente** → `lod.dati.gov.it` può avere picchi di carico, riprova. L'endpoint blocca le richieste server-side (403) ma accetta quelle dal browser.
 
-**Ollama lento** → Normale su CPU senza GPU (5-15s). Usa Mistral AI per velocizzare.
+**Ollama lento** → Normale su CPU senza GPU (5-15s). Considera un modello più piccolo o hardware con GPU.
 
 **Orphan containers** → `docker compose -f docker-compose-full.yml up -d --remove-orphans`
 
