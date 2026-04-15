@@ -732,18 +732,36 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             <button className="help-close" onClick={() => setShowHelp(false)} aria-label="Chiudi guida">
               <Icon name="x-lg" size={14} />
             </button>
+
             <h4><Icon name="search" size={14} /> Cerca dataset</h4>
-            <p>Scrivi cosa vuoi trovare in linguaggio naturale:</p>
+            <p>Usa verbi di ricerca seguiti dall'argomento. Esempi corretti:</p>
             <ul>
               <li><em>«cerca dati sulla qualità dell'aria»</em></li>
               <li><em>«trovami dataset sui rifiuti a Milano»</em></li>
-              <li><em>«dati demografici Puglia»</em></li>
+              <li><em>«mostrami statistiche demografiche Puglia»</em></li>
+              <li><em>«dati defibrillatori Mesagne»</em></li>
             </ul>
+            <p className="help-warn"><Icon name="exclamation-triangle" size={12} /> Verranno scartate frasi troppo brevi, domande generiche o senza riferimento a dati aperti. Esempi <strong>non validi</strong>: <em>«cosa sono i dataset?»</em>, <em>«ciao»</em>, <em>«aiuto»</em>, <em>«i dati sono opendata?»</em></p>
+
             <h4><Icon name="check2-circle" size={14} /> Valida CSV</h4>
-            <p>Clicca <strong>Valida CSV</strong> nella sidebar e incolla l'URL del file o caricalo direttamente.</p>
-            <h4><Icon name="diagram-3" size={14} /> Converti in RDF</h4>
-            <p>Clicca <strong>Trasforma in RDF TTL/XML</strong>, inserisci l'URL del CSV o carica il file, poi inserisci il <strong>Codice IPA</strong> e il <strong>Nome della PA</strong> (obbligatori).</p>
-            <p className="help-tip"><Icon name="lightbulb" size={12} /> Il sistema risponde solo a richieste riguardanti open data PA italiana.</p>
+            <p>Clicca <strong>Valida CSV</strong> nella sidebar, poi scegli:</p>
+            <ul>
+              <li><strong>Da URL</strong> — incolla il link diretto al file CSV (anche Google Sheets)</li>
+              <li><strong>Carica file</strong> — carica un file .csv dal tuo computer (max 5 MB)</li>
+            </ul>
+            <p>Il validatore controlla struttura, contenuto, qualità open data e linked data secondo le linee guida AgID. Punteggio da 0 a 100.</p>
+
+            <h4><Icon name="diagram-3" size={14} /> Converti in RDF TTL/XML</h4>
+            <p>Clicca <strong>Trasforma in RDF TTL/XML</strong> nella sidebar, poi:</p>
+            <ul>
+              <li>Scegli il formato: <strong>RDF/Turtle (.ttl)</strong> o <strong>RDF/XML (.rdf)</strong></li>
+              <li>Inserisci il <strong>Codice IPA</strong> dell'ente (es. <em>c_b220</em>) — <strong>obbligatorio</strong></li>
+              <li>Inserisci il <strong>Nome della PA</strong> (es. <em>Comune di Bari</em>) — <strong>obbligatorio</strong></li>
+              <li>Fornisci l'URL del CSV o carica il file</li>
+            </ul>
+            <p>Le ontologie vengono rilevate automaticamente dal corpus di 468 dataset PA italiani reali.</p>
+
+            <p className="help-tip"><Icon name="lightbulb" size={12} /> Questo assistente risponde <strong>esclusivamente</strong> a richieste riguardanti open data della Pubblica Amministrazione italiana. Domande su altri argomenti verranno rifiutate.</p>
           </div>
         )}
       </main>
