@@ -537,7 +537,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
 
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-logo">
-
+          <img src="/chatbot/logo-agid.png" alt="AgID" className="sidebar-agid-logo" />
+          <div className="sidebar-agid-title">
+            <span className="sidebar-agid-name">Chatbot</span>
+            <span className="sidebar-agid-sub">Open Data · dati.gov.it</span>
+          </div>
         </div>
 
         <StatusBar health={health} onRefresh={fetchHealth} />
