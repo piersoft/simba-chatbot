@@ -31,6 +31,7 @@ export default function App() {
   const [ttlTab,      setTtlTab]      = useState("url");
   const [ttlIpa,      setTtlIpa]      = useState("");
   const [ttlPa,       setTtlPa]       = useState("");
+  const [ttlFmt,      setTtlFmt]      = useState("ttl");
   const [showCsvBox,  setShowCsvBox]  = useState(false);
 
   const bottomRef = useRef(null);
@@ -343,13 +344,20 @@ SELECT ?d ?rhName WHERE {
     finally { setLoading(false); setCsvFile(null); }
   }
 
+  function openTtlBox(url, fmt = "ttl") {
+    setTtlUrl(url);
+    setTtlTab("url");
+    setTtlFmt(fmt);
+    setShowTtlBox(true);
+  }
+
   async function enrichFromBox() {
     if (!ttlUrl.trim()) return;
     setShowTtlBox(false);
     const pa = ttlPa.trim() || "Ente Pubblico";
     const ipa = ttlIpa.trim() || "ente";
-    await doEnrich(ttlUrl.trim(), pa, ipa);
-    setTtlUrl(""); setTtlIpa(""); setTtlPa("");
+    await doEnrich(ttlUrl.trim(), pa, ipa, ttlFmt);
+    setTtlUrl(""); setTtlIpa(""); setTtlPa(""); setTtlFmt("ttl");
   }
 
   async function enrichFromUpload() {
@@ -431,7 +439,7 @@ SELECT ?d ?rhName WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} onEnrich={doEnrich} />
+            <ValidateReport report={m.content} url={m.url} onEnrich={openTtlBox} />
           </div>
         </div>
       );
@@ -585,7 +593,7 @@ SELECT ?d ?rhName WHERE {
               </div>
               {ttlTab === "url" ? (
                 <>
-                  <p>URL del file CSV da convertire:</p>
+                  <p>URL del file CSV da convertire {ttlFmt === "rdfxml" ? "(→ RDF/XML)" : "(→ RDF/Turtle)"}:</p>
                   <div className="csv-box-row">
                     <input type="url" className="csv-url-input"
                       placeholder="https://esempio.it/dataset.csv"
