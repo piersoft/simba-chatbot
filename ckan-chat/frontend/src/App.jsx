@@ -150,6 +150,21 @@ SELECT ?d ?rhName WHERE {
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
   async function doValidate(url) {
+    // Prima prova a scaricare il CSV dal browser (aggira blocchi server-side tipo 403)
+    try {
+      const csvRes = await fetch(url);
+      if (csvRes.ok) {
+        const csv_text = await csvRes.text();
+        const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csv_text, filename: url.split("/").pop() }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return (await r.json()).report ?? "";
+      }
+    } catch {}
+    // Fallback: passa l'URL al backend (funziona se il server non blocca)
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
