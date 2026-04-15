@@ -36,13 +36,15 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL ?resourceId WHERE {
   rows.forEach(r => {
     const accessURL   = val(r, "accessURL");
     const downloadURL = val(r, "downloadURL");
-    const key = accessURL || downloadURL;
+    // Priorità a downloadURL (file diretto) — accessURL è spesso pagina HTML
+    const fileUrl = downloadURL || accessURL;
+    const key = fileUrl;
     if (key && !distMap.has(key)) {
       distMap.set(key, {
         title:      val(r, "distTitle") || fmtLabel(val(r, "format")) || "Risorsa",
         format:     fmtLabel(val(r, "format")).toUpperCase(),
-        url:        accessURL || downloadURL,
-        downloadURL: downloadURL || accessURL,
+        url:        fileUrl,
+        downloadURL: fileUrl,
         resourceId: val(r, "resourceId"),
       });
     }
