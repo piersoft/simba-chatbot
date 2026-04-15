@@ -20,6 +20,10 @@ RUN echo 'server { \
     proxy_connect_timeout 30s; \
     proxy_send_timeout 300s; \
   } \
+  location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|map)$ { \
+    try_files $uri =404; \
+    add_header Cache-Control "public, max-age=31536000, immutable"; \
+  } \
   location / { \
     try_files $uri $uri/ /index.html; \
   } \
