@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import StatusBar from "./components/StatusBar";
 import DatasetCard from "./components/DatasetCard";
 import ValidateReport from "./components/ValidateReport";
+import Icon from "./components/Icon";
 import AdvancedSearch from "./components/AdvancedSearch";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
@@ -512,13 +513,13 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         <div className="sidebar-section">
           <div className="section-label">Strumenti disponibili</div>
           <button className="tool-card tool-search" onClick={() => { setSidebarOpen(false); setShowCsvBox(false); setShowTtlBox(false); inputRef.current?.focus(); }} disabled={loading}>
-            🔍 Cerca dataset
+            <Icon name="search" size={18} /> Cerca dataset
           </button>
           <button className="tool-card tool-validate" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }} disabled={loading}>
-            ✅ Valida CSV
+            <Icon name="check2-circle" size={18} /> Valida CSV
           </button>
           <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
-            🔄 Trasforma in RDF TTL/XML
+            <Icon name="diagram-3" size={18} /> Trasforma in RDF TTL/XML
           </button>
         </div>
 
@@ -554,7 +555,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                  Basato su dati.gov.it e ontologie PA italiane.</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>🔍 Cerca dataset</span>
-                <span className="chip" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }}>✅ Valida CSV</span>
+                <span className="chip" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }}>Valida CSV</span>
                 <span className="chip" onClick={() => sendMessage("Converti CSV in RDF")}>🔄 CSV → RDF</span>
               </div>
             </div>
@@ -575,8 +576,8 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         {showCsvBox && (
           <div className="csv-box">
             <div className="csv-box-tabs">
-              <button className={`csv-tab ${csvTab==="url" ? "active":""}`} onClick={() => setCsvTab("url")}>🔗 Da URL</button>
-              <button className={`csv-tab ${csvTab==="upload" ? "active":""}`} onClick={() => setCsvTab("upload")}>📁 Carica file</button>
+              <button className={`csv-tab ${csvTab==="url" ? "active":""}`} onClick={() => setCsvTab("url")}><Icon name="link-45deg" /> Da URL</button>
+              <button className={`csv-tab ${csvTab==="upload" ? "active":""}`} onClick={() => setCsvTab("upload")}><Icon name="upload" /> Carica file</button>
             </div>
             {csvTab === "url" ? (
               <>
@@ -613,8 +614,8 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           <div className="csv-box ttl-box">
             {!ttlCsvText && (
               <div className="csv-box-tabs">
-                <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}>🔗 Da URL</button>
-                <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}>📁 Carica file</button>
+                <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}><Icon name="link-45deg" /> Da URL</button>
+                <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}><Icon name="upload" /> Carica file</button>
               </div>
             )}
             <div className="ttl-meta-row">
@@ -689,7 +690,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             disabled={loading}
           />
           <button className="send-btn" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
-            {loading ? "⏳" : "➤"}
+            {loading ? <Icon name="hourglass-split" /> : <Icon name="send-fill" />}
           </button>
         </div>
       </main>

@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { useState } from "react";
 
 export default function ValidateReport({ report, url, csvText, onEnrich, onEnrichText }) {
@@ -92,12 +93,12 @@ export default function ValidateReport({ report, url, csvText, onEnrich, onEnric
           <button className="btn-small btn-ttl" onClick={() =>
             onEnrich(url, "ttl")
           }>
-            🔄 RDF/Turtle
+            <Icon name="file-earmark-code" size={13} /> RDF/Turtle
           </button>
           <button className="btn-small btn-ttl" onClick={() =>
             onEnrich(url, "rdfxml")
           }>
-            🔄 RDF/XML
+            <Icon name="file-earmark-text" size={13} /> RDF/XML
           </button>
         </div>
       )}

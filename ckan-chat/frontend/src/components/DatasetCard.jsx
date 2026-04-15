@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { useState } from "react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
@@ -103,15 +104,15 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
       </div>
 
       <div className="dataset-card-meta">
-        {dataset.publisher && <span className="dataset-tag">🏛 {dataset.publisher}</span>}
-        {dataset.modified  && <span className="dataset-tag">📅 {dataset.modified}</span>}
+        {dataset.publisher && <span className="dataset-tag">{dataset.publisher}</span>}
+        {dataset.modified  && <span className="dataset-tag">{dataset.modified}</span>}
       </div>
 
       {desc && <p className="dataset-card-desc">{desc}</p>}
 
       {expanded && (
         <div className="dataset-card-resources">
-          {loading && <span className="loading-small">⏳ Carico distribuzioni...</span>}
+          {loading && <span className="loading-small">Carico distribuzioni...</span>}
 
           {!loading && distributions !== null && distributions.length === 0 && (
             <span className="no-csv">Nessuna distribuzione trovata</span>
@@ -120,19 +121,19 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
           {csvDists.map((d, i) => (
             <div key={i} className="csv-resource">
               <span className="csv-name">
-                📄 {d.title}
+                {d.title}
                 {d.format && <span className="fmt-badge">{d.format}</span>}
               </span>
               <div className="csv-actions">
                 <a href={d.downloadURL} target="_blank" rel="noopener noreferrer" className="btn-small btn-download">
-                  ⬇ Scarica
+                  <Icon name="download" size={13} /> Scarica
                 </a>
                 <button className="btn-small btn-validate" onClick={() => onValidate(d.downloadURL, dataset.title)}>
-                  ✅ Valida
+                  <Icon name="check2-circle" size={13} /> Valida
                 </button>
                 {onEnrich && (
                   <button className="btn-small btn-ttl" onClick={() => onEnrich(d.downloadURL, dataset.title)}>
-                    🔄 TTL
+                    <Icon name="diagram-3" size={13} /> RDF
                   </button>
                 )}
               </div>
@@ -147,12 +148,12 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
               {showOther && otherDists.map((d, i) => (
                 <div key={i} className="csv-resource">
                   <span className="csv-name">
-                    📎 {d.title}
+                    {d.title}
                     {d.format && <span className="fmt-badge">{d.format}</span>}
                   </span>
                   <div className="csv-actions">
                     <a href={d.url} target="_blank" rel="noopener noreferrer" className="btn-small btn-download">
-                      ↗ Apri
+                      <Icon name="box-arrow-up-right" size={13} /> Apri
                     </a>
                   </div>
                 </div>
@@ -164,7 +165,7 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
 
       <div className="dataset-card-footer">
         <a href={dataset.viewUrl} target="_blank" rel="noopener noreferrer" className="btn-small btn-view">
-          🔗 Apri dataset
+          <Icon name="box-arrow-up-right" size={13} /> Apri dataset
         </a>
       </div>
     </div>
