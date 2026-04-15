@@ -366,6 +366,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   }
 
   function openTtlBox(url, fmt = "ttl") {
+    setShowCsvBox(false);  // chiude box CSV se aperto
     setTtlUrl(url || "");
     setTtlTab(url ? "url" : "upload");
     setTtlFmt(fmt);
