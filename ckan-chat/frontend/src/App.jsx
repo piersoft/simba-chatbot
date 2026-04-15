@@ -503,8 +503,15 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-logo">
-          <div className="sidebar-brand">
+          <div className="sidebar-slim-bar">
             <span className="sidebar-agid">Agenzia per l'Italia Digitale</span>
+          </div>
+          <div className="sidebar-header-bar">
+            <img src="/chatbot/logo-dati-icon.png" alt="dati.gov.it" className="sidebar-header-icon" />
+            <div className="sidebar-header-text">
+              <span className="sidebar-header-name">dati.gov.it</span>
+              <span className="sidebar-header-sub">i dati aperti della pubblica amministrazione</span>
+            </div>
           </div>
         </div>
 
