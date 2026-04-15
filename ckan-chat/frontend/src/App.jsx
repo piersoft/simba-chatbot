@@ -56,15 +56,53 @@ export default function App() {
     } catch { return "SEARCH"; }
   }
 
-  // ── Ricerca SPARQL ────────────────────────────────────────────────────────
+  // ── Ricerca SPARQL — chiamata diretta dal browser (come l'assistente CKAN) ──
   async function doSearch(query, offset = 0) {
-    const r = await fetch(`${BACKEND_URL}/api/search`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, offset }),
+    const SPARQL = "https://lod.dati.gov.it/sparql";
+    const STOPWORDS = new Set(["il","lo","la","i","gli","le","un","una","uno",
+      "di","a","da","in","con","su","per","tra","fra","e","o","ma","non","che",
+      "del","dei","delle","della","degli","al","ai","alle","alla","nel","nei",
+      "sul","sui","sulla","sulle"]);
+    const words = query.split(/\s+/)
+      .filter(w => w.length >= 3 && !STOPWORDS.has(w.toLowerCase()));
+    const useWords = words.length > 0 ? words : [query.trim()];
+    const filter = useWords.map(w => {
+      const wl = w.toLowerCase().replace(/"/g,"");
+      return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}"))`;
+    }).join(" && ");
+
+    const sparql = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:title ?title .
+  FILTER(LANG(?title)='it'||LANG(?title)='')
+  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?publisher }
+  FILTER(${filter})
+} ORDER BY DESC(?modified) LIMIT 8 OFFSET ${offset}`;
+
+    const url = `${SPARQL}?query=${encodeURIComponent(sparql)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+    if (!r.ok) throw new Error(`SPARQL error ${r.status}`);
+    const data = await r.json();
+    const bindings = data.results?.bindings ?? [];
+    const datasets = bindings.map(b => {
+      const uri = b.d?.value ?? "";
+      const id  = uri.split("/").pop();
+      return {
+        uri, id,
+        title:       b.title?.value ?? "",
+        description: b.description?.value ?? "",
+        modified:    b.modified?.value?.slice(0,10) ?? "",
+        publisher:   b.publisher?.value ?? "",
+        viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
+        csvResources: [],
+      };
     });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
+    return { datasets, query, offset };
   }
 
   // ── Validazione CSV ───────────────────────────────────────────────────────

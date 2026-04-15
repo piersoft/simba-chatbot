@@ -528,62 +528,14 @@ app.post("/api/intent", async (req, res) => {
 });
 
 
-// ─── SPARQL search endpoint ───────────────────────────────────────────────────
-// Chiama direttamente lod.dati.gov.it/sparql — zero LLM coinvolto.
-// Restituisce dataset con titolo, descrizione, publisher, data, risorse CSV.
+// ─── Search: non più gestita dal backend ─────────────────────────────────────
+// La ricerca SPARQL viene eseguita direttamente dal frontend nel browser.
+// lod.dati.gov.it blocca le chiamate server-side (403).
 
-const SPARQL_ENDPOINT = "https://lod.dati.gov.it/sparql";
-const CKAN_API = "https://www.dati.gov.it/opendata/api/3/action";
-
-const SPARQL_PREFIXES = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>`;
-
-const STOPWORDS = new Set(['il','lo','la','i','gli','le','un','una','uno','di','a','da',
-  'in','con','su','per','tra','fra','e','o','ma','non','che','è','si','del','dei',
-  'delle','della','degli','al','ai','alle','alla','agli','nel','nei','nelle','nella',
-  'negli','sul','sui','sulle','sulla','sugli']);
-
-function buildSparqlQuery(keywords, limit = 8, offset = 0) {
-  const words = keywords.split(/\s+/).filter(w => w.length >= 3 && !STOPWORDS.has(w.toLowerCase()));
-  const useWords = words.length > 0 ? words : [keywords.trim()];
-
-  const filter = useWords.map(w => {
-    const wl = w.toLowerCase().replace(/"/g, "");
-    return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}"))`;
-  }).join(" && ");
-
-  return `${SPARQL_PREFIXES}
-SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
-  ?d a dcat:Dataset .
-  ?d dct:title ?title .
-  FILTER(LANG(?title)='it'||LANG(?title)='')
-  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
-  OPTIONAL { ?d dct:modified ?modified }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?publisher }
-  FILTER(${filter})
-} ORDER BY DESC(?modified) LIMIT ${limit} OFFSET ${offset}`;
-}
-
-async function sparqlQuery(query) {
-  const url = `${SPARQL_ENDPOINT}?query=${encodeURIComponent(query)}&format=application%2Fsparql-results%2Bjson`;
-  const res = await fetch(url, {
-    headers: {
-      "Accept": "application/sparql-results+json",
-      "User-Agent": "Mozilla/5.0 (compatible; ckan-opendata-assistant/1.0; +https://dati.gov.it)",
-    },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) throw new Error(`SPARQL error ${res.status}`);
-  return await res.json();
-}
-
-// Recupera le risorse CSV di un dataset da CKAN API
 async function fetchCsvResources(datasetId) {
   try {
-    const id = datasetId.split("/").pop();
-    const res = await fetch(`${CKAN_API}/package_show?id=${id}`, {
+    const CKAN_API = "https://www.dati.gov.it/opendata/api/3/action";
+    const res = await fetch(`${CKAN_API}/package_show?id=${datasetId}`, {
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return [];
@@ -592,46 +544,9 @@ async function fetchCsvResources(datasetId) {
     return resources
       .filter(r => (r.format || "").toUpperCase() === "CSV" || (r.url || "").endsWith(".csv"))
       .map(r => ({ name: r.name || "CSV", url: r.url, id: r.id }));
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
-app.post("/api/search", async (req, res) => {
-  const { query, offset = 0, withResources = false } = req.body;
-  if (!query) return res.status(400).json({ error: "query required" });
-
-  console.log(`[search] SPARQL query="${query}" offset=${offset}`);
-  try {
-    const sparql = buildSparqlQuery(query, 8, offset);
-    const data = await sparqlQuery(sparql);
-    const bindings = data.results?.bindings ?? [];
-
-    const datasets = await Promise.all(bindings.map(async b => {
-      const uri = b.d?.value ?? "";
-      const id  = uri.split("/").pop();
-      const csvResources = withResources ? await fetchCsvResources(id) : [];
-      return {
-        uri,
-        id,
-        title:       b.title?.value ?? "",
-        description: b.description?.value ?? "",
-        modified:    b.modified?.value?.slice(0, 10) ?? "",
-        publisher:   b.publisher?.value ?? "",
-        viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
-        csvResources,
-      };
-    }));
-
-    console.log(`[search] trovati ${datasets.length} dataset`);
-    res.json({ datasets, query, offset });
-  } catch (e) {
-    console.error("[search] errore:", e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Recupera risorse CSV di un singolo dataset (chiamata lazy dal frontend)
 app.get("/api/resources/:datasetId", async (req, res) => {
   try {
     const csvResources = await fetchCsvResources(req.params.datasetId);
@@ -640,17 +555,6 @@ app.get("/api/resources/:datasetId", async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-
-// ─── Risposta di rifiuto fuori tema ──────────────────────────────────────────
-
-const OFF_TOPIC_REPLY = `Mi dispiace, posso aiutarti solo con domande relative a **open data**, **dataset** e **portali CKAN**.
-
-Prova a chiedermi, ad esempio:
-- 🔍 "Cerca dataset sulla qualità dell'aria"
-- 📊 "Quanti dataset ci sono su mobilità a Roma?"
-- ✅ "Valida questo CSV: <url>"
-- 🌐 "Mostrami i dati aperti del comune di Milano"`;
-
 
 // ─── Validate endpoint diretto ───────────────────────────────────────────────
 // Chiama validatore-mcp direttamente senza passare per Ollama.
