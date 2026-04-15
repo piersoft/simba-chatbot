@@ -493,39 +493,37 @@ Esempi:
 
 Rispondi SOLO con una di queste parole: SEARCH VALIDATE ENRICH OFF_TOPIC`;
 
-// Pre-filtro deterministico — intercetta i casi ovvi prima di chiamare Ollama/Mistral
-// Ollama viene chiamato solo se il pre-filtro non è sicuro (linguaggio ambiguo)
+// Pre-filtro deterministico — logica whitelist
+// Se il messaggio NON contiene nessuna keyword open data → OFF_TOPIC diretto
+// Ollama interviene SOLO quando ci sono keyword open data ma l'intent è ambiguo
 function preFilterIntent(text) {
   const t = text.toLowerCase().trim();
 
-  // Parole che indicano VALIDATE con certezza
-  const validateKw = ["valid","controlla","verifica qualità","qualità csv","errori csv",
-    "controllo csv","check csv","analizza csv","esamina csv"];
+  // Keyword VALIDATE — priorità massima
+  const validateKw = ["valida","valid","controlla il csv","verifica il csv","qualità csv",
+    "errori csv","controllo csv","check csv","analizza csv"];
   if (validateKw.some(k => t.includes(k))) return "VALIDATE";
 
-  // Parole che indicano ENRICH con certezza
-  const enrichKw = ["ttl","turtle","rdf","linked data","ontolog","converti","trasforma",
-    "arricch","semantic"];
+  // Keyword ENRICH — priorità alta
+  const enrichKw = ["ttl","turtle","rdf","linked data","ontolog","converti in","trasforma in",
+    "arricch","semantic","genera ttl","genera rdf"];
   if (enrichKw.some(k => t.includes(k))) return "ENRICH";
 
-  // Parole che indicano OFF_TOPIC con certezza (nessun riferimento a dati/dataset)
-  const offTopicKw = ["ricetta","torta","cucina","meteo","sport","calcio","partita",
-    "film","canzone","musica","salut","come stai","ciao","grazie","prego","aiuto",
-    "chi sei","cosa sei","cosa fai","come funzion","come sei","perché","raccontami",
-    "presentati","sei un","sei la","sei il","dimmi chi","dimmi cosa"];
-  if (offTopicKw.some(k => t.includes(k))) return "OFF_TOPIC";
-
-  // Domande brevi generiche senza parole chiave open data → OFF_TOPIC
-  const dataKw = ["dataset","csv","dati","file","open","rdf","ttl","catalogo","portale","sparql","valida","converti"];
-  const hasDataRef = dataKw.some(k => t.includes(k));
-  if (!hasDataRef && t.length < 30 && (t.startsWith("ma ") || t.startsWith("e ") || t.endsWith("?"))) return "OFF_TOPIC";
-
-  // Parole che indicano SEARCH con certezza
-  const searchKw = ["cerca","trova","dataset","dati","open data","opendata","statistic",
-    "informazion","pubbl","catalogo","sparql","portale"];
+  // Keyword SEARCH esplicite — priorità alta
+  const searchKw = ["cerca","trovami","mostrami","elenca","dammi","quali dataset",
+    "dataset su","dati su","open data","opendata","catalogo","portale dati","sparql"];
   if (searchKw.some(k => t.includes(k))) return "SEARCH";
 
-  return null; // ambiguo — passa ad Ollama/Mistral
+  // Se non c'è NESSUNA keyword open data → OFF_TOPIC
+  // Ollama non viene chiamato per testi che non parlano di open data
+  const openDataKw = ["dataset","csv","dati","file","rdf","ttl","catalogo","portale",
+    "sparql","pubblica amministrazione","pa ","open","linked","ontologi","distribuz",
+    "risorsa","formato","licenza","metadat"];
+  const hasOpenData = openDataKw.some(k => t.includes(k));
+  if (!hasOpenData) return "OFF_TOPIC";
+
+  // Ha keyword open data ma intent ambiguo → Ollama decide
+  return null;
 }
 
 async function classifyIntent(userMessage) {
