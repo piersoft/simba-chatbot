@@ -512,10 +512,28 @@ function preFilterIntent(text) {
     "arricch","semantic","genera ttl","genera rdf"];
   if (enrichKw.some(k => t.includes(k))) return "ENRICH";
 
-  // Keyword SEARCH esplicite — priorità alta
-  const searchKw = ["cerca","trovami","mostrami","elenca","dammi","quali dataset",
-    "dataset su","dati su","open data","opendata","catalogo","portale dati","sparql"];
-  if (searchKw.some(k => t.includes(k))) return "SEARCH";
+  // Keyword SEARCH esplicite — ma solo se c'è anche un riferimento a dati/PA reali
+  // "cerca dataset su X" è SEARCH solo se X è un argomento open data PA
+  const searchTriggers = ["cerca","trovami","mostrami","elenca","dammi",
+    "open data","opendata","catalogo","portale dati","sparql"];
+  const hasSearchTrigger = searchTriggers.some(k => t.includes(k));
+
+  if (hasSearchTrigger) {
+    // Verifica che ci sia anche una keyword tematica open data
+    // altrimenti "cerca la torta della nonna" → Ollama decide
+    const topicKw = [
+      "dataset","dati","csv","statistic","pubblica","amministrazione","comune",
+      "regione","provincia","istat","catasto","anagrafe","servizi","rifiuti",
+      "ambiente","energia","salute","scuole","trasporto","bilancio","appalti",
+      "residenti","popolazione","demografic","culturali","musei","turismo",
+      "qualità","aria","acqua","suolo","incidenti","strade","parcheggi",
+      "defibrillatori","sensori","iot","monitoraggio","immobili","urbanistica",
+      "permessi","contratti","personale","disabili","sociale","welfare","tributi"
+    ];
+    if (topicKw.some(k => t.includes(k))) return "SEARCH";
+    // Ha trigger di ricerca ma nessun argomento open data → Ollama decide
+    return null;
+  }
 
   // Se non c'è NESSUNA keyword open data → OFF_TOPIC
   // Basato sul corpus fixtures_v9.json (468 dataset PA italiani reali)
