@@ -430,8 +430,11 @@ async function chatWithTools(messages, model) {
 
       let result;
       try {
+        console.log(`[callTool] chiamo ${fnName} su ${toolsRouteMap[fnName] || MCP_URLS[0]}`);
         result = await callTool(fnName, fnArgs);
+        console.log(`[callTool] risposta ${fnName}: ${String(result).slice(0, 120)}`);
       } catch (e) {
+        console.error(`[callTool] ERRORE ${fnName}: ${e.message}`);
         result = `Errore: ${e.message}`;
       }
 
