@@ -60,50 +60,90 @@ export default function App() {
 
   // ── Ricerca SPARQL — chiamata diretta dal browser (come l'assistente CKAN) ──
   async function doSearch(query, offset = 0) {
-    const SPARQL = "https://lod.dati.gov.it/sparql";
+    const SPARQL_EP = "https://lod.dati.gov.it/sparql";
+    const FETCH_SIZE = 32; // come l'assistente: fetch più righe per deduplicare
+    const PAGE_SIZE  = 8;
     const STOPWORDS = new Set(["il","lo","la","i","gli","le","un","una","uno",
       "di","a","da","in","con","su","per","tra","fra","e","o","ma","non","che",
       "del","dei","delle","della","degli","al","ai","alle","alla","nel","nei",
       "sul","sui","sulla","sulle"]);
-    const words = query.split(/\s+/)
-      .filter(w => w.length >= 3 && !STOPWORDS.has(w.toLowerCase()));
-    const useWords = words.length > 0 ? words : [query.trim()];
-    const filter = useWords.map(w => {
-      const wl = w.toLowerCase().replace(/"/g,"");
-      return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}"))`;
-    }).join(" && ");
 
-    const sparql = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    const allWords = query.split(/\s+/).filter(w => w.length >= 2);
+    const sigWords = allWords.filter(w => !STOPWORDS.has(w.toLowerCase()));
+    const useWords = sigWords.length > 0 ? sigWords : allWords;
+
+    // kwFilter: AND con ricerca in titolo, descrizione E keyword (come l'assistente)
+    function kwFilter(words, useOr = false) {
+      const parts = words.map((w, i) => {
+        const wl = w.toLowerCase().replace(/"/g, "");
+        return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+      });
+      return parts.join(useOr ? " || " : " && ");
+    }
+
+    async function runQuery(words, useOr, off) {
+      const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?publisher }
-  FILTER(${filter})
-} ORDER BY DESC(?modified) LIMIT 8 OFFSET ${offset}`;
+  FILTER(${kwFilter(words, useOr)})
+} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
+      const url = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+      const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+      if (!r.ok) throw new Error(`SPARQL error ${r.status}`);
+      return (await r.json()).results?.bindings ?? [];
+    }
 
-    const url = `${SPARQL}?query=${encodeURIComponent(sparql)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-    const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
-    if (!r.ok) throw new Error(`SPARQL error ${r.status}`);
-    const data = await r.json();
-    const bindings = data.results?.bindings ?? [];
-    const datasets = bindings.map(b => {
+    // Prima prova AND, se non trova nulla riprova con OR (come l'assistente)
+    let bindings = await runQuery(useWords, false, offset);
+    if (bindings.length === 0 && useWords.length > 1) {
+      bindings = await runQuery(useWords, true, offset);
+    }
+
+    // Poi recupera publisher in parallelo (query separata per non sporcare DISTINCT)
+    const uris = [...new Set(bindings.map(b => b.d?.value).filter(Boolean))];
+    const pubMap = new Map();
+    if (uris.length > 0) {
+      try {
+        const pubQ = `PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?d ?rhName WHERE {
+  VALUES ?d { ${uris.map(u => `<${u}>`).join(" ")} }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+}`;
+        const pubUrl = `${SPARQL_EP}?query=${encodeURIComponent(pubQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const pr = await fetch(pubUrl, { headers: { Accept: "application/sparql-results+json" } });
+        if (pr.ok) {
+          const pd = await pr.json();
+          (pd.results?.bindings ?? []).forEach(b => {
+            if (b.rhName?.value) pubMap.set(b.d?.value, b.rhName.value);
+          });
+        }
+      } catch {}
+    }
+
+    // Deduplicazione e costruzione risultati
+    const seen = new Map();
+    for (const b of bindings) {
       const uri = b.d?.value ?? "";
-      const id  = uri.split("/").pop();
-      return {
+      if (!uri || seen.has(uri)) continue;
+      const id = uri.split("/").pop();
+      seen.set(uri, {
         uri, id,
         title:       b.title?.value ?? "",
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
-        publisher:   b.publisher?.value ?? "",
+        publisher:   pubMap.get(uri) ?? "",
         viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
         csvResources: [],
-      };
-    });
+      });
+    }
+    const datasets = [...seen.values()].slice(0, PAGE_SIZE);
     return { datasets, query, offset };
   }
 
