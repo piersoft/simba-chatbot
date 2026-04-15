@@ -311,17 +311,29 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
         <StatusBar health={health} onRefresh={fetchHealth} />
 
-        <div className="sidebar-section suggestions-section">
-          <div className="section-label">Suggerimenti</div>
-          {SUGGESTIONS.map((s, i) => (
-            <button key={i} className="suggestion-btn"
-              onClick={() => s.action === "validate_prompt"
-                ? (addMsg("user","Valida un CSV"), setShowCsvBox(true))
-                : sendMessage(s.text)}
-              disabled={loading}>
-              {s.icon} {s.text}
-            </button>
-          ))}
+        {/* Strumenti disponibili */}
+        <div className="sidebar-section">
+          <div className="section-label">Strumenti disponibili</div>
+          <button className="suggestion-btn" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")} disabled={loading}>
+            🔍 Cerca dataset
+          </button>
+          <button className="suggestion-btn" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); }} disabled={loading}>
+            ✅ Valida CSV
+          </button>
+          <button className="suggestion-btn" onClick={() => sendMessage("Converti CSV in RDF TTL")} disabled={loading}>
+            🔄 Trasforma in TTL
+          </button>
+        </div>
+
+        {/* Strumenti consigliati */}
+        <div className="sidebar-section">
+          <div className="section-label">Strumenti consigliati</div>
+          <a className="sidebar-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
+            🔌 CKAN MCP Server
+          </a>
+          <a className="sidebar-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
+            🔌 ISTAT MCP Server
+          </a>
         </div>
 
         <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); }}>
