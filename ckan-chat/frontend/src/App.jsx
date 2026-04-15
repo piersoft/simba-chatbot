@@ -221,7 +221,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
       else if (intent === "ENRICH") setPageTitle("🔄 Conversione RDF — Open Data Italia");
 
       if (intent === "OFF_TOPIC") {
-        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- 🔍 Ricerca dataset open data italiani\n- ✅ Validazione file CSV per la PA\n- 🔄 Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca dataset sulla qualità dell'aria"*`);
+        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- 🔍 Ricerca dataset open data italiani\n- ✅ Validazione file CSV per la PA\n- 🔄 Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
         return;
       }
 
