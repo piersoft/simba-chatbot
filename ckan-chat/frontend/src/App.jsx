@@ -19,7 +19,7 @@ const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jail
 
 export default function App() {
   const [messages,    setMessages]    = useState([]);
-  const [pageTitle,   setPageTitle]   = useState("🏛️ Esplora i Dati Aperti Italiani");
+  const [pageTitle,   setPageTitle]   = useState("Esplora i Dati Aperti Italiani");
   const [input,       setInput]       = useState("");
   const [loading,     setLoading]     = useState(false);
   const [health,      setHealth]      = useState(null);
@@ -503,8 +503,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-logo">
-          <div className="logo-icon">🇮🇹</div>
-          <span className="logo-text">Open Data<br />Assistant</span>
+          <div className="sidebar-brand">
+            <img src="/chatbot/logo-dati.svg" alt="dati.gov.it" className="sidebar-logo" />
+            <span className="sidebar-agid">Agenzia per l'Italia Digitale</span>
+          </div>
         </div>
 
         <StatusBar health={health} onRefresh={fetchHealth} />
@@ -540,7 +542,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           </a>
         </div>
 
-        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); setShowTtlBox(false); setPageTitle("🏛️ Esplora i Dati Aperti Italiani"); }}>
+        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); setShowTtlBox(false); setPageTitle("Esplora i Dati Aperti Italiani"); }}>
           Nuova conversazione
         </button>
       </aside>
@@ -549,8 +551,8 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome">
-              <div className="welcome-icon">🏛️</div>
-              <h2>Assistente Open Data</h2>
+              <img src="/chatbot/logo-dati.svg" alt="dati.gov.it" className="welcome-logo" />
+              <h2>Assistente Open Data Italiani</h2>
               <p>Cerca dataset, valida CSV o converti in Linked Data.<br />
                  Basato su dati.gov.it e ontologie PA italiane.</p>
               <div className="welcome-chips">

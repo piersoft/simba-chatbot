@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" fill="none">
+  <!-- Scudo tricolore stile PA italiana -->
+  <rect x="2" y="4" width="12" height="40" rx="2" fill="#009246"/>
+  <rect x="14" y="4" width="12" height="40" fill="#fff"/>
+  <rect x="26" y="4" width="12" height="40" rx="2" fill="#ce2b37"/>
+  <!-- Testo dati.gov.it -->
+  <text x="46" y="22" font-family="Titillium Web, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0066CC">dati.gov.it</text>
+  <text x="46" y="38" font-family="Titillium Web, Helvetica, Arial, sans-serif" font-size="11" fill="#5C6F82">Open Data Italiani</text>
+</svg>
