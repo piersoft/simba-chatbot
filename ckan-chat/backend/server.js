@@ -511,8 +511,14 @@ function preFilterIntent(text) {
   // Parole che indicano OFF_TOPIC con certezza (nessun riferimento a dati/dataset)
   const offTopicKw = ["ricetta","torta","cucina","meteo","sport","calcio","partita",
     "film","canzone","musica","salut","come stai","ciao","grazie","prego","aiuto",
-    "chi sei","cosa sei","cosa fai"];
+    "chi sei","cosa sei","cosa fai","come funzion","come sei","perché","raccontami",
+    "presentati","sei un","sei la","sei il","dimmi chi","dimmi cosa"];
   if (offTopicKw.some(k => t.includes(k))) return "OFF_TOPIC";
+
+  // Domande brevi generiche senza parole chiave open data → OFF_TOPIC
+  const dataKw = ["dataset","csv","dati","file","open","rdf","ttl","catalogo","portale","sparql","valida","converti"];
+  const hasDataRef = dataKw.some(k => t.includes(k));
+  if (!hasDataRef && t.length < 30 && (t.startsWith("ma ") || t.startsWith("e ") || t.endsWith("?"))) return "OFF_TOPIC";
 
   // Parole che indicano SEARCH con certezza
   const searchKw = ["cerca","trova","dataset","dati","open data","opendata","statistic",
