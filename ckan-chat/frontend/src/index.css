@@ -75,8 +75,8 @@ body {
   align-items: center;
   gap: 12px;
   padding: 18px 16px;
-  background: #004D99;
-  border-bottom: 3px solid rgba(255,255,255,0.2);
+  background: #ffffff;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .logo-icon {
@@ -1145,12 +1145,13 @@ body {
 .help-warn .bi { flex-shrink: 0; margin-top: 2px; }
 
 .help-sidebar-btn {
-  width: 100%; padding: 8px 14px; border-radius: 6px; cursor: pointer;
-  background: none; border: 1px solid rgba(255,255,255,0.35); color: rgba(255,255,255,0.85);
-  font-size: 13px; font-weight: 500; text-align: left; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 8px; transition: all 0.15s;
+  margin: 8px 16px 0; padding: 10px 14px; border-radius: 6px; cursor: pointer;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
+  color: #fff; font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; width: calc(100% - 32px);
+  display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s;
 }
-.help-sidebar-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.help-sidebar-btn:hover { background: rgba(255,255,255,0.2); }
 
 /* Popup guida — si apre sopra l'area input nella chat */
 .help-popup {
@@ -1176,16 +1177,16 @@ body {
 /* ── Header sidebar AgID ────────────────────────────────────────────────── */
 .sidebar-agid-logo {
   height: 28px; width: auto; object-fit: contain; flex-shrink: 0;
-  mix-blend-mode: lighten;
+  /* sfondo bianco, nessun filtro necessario */
 }
 .sidebar-agid-title {
   display: flex; flex-direction: column; gap: 1px;
 }
 .sidebar-agid-name {
   font-family: 'Titillium Web', Arial, sans-serif;
-  font-size: 15px; font-weight: 700; color: #fff; line-height: 1.1;
+  font-size: 15px; font-weight: 700; color: #004D99; line-height: 1.1;
 }
 .sidebar-agid-sub {
   font-family: 'Titillium Web', Arial, sans-serif;
-  font-size: 10px; font-weight: 300; color: rgba(255,255,255,0.75); line-height: 1.2;
+  font-size: 10px; font-weight: 300; color: #5c6f82; line-height: 1.2;
 }
