@@ -782,19 +782,21 @@ app.post("/api/chat", async (req, res) => {
 });
 
 app.get("/api/health", async (req, res) => {
-  const status = { backend: "ok", ollama: "n/a", mcp: "unknown", mcp_servers: MCP_URLS };
+  const status = { backend: "ok", ollama: "n/a", validatore: "unknown", rdf: "unknown" };
   if (LLM_PROVIDER === "ollama") {
     try {
-      await fetch(`${OLLAMA_URL}/api/tags`);
+      await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
       status.ollama = "ok";
-    } catch {
-      status.ollama = "error";
-    }
+    } catch { status.ollama = "error"; }
   }
   try {
-    await mcpCall("tools/list");
-    status.mcp = "ok";
-  } catch {}
+    const r = await fetch("http://validatore-mcp:3002/health", { signal: AbortSignal.timeout(3000) });
+    status.validatore = r.ok ? "ok" : "error";
+  } catch { status.validatore = "error"; }
+  try {
+    const r = await fetch("http://rdf-mcp:3003/health", { signal: AbortSignal.timeout(3000) });
+    status.rdf = r.ok ? "ok" : "error";
+  } catch { status.rdf = "error"; }
   res.json(status);
 });
 

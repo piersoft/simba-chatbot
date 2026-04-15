@@ -12,7 +12,10 @@ export default function StatusBar({ health, onRefresh }) {
         {dot(health?.ollama)} <span>Ollama</span>
       </div>
       <div className="status-row">
-        {dot(health?.mcp)} <span>CKAN MCP</span>
+        {dot(health?.validatore)} <span>Validatore</span>
+      </div>
+      <div className="status-row">
+        {dot(health?.rdf)} <span>RDF</span>
       </div>
       <button className="refresh-btn" onClick={onRefresh} title="Aggiorna stato">
         ↻
