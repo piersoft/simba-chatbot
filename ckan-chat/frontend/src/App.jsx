@@ -191,6 +191,15 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   }
 
   // ── Handler principale ────────────────────────────────────────────────────
+  function resetChat() {
+    setMessages([]);
+    setShowCsvBox(false);
+    setShowTtlBox(false);
+    setTtlCsvText(null);
+    setCsvFile(null);
+    setTtlFile(null);
+  }
+
   async function sendMessage(text) {
     if (!text.trim() || loading) return;
     if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) { alert("Input non valido."); return; }
@@ -513,10 +522,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
         {/* Strumenti disponibili — card colorate */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti disponibili</div>
-          <button className="tool-card tool-search" onClick={() => { setSidebarOpen(false); setShowCsvBox(false); setShowTtlBox(false); inputRef.current?.focus(); }} disabled={loading}>
+          <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
             <Icon name="search" size={18} /> Cerca dataset
           </button>
-          <button className="tool-card tool-validate" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }} disabled={loading}>
+          <button className="tool-card tool-validate" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
             <Icon name="check2-circle" size={18} /> Valida CSV
           </button>
           <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
@@ -541,7 +550,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           </a>
         </div>
 
-        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); setShowTtlBox(false); setPageTitle("Esplora i Dati Aperti Italiani"); }}>
+        <button className="clear-btn" onClick={() => { resetChat(); }}>
           Nuova conversazione
         </button>
       </aside>
@@ -555,7 +564,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                  Basato su dati.gov.it e ontologie PA italiane.</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>🔍 Cerca dataset</span>
-                <span className="chip" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }}>Valida CSV</span>
+                <span className="chip" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }}>Valida CSV</span>
                 <span className="chip" onClick={() => sendMessage("Converti CSV in RDF")}>🔄 CSV → RDF</span>
               </div>
             </div>
