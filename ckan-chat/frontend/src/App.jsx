@@ -18,6 +18,7 @@ const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jail
 
 export default function App() {
   const [messages,    setMessages]    = useState([]);
+  const [pageTitle,   setPageTitle]   = useState("🏛️ Esplora i Dati Aperti Italiani");
   const [input,       setInput]       = useState("");
   const [loading,     setLoading]     = useState(false);
   const [health,      setHealth]      = useState(null);
@@ -200,6 +201,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
     try {
       const intent = await classifyIntent(text);
 
+      if (intent === "SEARCH") setPageTitle("🔍 Ricerca Dataset — Open Data Italia");
+      else if (intent === "VALIDATE") setPageTitle("✅ Validazione CSV — Open Data Italia");
+      else if (intent === "ENRICH") setPageTitle("🔄 Conversione RDF — Open Data Italia");
+
       if (intent === "OFF_TOPIC") {
         addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- 🔍 Ricerca dataset open data italiani\n- ✅ Validazione file CSV per la PA\n- 🔄 Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca dataset sulla qualità dell'aria"*`);
         return;
@@ -271,7 +276,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       }
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 15).join("\n");
+      const preview = lines.slice(0, 30).join("\n");
       const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
       const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: mimeType });
@@ -346,7 +351,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 15).join("\n");
+      const preview = lines.slice(0, 30).join("\n");
       const ext = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle" });
       const blobUrl = URL.createObjectURL(blob);
@@ -391,7 +396,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 15).join("\n");
+      const preview = lines.slice(0, 30).join("\n");
       const blob = new Blob([ttl], { type: "text/turtle" });
       const blobUrl = URL.createObjectURL(blob);
       addMsg("assistant", `✅ Conversione completata!\n\n\`\`\`turtle\n${preview}${lines.length > 15 ? "\n…" : ""}\n\`\`\``, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.ttl` });
@@ -528,7 +533,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
       <main className="chat-area">
         <div className="chat-header">
-          <span className="chat-header-title">🏛️ Esplora i Dati Aperti Italiani</span>
+          <span className="chat-header-title">{pageTitle}</span>
         </div>
 
         <div className="messages">
