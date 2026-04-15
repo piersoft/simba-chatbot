@@ -1,4 +1,7 @@
 import express from "express";
+import { writeFileSync, unlinkSync, existsSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import cors from "cors";
 import fetch from "node-fetch";
 import rateLimit from "express-rate-limit";
@@ -657,26 +660,34 @@ app.post("/api/validate", async (req, res) => {
 // ─── Endpoint CSV → RDF/TTL ──────────────────────────────────────────────────
 const RDF_MCP_URL = process.env.MCP_URL_RDF || "http://rdf-mcp:3003";
 
+// Mappa dei file CSV temporanei serviti localmente per rdf-mcp
+const tempCsvFiles = new Map();
+
+// Endpoint che serve i CSV temporanei a rdf-mcp
+app.get("/tmp-csv/:id", (req, res) => {
+  const csv = tempCsvFiles.get(req.params.id);
+  if (!csv) return res.status(404).send("not found");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.send(csv);
+});
+
 app.post("/api/enrich", async (req, res) => {
   const { url, csv_text, ipa, pa, fmt } = req.body;
   if (!url && !csv_text) return res.status(400).json({ error: "url o csv_text richiesto" });
-  console.log(`[enrich] url=${url || "testo"} ipa=${ipa} pa=${pa}`);
+  console.log(`[enrich] url=${url || "upload"} ipa=${ipa} pa=${pa}`);
   try {
-    let rdfRes;
-    if (url) {
-      // Chiama rdf-mcp con URL
-      const params = new URLSearchParams({ url, ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
-      rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
-    } else {
-      // Chiama rdf-mcp con testo CSV via POST (body grezzo text/csv)
-      const params = new URLSearchParams({ ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
-      rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, {
-        method: "POST",
-        headers: { "Content-Type": "text/csv; charset=utf-8" },
-        body: csv_text,
-        signal: AbortSignal.timeout(60000),
-      });
+    let csvUrl = url;
+    let tempId = null;
+    if (csv_text) {
+      // Salva CSV come file temporaneo accessibile a rdf-mcp via URL interno
+      tempId = `csv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      tempCsvFiles.set(tempId, csv_text);
+      // rdf-mcp chiama il backend per scaricare il CSV
+      csvUrl = `http://backend:3001/tmp-csv/${tempId}`;
+      setTimeout(() => tempCsvFiles.delete(tempId), 120000); // cleanup dopo 2 min
     }
+    const params = new URLSearchParams({ url: csvUrl, ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
+    const rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
     const text = await rdfRes.text();
     if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
     res.setHeader("Content-Type", rdfRes.headers.get("Content-Type") || "text/turtle");
