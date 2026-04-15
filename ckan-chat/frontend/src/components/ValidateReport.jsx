@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function ValidateReport({ report, url, onEnrich }) {
+export default function ValidateReport({ report, url, csvText, onEnrich, onEnrichText }) {
   const [showAll, setShowAll] = useState(false);
   const lines = (report || "").split("\n").filter(Boolean);
 
@@ -86,13 +86,17 @@ export default function ValidateReport({ report, url, onEnrich }) {
         </div>
       )}
       {/* Bottoni conversione RDF — mostrati solo se CSV è accettabile */}
-      {(isOk || isWarn) && url && onEnrich && (
+      {(isOk || isWarn) && (
         <div className="validate-convert-btns">
           <span className="convert-label">Converti in:</span>
-          <button className="btn-small btn-ttl" onClick={() => onEnrich(url, "ttl")}>
+          <button className="btn-small btn-ttl" onClick={() =>
+            csvText && onEnrichText ? onEnrichText(csvText, url, "ttl") : onEnrich(url, "ttl")
+          }>
             🔄 RDF/Turtle
           </button>
-          <button className="btn-small btn-ttl" onClick={() => onEnrich(url, "rdfxml")}>
+          <button className="btn-small btn-ttl" onClick={() =>
+            csvText && onEnrichText ? onEnrichText(csvText, url, "rdfxml") : onEnrich(url, "rdfxml")
+          }>
             🔄 RDF/XML
           </button>
         </div>

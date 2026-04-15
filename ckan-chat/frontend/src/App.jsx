@@ -319,9 +319,34 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      addMsg("assistant", data.report ?? "Errore nella validazione", { type: "validate_report", url: csvFile.name });
+      addMsg("assistant", data.report ?? "Errore nella validazione", { type: "validate_report", url: csvFile.name, csvText: text });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); setCsvFile(null); }
+  }
+
+  async function doEnrichText(csv_text, filename, fmt = "ttl") {
+    // Conversione diretta da testo CSV (file già caricato) — niente box IPA/PA
+    addMsg("user", `Converti in ${fmt.toUpperCase()}: ${filename}`);
+    addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${filename}"** in corso…`);
+    setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND_URL}/api/enrich`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv_text, pa: filename.replace(/\.csv$/i,""), ipa: "ente", fmt }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const ttl = await r.text();
+      const lines = ttl.split("\n").filter(Boolean);
+      const preview = lines.slice(0, 15).join("\n");
+      const ext = fmt === "rdfxml" ? "rdf" : "ttl";
+      const blob = new Blob([ttl], { type: fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle" });
+      const blobUrl = URL.createObjectURL(blob);
+      addMsg("assistant", `✅ Conversione completata! ${lines.length} righe generate.`, {
+        type: "ttl_result", blobUrl, filename: `${filename.replace(/\.csv$/i,"")}.${ext}`, preview, fmt
+      });
+    } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
+    setLoading(false);
   }
 
   function openTtlBox(url, fmt = "ttl") {
@@ -419,7 +444,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} onEnrich={openTtlBox} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={openTtlBox} onEnrichText={doEnrichText} />
           </div>
         </div>
       );
