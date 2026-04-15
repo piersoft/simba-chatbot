@@ -539,6 +539,16 @@ function preFilterIntent(text) {
   const hasOpenData = openDataKw.some(k => t.includes(k));
   if (!hasOpenData) return "OFF_TOPIC";
 
+  // Ha keyword open data ma è una domanda generica senza verbo di ricerca/azione?
+  // Es: "i dataset sono tutti opendata?" → OFF_TOPIC
+  // Es: "cosa sono i dati aperti?" → OFF_TOPIC
+  const hasActionVerb = ["cerca","trova","mostra","elenca","dammi","scarica",
+    "valida","converti","trasforma","analizza","verifica","cerca","visualizza",
+    "hai","esiste","disponibile","quanti","quali"].some(k => t.includes(k));
+  const isQuestion = t.endsWith("?");
+  const isShort = t.split(" ").length <= 6;
+  if (isQuestion && !hasActionVerb && isShort) return "OFF_TOPIC";
+
   // Ha keyword open data ma intent ambiguo → Ollama decide
   return null;
 }
