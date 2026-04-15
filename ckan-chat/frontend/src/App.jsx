@@ -773,7 +773,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
             placeholder="Cerca dataset, valida un CSV, converti in RDF…"
-            rows={1}
+            rows={2}
             disabled={loading}
           />
           <button className="send-btn" aria-label="Invia messaggio" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>

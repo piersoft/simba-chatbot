@@ -504,8 +504,10 @@ body {
   line-height: 1.5;
   resize: none;
   outline: none;
-  max-height: 120px;
+  min-height: 44px;
+  max-height: 160px;
   overflow-y: auto;
+  padding: 4px 0;
 }
 .chat-input::placeholder { color: var(--text3); }
 
