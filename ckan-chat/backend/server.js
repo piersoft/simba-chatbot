@@ -127,9 +127,19 @@ function getToolsForProvider(allTools) {
 
 async function callTool(name, args) {
   const url = toolsRouteMap[name] || MCP_URLS[0];
-  const res = await mcpCallTo(url, "tools/call", { name, arguments: args });
-  const content = res.result?.content ?? [];
-  return content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
+  console.log(`[callTool] ${name} → ${url}`);
+  try {
+    const res = await mcpCallTo(url, "tools/call", { name, arguments: args });
+    console.log(`[callTool] ${name} risposta ricevuta, error=${JSON.stringify(res.error)}`);
+    if (res.error) throw new Error(`MCP error ${res.error.code}: ${res.error.message}`);
+    const content = res.result?.content ?? [];
+    const text = content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
+    console.log(`[callTool] ${name} ok, ${text.length} chars`);
+    return text;
+  } catch (e) {
+    console.error(`[callTool] ${name} ERRORE: ${e.message}`);
+    throw e;
+  }
 }
 
 // ─── Mistral chat ─────────────────────────────────────────────────────────────
