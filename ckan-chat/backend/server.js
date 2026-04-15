@@ -395,6 +395,7 @@ async function chatWithTools(messages, model) {
     } else {
       const data = await ollamaChat(history, tools.map(mcpToolToOllama), model);
       msg = data.message;
+      console.log(`[ollama-raw] tool_calls=${JSON.stringify(msg.tool_calls?.length)} content="${String(msg.content).slice(0,80)}" done_reason="${data.done_reason}"`);
       finishReason = msg.tool_calls?.length ? "tool_calls" : "stop";
     }
 
