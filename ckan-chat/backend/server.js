@@ -512,9 +512,51 @@ function preFilterIntent(text) {
     "converti in","trasforma in","arricch","semantic","genera ttl","genera rdf"];
   if (enrichKw.some(k => t.includes(k))) return "ENRICH";
 
-  // Tutto il resto → Ollama decide (SEARCH o OFF_TOPIC)
-  // Non blocchiamo nulla: se SPARQL non trova risultati l'utente lo capisce
+  // Per tutto il resto: prima ASK SPARQL, poi eventualmente Ollama
   return null;
+}
+
+// Verifica se esistono dataset su lod.dati.gov.it con le parole chiave
+// Usa ASK query — leggerissima, risposta booleana
+async function sparqlAsk(text) {
+  // Estrai parole significative (> 3 caratteri, no stopword)
+  const stopwords = new Set(["cosa","come","dove","quando","perché","quali","quali",
+    "sono","sarà","viene","voglio","vorrei","puoi","posso","devo","avere","essere",
+    "tutti","tutte","della","delle","degli","dello","nella","nelle","negli",
+    "questo","questa","questi","queste","anche","però","oppure","cerca","trova",
+    "mostra","dammi","elenca","dataset","dati","file","apri"]);
+  
+  const words = text.toLowerCase()
+    .replace(/[^a-zàèéìòù\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !stopwords.has(w));
+
+  if (words.length === 0) return false;
+
+  // Usa le prime 2 parole significative per la ASK query
+  const keyword = words.slice(0, 2).join(" ");
+  
+  const query = `PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+ASK {
+  ?d a dcat:Dataset .
+  ?d dct:title ?t .
+  FILTER(CONTAINS(LCASE(STR(?t)), "${keyword.replace(/"/g, '')}")
+    || CONTAINS(LCASE(STR(?t)), "${words[0].replace(/"/g, '')}"))
+}`;
+
+  try {
+    const url = `https://lod.dati.gov.it/sparql?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const r = await fetch(url, {
+      headers: { Accept: "application/sparql-results+json", "User-Agent": "Mozilla/5.0" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return true; // in caso di errore lascia passare
+    const data = await r.json();
+    return data.boolean === true;
+  } catch {
+    return true; // in caso di timeout/errore lascia passare
+  }
 }
 
 async function classifyIntent(userMessage) {
@@ -524,8 +566,15 @@ async function classifyIntent(userMessage) {
     console.log(`[intent] pre-filtro → ${preFilter}`);
     return preFilter;
   }
-  // Ambiguo — chiede ad Ollama/Mistral
-  console.log(`[intent] ambiguo, chiedo all'AI...`);
+  // Testo SPARQL ASK — il catalogo reale decide se esistono dataset
+  console.log(`[intent] verifico su SPARQL...`);
+  const hasDatasets = await sparqlAsk(userMessage);
+  if (!hasDatasets) {
+    console.log(`[intent] SPARQL ASK → nessun dataset → OFF_TOPIC`);
+    return "OFF_TOPIC";
+  }
+  console.log(`[intent] SPARQL ASK → dataset trovati → chiedo ad Ollama per disambiguare`);
+  // Dataset esistono MA intent ambiguo (SEARCH? VALIDATE? ENRICH?) → Ollama decide
   try {
     if (LLM_PROVIDER === "mistral") {
       const response = await fetch(MISTRAL_API_URL, {
