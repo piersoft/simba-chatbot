@@ -68,7 +68,6 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
     setExpanded(next);
     if (next && distributions === null) {
       setLoading(true);
-      console.log("[card] dataset.uri:", dataset.uri);
       try {
         setDistributions(await loadDistributions(dataset.uri));
       } catch(e) {
