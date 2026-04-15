@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import rateLimit from "express-rate-limit";
+import { routeQuestion } from "./router.js";
 
 const app = express();
 
@@ -376,100 +377,86 @@ const RETRY_MESSAGE = {
 };
 
 async function chatWithTools(messages, model) {
-  const allTools = await getTools();
-  const tools = getToolsForProvider(allTools);
   const toolCallsLog = [];
+  const lastUserMsg = messages.filter(m => m.role === "user").pop()?.content ?? "";
 
-  const isOllama = LLM_PROVIDER === "ollama";
-  const systemPrompt = isOllama ? SYSTEM_PROMPT_OLLAMA : SYSTEM_PROMPT;
-
-  let historyMessages;
-  if (isOllama && messages.length > 0) {
-    const allButLast = messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }));
-    const lastMsg = messages[messages.length - 1];
-    historyMessages = [...allButLast, buildNudgeMessage(lastMsg.content)];
-  } else {
-    historyMessages = messages.map(m => ({ role: m.role, content: m.content }));
+  // ── Mistral: agentic loop classico con tool definitions ──────────────────
+  if (LLM_PROVIDER === "mistral") {
+    const tools = await getTools();
+    const history = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages.map(m => ({ role: m.role, content: m.content })),
+    ];
+    for (let round = 0; round < 6; round++) {
+      if (round > 0) await new Promise(r => setTimeout(r, 1200));
+      const data = await mistralChat(history, tools.map(mcpToolToMistral), model);
+      const msg = data.choices[0].message;
+      const finishReason = data.choices[0].finish_reason;
+      history.push(msg);
+      if (finishReason === "stop" || finishReason === "end_turn" || !msg.tool_calls?.length) {
+        const reply = typeof msg.content === "string"
+          ? msg.content
+          : msg.content?.filter(b => b.type === "text").map(b => b.text).join("\n") ?? "";
+        return { reply, toolCalls: toolCallsLog };
+      }
+      for (const tc of msg.tool_calls) {
+        const fnName = tc.function.name;
+        const fnArgs = typeof tc.function.arguments === "string"
+          ? JSON.parse(tc.function.arguments) : tc.function.arguments;
+        console.log(`[tool] ${fnName}`, JSON.stringify(fnArgs).slice(0, 120));
+        toolCallsLog.push({ tool: fnName, args: fnArgs });
+        let result;
+        try { result = await callTool(fnName, fnArgs); }
+        catch (e) { result = `Errore: ${e.message}`; }
+        history.push({ role: "tool", tool_call_id: tc.id, name: fnName, content: result });
+      }
+    }
+    return { reply: "Nessuna risposta ottenuta.", toolCalls: toolCallsLog };
   }
 
-  const history = [
-    { role: "system", content: systemPrompt },
-    ...historyMessages,
+  // ── Ollama: router deterministico → MCP → sintesi LLM ────────────────────
+  // Il modello NON riceve tool definitions: zero overhead di tokenizzazione.
+  // 1. Router decide quale tool chiamare
+  const route = routeQuestion(lastUserMsg);
+  console.log(`[router] tool=${route.tool} args=${JSON.stringify(route.args).slice(0, 100)}`);
+
+  if (route.fallback) {
+    return { reply: route.fallback, toolCalls: [] };
+  }
+
+  // 2. Chiama il tool MCP direttamente
+  let mcpResult = "";
+  try {
+    mcpResult = await callTool(route.tool, route.args);
+    toolCallsLog.push({ tool: route.tool, args: route.args });
+    console.log(`[router] risultato MCP: ${mcpResult.slice(0, 150)}`);
+  } catch (e) {
+    console.error(`[router] errore MCP: ${e.message}`);
+    return { reply: `Errore nel recupero dei dati: ${e.message}`, toolCalls: toolCallsLog };
+  }
+
+  // 3. Ollama sintetizza solo il testo — nessun tool, prompt minimale
+  const synthesisPrompt = `Sei un assistente open data. Rispondi in italiano in modo chiaro e conciso.
+Usa i dati forniti per rispondere alla domanda. Non inventare nulla.
+Se trovi dataset mostra: nome, organizzazione, descrizione breve e link.`;
+
+  const synthesisMessages = [
+    { role: "system", content: synthesisPrompt },
+    { role: "user", content: `Domanda: ${lastUserMsg}\n\nDati disponibili:\n${mcpResult.slice(0, 3000)}` },
   ];
 
-  for (let round = 0; round < 6; round++) {
-    if (round > 0) await new Promise(r => setTimeout(r, 1200));
-
-    let msg, finishReason;
-
-    if (LLM_PROVIDER === "mistral") {
-      const data = await mistralChat(history, tools.map(mcpToolToMistral), model);
-      msg = data.choices[0].message;
-      finishReason = data.choices[0].finish_reason;
-    } else {
-      const data = await ollamaChat(history, tools.map(mcpToolToOllama), model);
-      msg = data.message;
-      console.log(`[ollama-raw] tool_calls=${JSON.stringify(msg.tool_calls?.length)} content="${String(msg.content).slice(0,80)}" done_reason="${data.done_reason}"`);
-      finishReason = msg.tool_calls?.length ? "tool_calls" : "stop";
-    }
-
-    if (isOllama && round === 0 && finishReason === "stop" && toolCallsLog.length === 0) {
-      console.log(`[ollama-nudge] round ${round}: nessun tool chiamato, inietto retry message`);
-      history.push(msg);
-      history.push(RETRY_MESSAGE);
-      continue;
-    }
-
-    history.push(msg);
-
-    if (finishReason === "stop" || finishReason === "end_turn" || !msg.tool_calls?.length) {
-      const rawReply = typeof msg.content === "string"
-        ? msg.content
-        : msg.content?.filter(b => b.type === "text").map(b => b.text).join("\n") ?? "";
-      const reply = isOllama ? stripThinkTags(rawReply) : rawReply;
-      if (isOllama && toolCallsLog.length === 0) {
-        console.warn(`[ollama-nudge] risposta finale senza tool call dopo ${round + 1} round`);
-      }
-      return { reply, toolCalls: toolCallsLog };
-    }
-
-    for (const tc of msg.tool_calls) {
-      const fnName = tc.function?.name ?? tc.name;
-      let fnArgs;
-      try {
-        const rawArgs = tc.function?.arguments ?? tc.arguments ?? {};
-        fnArgs = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
-      } catch (e) {
-        console.error(`[tool] ERRORE parsing args di ${fnName}:`, e.message, "raw tc:", JSON.stringify(tc).slice(0, 200));
-        fnArgs = {};
-      }
-
-      console.log(`[tool] ${fnName}`, JSON.stringify(fnArgs).slice(0, 120));
-      console.log(`[tool-debug] fnName type=${typeof fnName} fnArgs type=${typeof fnArgs}`);
-      console.log(`[tool-debug] toolsRouteMap keys=${Object.keys(toolsRouteMap).join(",")}`);
-      console.log(`[tool-debug] MCP_URLS[0]=${MCP_URLS[0]}`);
-      toolCallsLog.push({ tool: fnName, args: fnArgs });
-      console.log(`[tool-debug] push ok, ora chiamo callTool`);
-
-      let result;
-      try {
-        console.log(`[callTool] chiamo ${fnName} su ${toolsRouteMap[fnName] || MCP_URLS[0]}`);
-        result = await callTool(fnName, fnArgs);
-        console.log(`[callTool] risposta ${fnName}: ${String(result).slice(0, 120)}`);
-      } catch (e) {
-        console.error(`[callTool] ERRORE ${fnName}: ${e.message}`);
-        result = `Errore: ${e.message}`;
-      }
-
-      if (LLM_PROVIDER === "mistral") {
-        history.push({ role: "tool", tool_call_id: tc.id, name: fnName, content: result });
-      } else {
-        history.push({ role: "tool", content: result });
-      }
-    }
+  try {
+    console.log(`[ollama] sintesi risposta...`);
+    const data = await ollamaChat(synthesisMessages, [], model);
+    const raw = data.message?.content ?? "";
+    const reply = stripThinkTags(raw);
+    console.log(`[ollama] risposta sintetizzata: ${reply.slice(0, 100)}`);
+    return { reply, toolCalls: toolCallsLog };
+  } catch (e) {
+    console.error(`[ollama] errore sintesi: ${e.message}`);
+    // Fallback: restituisce il risultato MCP grezzo senza sintesi LLM
+    return { reply: mcpResult.slice(0, 2000), toolCalls: toolCallsLog };
   }
-
-  return { reply: "Nessuna risposta ottenuta.", toolCalls: toolCallsLog };
 }
 
 // ─── Risposta di rifiuto fuori tema ──────────────────────────────────────────
