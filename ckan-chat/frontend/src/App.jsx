@@ -565,11 +565,14 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
           <a className="sidebar-plain-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
             🔌 ISTAT MCP Server <span className="plain-tag">OnData</span>
           </a>
-          <a className="sidebar-plain-link" href="https://github.com/piersoft/CSV-to-RDF" target="_blank" rel="noopener noreferrer">
+          <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/" target="_blank" rel="noopener noreferrer">
             📄 CSV to RDF <span className="plain-tag">AgID</span>
           </a>
-          <a className="sidebar-plain-link" href="https://github.com/piersoft/CSV-to-RDF/blob/main/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
+          <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
             ✅ Validatore CSV <span className="plain-tag">AgID</span>
+          </a>
+          <a className="sidebar-plain-link" href="https://piersoft.github.io/ckan-opendata-assistant/" target="_blank" rel="noopener noreferrer">
+            🔍 Assistente ricerca <span className="plain-tag">AgID</span>
           </a>
         </div>
 
