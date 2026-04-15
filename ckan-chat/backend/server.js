@@ -564,6 +564,7 @@ app.post("/api/validate", async (req, res) => {
   if (!url) return res.status(400).json({ error: "url required" });
   console.log(`[validate] ${url}`);
   try {
+    await getTools(); // assicura che toolsRouteMap sia popolato
     const result = await callTool("csv_validate", { csv_url: url, summary_only: false });
     res.json({ report: result });
   } catch (e) {
@@ -646,7 +647,14 @@ app.get("/api/health", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Backend pronto su http://localhost:${PORT}`);
   console.log(`Raggiungibile su http://${process.env.SERVER_IP || "0.0.0.0"}:${PORT}`);
+  // Pre-carica i tool all'avvio così toolsRouteMap è subito popolato
+  try {
+    await getTools();
+    console.log(`[init] tool caricati: ${Object.keys(toolsRouteMap).join(", ")}`);
+  } catch (e) {
+    console.warn("[init] impossibile precaricare tool:", e.message);
+  }
 });
