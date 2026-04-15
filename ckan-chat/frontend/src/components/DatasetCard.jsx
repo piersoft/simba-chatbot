@@ -6,12 +6,13 @@ const FT_BASE     = "http://publications.europa.eu/resource/authority/file-type/
 function val(b, k) {
   const v = b[k]?.value || "";
   let url = v.replace(/&amp;/g, "&").replace(/&#38;/g, "&");
-  // L'endpoint SPARQL tronca i & negli URL — ricostruisce i parametri Google Sheets
-  if (url.includes("docs.google.com") || url.includes("spreadsheets")) {
-    url = url
-      .replace(/([?&]gid=\d+)(single=)/, "$1&$2")
-      .replace(/(single=true)(output=)/, "$1&$2")
-      .replace(/(output=csv)(&|$)/, "$1$2");
+  // Virtuoso rimuove i & dagli URL nei valori — ricostruisce con regex generica
+  // Es: ?gid=0single=trueoutput=csv → ?gid=0&single=true&output=csv
+  if (url.includes("?") && !url.includes("&")) {
+    const [base, qs] = url.split("?");
+    // Inserisce & prima di ogni nome di parametro (parola seguita da =)
+    const fixed = qs.replace(/([^=&]+=[^=]*)([a-zA-Z_][a-zA-Z0-9_]*=)/g, "$1&$2");
+    url = base + "?" + fixed;
   }
   return url;
 }
