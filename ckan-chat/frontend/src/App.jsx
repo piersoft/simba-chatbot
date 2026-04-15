@@ -391,9 +391,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 
   async function enrichFromBox() {
     if (!ttlUrl.trim()) return;
+    if (!ttlIpa.trim()) { alert("Inserisci il Codice IPA dell'ente (es. c_b220)"); return; }
+    if (!ttlPa.trim())  { alert("Inserisci il Nome della PA (es. Comune di Bari)"); return; }
     setShowTtlBox(false);
-    const pa = ttlPa.trim() || "Ente Pubblico";
-    const ipa = ttlIpa.trim() || "ente";
+    const pa = ttlPa.trim();
+    const ipa = ttlIpa.trim();
     await doEnrich(ttlUrl.trim(), pa, ipa, ttlFmt);
     setTtlUrl(""); setTtlIpa(""); setTtlPa(""); setTtlFmt("ttl");
   }
@@ -401,9 +403,11 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
   async function enrichFromUpload() {
     const hasMemory = !!ttlCsvText;
     if (!ttlFile && !hasMemory) return;
+    if (!ttlIpa.trim()) { alert("Inserisci il Codice IPA dell'ente (es. c_b220)"); return; }
+    if (!ttlPa.trim())  { alert("Inserisci il Nome della PA (es. Comune di Bari)"); return; }
     setShowTtlBox(false);
-    const pa = ttlPa.trim() || "Ente Pubblico";
-    const ipa = ttlIpa.trim() || "ente";
+    const pa = ttlPa.trim();
+    const ipa = ttlIpa.trim();
     const fname = ttlFile?.name || "CSV";
     const fmt = ttlFmt || "ttl";
     const ext = fmt === "rdfxml" ? "rdf" : "ttl";
@@ -466,7 +470,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           <div className="message-bubble">
             <p>✅ Conversione completata!</p>
             {m.preview && (
-              <pre className="ttl-preview">{m.preview}{"\n…"}</pre>
+              <>
+                <p className="ttl-preview-label">Anteprima (prime righe) — scarica il file per il contenuto completo:</p>
+                <pre className="ttl-preview">{m.preview}{"\n…"}</pre>
+              </>
             )}
             <div className="ttl-download-btns">
               <a href={m.blobUrl} download={m.filename} className="btn-small btn-download">
@@ -630,9 +637,9 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
               </div>
             )}
             <div className="ttl-meta-row">
-              <input type="text" className="csv-url-input" placeholder="Codice IPA (es. c_b220)"
+              <input type="text" className="csv-url-input" placeholder="* Codice IPA (es. c_b220)"
                 value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
-              <input type="text" className="csv-url-input" placeholder="Nome PA (es. Comune di Bari)"
+              <input type="text" className="csv-url-input" placeholder="* Nome PA (es. Comune di Bari)"
                 value={ttlPa} onChange={e => setTtlPa(e.target.value)} />
             </div>
             <div className="ttl-fmt-row">
@@ -675,7 +682,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                       <button className="btn-file-pick" onClick={() => ttlFileRef.current?.click()}>
                         <Icon name="upload" size={14} /> {ttlFile ? ttlFile.name : "Scegli file CSV…"}
                       </button>
-                      <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile}>
+                      <button className="btn-validate-box btn-ttl-box" onClick={enrichFromUpload} disabled={!ttlFile || !ttlIpa.trim() || !ttlPa.trim()}>
                         <Icon name="diagram-3" size={14} /> Converti
                       </button>
                     </div>

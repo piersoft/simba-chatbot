@@ -1076,3 +1076,7 @@ body {
   white-space: nowrap; text-overflow: ellipsis;
 }
 .btn-file-pick:hover { background: #ddeeff; border-style: solid; }
+
+.ttl-preview-label {
+  font-size: 11px; color: #888; font-style: italic; margin-bottom: 4px;
+}
