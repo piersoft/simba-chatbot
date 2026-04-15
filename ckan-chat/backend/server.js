@@ -209,22 +209,36 @@ async function ollamaChat(history, tools, model) {
       ? { Authorization: `Bearer ${process.env.OLLAMA_API_KEY}` }
       : {}),
   };
-  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model: model || OLLAMA_MODEL,
-      messages: history,
-      tools,
-      stream: false,
-      options: { temperature: 0.3 },
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Ollama error ${res.status}: ${err}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    console.error("[ollama] TIMEOUT dopo 90s — abort");
+    controller.abort();
+  }, 90000);
+  console.log(`[ollama] invio richiesta a ${OLLAMA_URL}/api/chat model=${model || OLLAMA_MODEL} msgs=${history.length} tools=${tools.length}`);
+  try {
+    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: model || OLLAMA_MODEL,
+        messages: history,
+        tools,
+        stream: false,
+        options: { temperature: 0.3 },
+      }),
+    });
+    clearTimeout(timeout);
+    console.log(`[ollama] risposta HTTP ${res.status}`);
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Ollama error ${res.status}: ${err}`);
+    }
+    return await res.json();
+  } catch (e) {
+    clearTimeout(timeout);
+    throw e;
   }
-  return await res.json();
 }
 
 // ─── Guardrail: classificatore domanda ───────────────────────────────────────
