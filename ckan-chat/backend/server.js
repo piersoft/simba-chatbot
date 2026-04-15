@@ -15,7 +15,7 @@ app.use(cors({
   methods: ["GET", "POST"],
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
 
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
