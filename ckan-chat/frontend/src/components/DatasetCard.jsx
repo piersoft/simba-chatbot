@@ -24,14 +24,13 @@ async function loadDistributions(dUri) {
   const rows = await sparql(
 `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
-SELECT ?distTitle ?format ?accessURL ?downloadURL ?resourceId WHERE {
+SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
   BIND(<${dUri}> AS ?d)
   ?d dcat:distribution ?dist .
   OPTIONAL { ?dist dct:title ?distTitle }
   OPTIONAL { ?dist dct:format ?format }
   OPTIONAL { ?dist dcat:accessURL ?accessURL }
   OPTIONAL { ?dist dct:downloadURL ?downloadURL }
-  OPTIONAL { ?dist dct:identifier ?resourceId }
 } LIMIT 30`
   );
 
@@ -47,7 +46,6 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL ?resourceId WHERE {
         format:     fmtLabel(val(r, "format")).toUpperCase(),
         url:        fileUrl,
         downloadURL: fileUrl,
-        resourceId: val(r, "resourceId"),
       });
     }
   });
