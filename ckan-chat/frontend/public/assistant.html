@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#004D99">
+<title>Assistente Open Data · dati.gov.it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap');
+
+:root {
+  --primary:      #0066CC;
+  --primary-dark: #004D99;
+  --primary-light:#CCE3F5;
+  --primary-bg:   #E8F3FB;
+  --accent2:      #004D99;
+  --danger:       #CC334D;
+  --success:      #00875A;
+  --success-bg:   #E6F6F0;
+  --bg:           #F2F2F2;
+  --surface:      #FFFFFF;
+  --surface2:     #F7F9FC;
+  --border:       #D9D9D9;
+  --border-dark:  #B3B3B3;
+  --text:         #17324D;
+  --text2:        #455B71;
+  --text3:        #5C6F82;
+  --tag-bg:       #CCE3F5;
+  --tag-text:     #004D99;
+  --radius:       4px;
+  --font:         'Titillium Web','Helvetica Neue',Arial,sans-serif;
+  --mono:         'Roboto Mono','Courier New',monospace;
+  --shadow:       0 2px 8px rgba(0,0,0,.08);
+  --shadow-lg:    0 4px 20px rgba(0,0,0,.12);
+  --sidebar-w:    272px;
+  --header-h:     56px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{font-size:16px;line-height:1.6;
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  font-size:16px;line-height:1.5;
+}
+
+/* ── HEADER ─────────────────────────────────────────── */
+header{
+  background:var(--primary-dark);color:white;
+  padding:0 20px;height:var(--header-h);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;border-bottom:4px solid var(--primary);
+  position:relative;z-index:100;
+}
+.header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.logo-icon{
+  width:36px;height:36px;background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.header-title{font-size:16px;font-weight:700;white-space:nowrap}
+.header-subtitle{font-size:12px;opacity:.7;font-weight:300;display:none}
+.header-badge{
+  font-size:10px;background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.3);padding:3px 10px;
+  border-radius:20px;font-weight:600;font-family:var(--mono);
+  white-space:nowrap;flex-shrink:0;
+}
+/* hamburger mobile */
+.menu-toggle{
+  display:none;background:none;border:none;color:white;
+  font-size:22px;cursor:pointer;padding:4px;line-height:1;
+}
+
+/* ── BARRA FILTRI ATTIVI ─────────────────────────────── */
+.active-bar{
+  display:none;flex-wrap:wrap;gap:6px;align-items:center;
+  padding:7px 20px;background:var(--primary-bg);
+  border-bottom:2px solid var(--primary);flex-shrink:0;
+}
+.active-bar.visible{display:flex}
+.active-bar-label{
+  font-size:12px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--primary-dark);margin-right:2px;
+}
+.active-pill{
+  display:flex;align-items:center;gap:3px;padding:3px 10px;
+  border-radius:2px;background:var(--primary);color:white;
+  font-size:13px;font-weight:600;
+}
+.active-pill button{background:none;border:none;cursor:pointer;color:white;font-size:13px;line-height:1;padding:0;opacity:.7}
+.active-pill button:hover{opacity:1}
+.run-query-btn{
+  margin-left:auto;padding:4px 14px;border-radius:var(--radius);
+  background:var(--primary);color:white;border:none;
+  font-family:var(--font);font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .15s;letter-spacing:.03em;
+  text-transform:uppercase;
+}
+.run-query-btn:hover{background:var(--primary-dark)}
+.clear-all-btn{
+  padding:4px 10px;border-radius:var(--radius);background:transparent;
+  color:var(--text3);border:1px solid var(--border-dark);
+  font-family:var(--font);font-size:11px;cursor:pointer;transition:all .15s;
+}
+.clear-all-btn:hover{border-color:var(--danger);color:var(--danger)}
+
+/* ── LAYOUT ──────────────────────────────────────────── */
+.main{display:flex;flex:1;overflow:hidden;position:relative}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar-w);background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;
+  transition:transform .25s ease;
+}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border-dark);border-radius:2px}
+
+.sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sidebar-label{
+  font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:9px;padding-bottom:5px;
+  border-bottom:2px solid var(--primary);display:inline-block;
+}
+
+.quick-btn{
+  width:100%;text-align:left;padding:8px 12px;
+  border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surface2);cursor:pointer;font-family:var(--font);
+  font-size:14px;color:var(--text);margin-bottom:5px;
+  display:flex;align-items:center;gap:8px;transition:all .15s;line-height:1.3;
+}
+.quick-btn:hover{background:var(--primary-bg);border-color:var(--primary);color:var(--primary-dark);font-weight:600}
+.quick-btn.selected{background:var(--primary);color:white;border-color:var(--primary-dark);font-weight:600}
+
+.theme-chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{
+  padding:3px 9px;border-radius:20px;font-size:13px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border-dark);
+  background:var(--surface);color:var(--text2);transition:all .15s;white-space:nowrap;
+}
+.chip:hover{background:var(--primary-bg);border-color:var(--primary);color:var(--primary-dark)}
+.chip.active,.chip.selected{background:var(--primary);color:white;border-color:var(--primary-dark)}
+
+.org-item{
+  display:flex;align-items:center;gap:7px;padding:6px 6px;
+  cursor:pointer;border-radius:var(--radius);font-size:12px;
+  color:var(--text2);transition:all .15s;border-bottom:1px solid var(--surface2);
+}
+.org-item:hover{color:var(--primary-dark);background:var(--primary-bg);padding-left:10px}
+.org-item.selected{
+  color:var(--primary-dark);background:var(--primary-bg);
+  font-weight:700;padding-left:10px;border-left:3px solid var(--primary);
+}
+.org-dot{width:5px;height:5px;border-radius:50%;background:var(--primary);flex-shrink:0}
+
+/* overlay mobile per sidebar */
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:49;
+}
+
+/* ── CHAT ────────────────────────────────────────────── */
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);min-width:0}
+
+.messages{
+  flex:1;overflow-y:auto;padding:20px;
+  display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;
+}
+.messages::-webkit-scrollbar{width:5px}
+.messages::-webkit-scrollbar-thumb{background:var(--border-dark);border-radius:3px}
+
+/* Welcome */
+.welcome{text-align:center;padding:32px 16px;animation:fadeUp .5s ease}
+.welcome-icon{
+  width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.welcome h2{font-size:22px;font-weight:700;color:var(--primary-dark);margin-bottom:8px}
+.welcome p{font-size:14px;color:var(--text2);max-width:420px;margin:0 auto 20px;line-height:1.6;font-weight:300}
+.welcome-actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.welcome-chip{
+  padding:7px 16px;border-radius:4px;font-size:13px;font-weight:600;
+  cursor:pointer;border:2px solid var(--primary);background:white;color:var(--primary);transition:all .15s;
+}
+.welcome-chip:hover{background:var(--primary);color:white}
+
+/* Messaggi */
+.msg{display:flex;gap:8px;align-items:flex-start;animation:fadeUp .3s ease}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{
+  width:34px;height:34px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0;font-weight:700;
+}
+.msg.bot .msg-avatar{background:var(--primary);color:white}
+.msg.user .msg-avatar{background:var(--text2);color:white}
+.msg-bubble{
+  max-width:82%;padding:10px 14px;border-radius:var(--radius);
+  font-size:15px;line-height:1.6;
+}
+.msg.bot .msg-bubble{
+  background:white;border:1px solid var(--border);
+  border-left:3px solid var(--primary);box-shadow:var(--shadow);
+}
+.msg.user .msg-bubble{background:var(--primary-dark);color:white}
+
+/* Risultati */
+.results-container{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;padding:0 16px 16px}
+.results-header{padding:12px 0 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;font-size:15px;color:var(--text3);
+  padding-bottom:7px;border-bottom:1px solid var(--border);
+}
+.results-count{font-family:var(--mono);color:var(--primary);font-weight:700;font-size:15px}
+
+.dataset-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;margin-bottom:7px;
+  cursor:pointer;transition:all .2s;box-shadow:var(--shadow);
+  border-left:4px solid transparent;
+}
+.dataset-card:hover{border-left-color:var(--primary);box-shadow:var(--shadow-lg);transform:translateX(2px)}
+.dataset-title{font-size:16px;font-weight:700;color:var(--primary-dark);margin-bottom:3px;line-height:1.4}
+.dataset-org{font-size:13px;color:var(--text3);margin-bottom:5px;font-family:var(--mono);font-weight:500}
+.dataset-notes{
+  font-size:14px;color:var(--text2);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:300;
+}
+.dataset-meta{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.meta-tag{
+  font-size:12px;padding:2px 7px;border-radius:2px;
+  background:var(--tag-bg);color:var(--tag-text);
+  font-weight:700;font-family:var(--mono);letter-spacing:.03em;text-transform:uppercase;
+}
+.meta-tag.format{background:#FFF3CC;color:#7A5700}
+.meta-tag.date{background:var(--success-bg);color:var(--success)}
+
+/* Dettaglio */
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);width:100%}
+.detail-header{background:var(--primary-dark);color:white;padding:14px 18px;border-left:6px solid var(--primary)}
+.detail-header h3{font-size:22px;font-weight:700;margin-bottom:4px;line-height:1.3}
+.detail-header .detail-org{font-size:13px;opacity:.75;font-family:var(--mono)}
+.detail-body{font-size:16px;line-height:1.6;padding:14px 18px}
+.detail-desc{font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);font-weight:300}
+.resources-label{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;margin-top:2px}
+.resource-item{
+  display:flex; flex-direction:column;
+  padding:8px 10px; border-radius:var(--radius);
+  background:var(--surface2); border:1px solid var(--border); margin-bottom:4px;
+}
+.resource-item-header {
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+}
+.resource-name{font-size:14px;font-weight:600;color:var(--text)}
+.res-btn{
+  font-size:13px;padding:6px 14px;border-radius:var(--radius);cursor:pointer;
+  font-family:var(--font);font-weight:700;transition:all .15s;
+  letter-spacing:.03em;text-transform:uppercase;
+  border:2px solid var(--primary);color:var(--primary);background:white;
+}
+.res-btn:hover{background:var(--primary);color:white}
+
+.action-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.action-chip{
+  padding:5px 12px;border-radius:4px;font-size:14px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border-dark);background:white;color:var(--text2);
+  transition:all .15s;display:flex;align-items:center;gap:4px;
+}
+.action-chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
+
+/* Typing */
+.typing{
+  display:flex;gap:4px;align-items:center;padding:11px 14px;
+  background:white;border:1px solid var(--border);
+  border-left:3px solid var(--primary);border-radius:var(--radius);width:fit-content;
+}
+.typing span{width:7px;height:7px;background:var(--primary);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+
+/* ── RICERCA AVANZATA ────────────────────────────────── */
+.adv-panel{
+  background:var(--surface);border-top:3px solid var(--primary);
+  padding:0;overflow:hidden;max-height:0;
+  transition:max-height .35s ease,padding .2s ease;
+  flex-shrink:0;position:relative;
+}
+.adv-panel.open{max-height:400px;padding:14px 20px;overflow:visible;position:relative;z-index:10}
+.adv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end}
+.adv-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+.adv-field label{
+  display:block;font-size:12px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text3);margin-bottom:5px;
+}
+.adv-field input,.adv-field select{
+  width:100%;padding:7px 10px;border:1.5px solid var(--border);
+  border-radius:var(--radius);font-family:var(--font);font-size:13px;
+  color:var(--text);background:var(--bg);outline:none;transition:border-color .15s;
+}
+.adv-field input:focus,.adv-field select:focus{border-color:var(--primary);background:white}
+.adv-actions{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.adv-btn{
+  padding:8px 20px;border-radius:var(--radius);font-family:var(--font);
+  font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;border:none;
+  letter-spacing:.03em;text-transform:uppercase;
+}
+.adv-btn.primary{background:var(--primary);color:white}
+.adv-btn.primary:hover{background:var(--primary-dark)}
+.adv-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.adv-btn.secondary:hover{background:var(--border)}
+.adv-toggle{
+  padding:5px 12px;border-radius:20px;font-size:14px;font-weight:600;
+  cursor:pointer;border:1.5px solid var(--border-dark);background:white;
+  color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:4px;flex-shrink:0;
+}
+.adv-toggle:hover,.adv-toggle.open{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
+
+/* Autocomplete */
+.autocomplete-wrap{position:relative;z-index:9999}
+.autocomplete-list{
+  position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:9999;
+  background:white;border:1.5px solid var(--primary);
+  border-radius:var(--radius);
+  max-height:220px;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);
+}
+.ac-item{
+  padding:7px 12px;font-size:14px;cursor:pointer;
+  border-bottom:1px solid var(--surface2);color:var(--text);
+  display:flex;justify-content:space-between;align-items:center;transition:background .1s;
+}
+.ac-item:hover{background:var(--primary-bg);color:var(--primary-dark)}
+.ac-count{font-family:var(--mono);font-size:12px;color:var(--text3)}
+
+/* ── INPUT BAR ───────────────────────────────────────── */
+.input-bar{
+  padding:10px 20px;background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;flex-shrink:0;
+}
+.input-bar.wizard-mode{
+  padding:12px 16px;background:var(--surface);
+}
+.input-wrap{
+  flex:1;display:flex;align-items:center;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:4px;padding:7px 14px;gap:7px;transition:border-color .15s;
+  min-width:0;
+}
+.input-wrap:focus-within{border-color:var(--primary);background:white}
+#searchInput{
+  flex:1;border:none;background:transparent;font-family:var(--font);
+  font-size:16px;color:var(--text);outline:none;min-width:0;
+}
+#searchInput::placeholder{color:var(--text3)}
+.send-btn{
+  width:40px;height:40px;border-radius:4px;background:var(--primary);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:white;font-size:18px;transition:all .15s;flex-shrink:0;
+}
+.send-btn:hover{background:var(--primary-dark)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.error-msg{background:#FFF0F3;border:1px solid #F4A0B0;border-left:3px solid var(--danger);color:#7A1A2A;padding:10px 14px;border-radius:var(--radius);font-size:15px}
+.no-results{text-align:center;padding:24px;color:var(--text3);font-size:15px}
+.no-results .icon{font-size:32px;margin-bottom:8px}
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --header-h: 52px; }
+
+  /* header compatto */
+  .header-title { font-size: 16px; }
+  .header-badge { display: none; }
+  .menu-toggle { display: block; }
+
+  /* sidebar: drawer laterale */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 80vw; max-width: 300px;
+    z-index: 50;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  /* chat prende tutto */
+  .chat-area { width: 100%; }
+
+  /* messaggi più compatti */
+  .messages { padding: 12px; gap: 10px; }
+  .msg-bubble { max-width: 92%; font-size: 13px; }
+  .msg-avatar { width: 28px; height: 28px; font-size: 13px; }
+
+  /* welcome ridotto */
+  .welcome { padding: 20px 10px; }
+  .welcome h2 { font-size: 18px; }
+  .welcome p { font-size: 13px; }
+
+  /* ricerca avanzata: 1 colonna */
+  .adv-grid { grid-template-columns: 1fr; }
+  .adv-row2 { grid-template-columns: 1fr 1fr; }
+
+
+  /* input bar compatta */
+  .input-bar { padding: 8px 12px; gap: 6px; }
+  .adv-toggle span:not(:first-child) { display: none; }
+
+  /* active bar compatta */
+  .active-bar { padding: 6px 12px; }
+  .run-query-btn { padding: 4px 10px; font-size: 11px; }
+
+  /* dataset cards */
+  .dataset-card { padding: 10px 12px; }
+  .dataset-title { font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .adv-row2 { grid-template-columns: 1fr; }
+  .welcome-actions { gap: 5px; }
+  .welcome-chip { padding: 6px 12px; font-size: 12px; }
+  .action-chips { gap: 4px; }
+  .action-chip { font-size: 11px; padding: 4px 9px; }
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+
+  /* Carica altri risultati */
+  .load-more-btn {
+    width:100%;padding:10px;margin-top:4px;
+    border:2px dashed var(--border-dark);border-radius:var(--radius);
+    background:transparent;color:var(--text3);font-family:var(--font);
+    font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
+    letter-spacing:.03em;
+  }
+  .load-more-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
+  .load-more-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Carica altri org sidebar */
+  .load-more-orgs {
+    width:100%;padding:7px;margin-top:4px;
+    border:1px dashed var(--border-dark);border-radius:var(--radius);
+    background:transparent;color:var(--text3);font-family:var(--font);
+    font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
+  }
+  .load-more-orgs:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
+
+
+  /* Ricerca amministrazioni nella sidebar */
+  .sidebar-search {
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .sidebar-search input {
+    width: 100%;
+    padding: 6px 10px 6px 28px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .sidebar-search input:focus {
+    border-color: var(--primary);
+    background: white;
+  }
+  .sidebar-search .search-icon {
+    position: absolute;
+    left: 8px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--text3);
+    pointer-events: none;
+  }
+  .sidebar-search .ac-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0; right: 0;
+    z-index: 9999;
+    background: white;
+    border: 1.5px solid var(--primary);
+    border-radius: var(--radius);
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    display: none;
+  }
+  .sidebar-search .ac-dropdown.open { display: block; }
+
+
+  /* Anteprima dati CSV/XLSX */
+  .data-preview {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .data-preview-header {
+    background: var(--primary);
+    color: white;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .data-preview-table {
+    overflow-x: auto;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .data-preview-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .data-preview-table th {
+    background: var(--surface2);
+    padding: 5px 10px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .data-preview-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--surface2);
+    color: var(--text);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .data-preview-table tr:hover td { background: var(--primary-bg); }
+  .data-preview-loading {
+    padding: 16px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 13px;
+  }
+
+
+  /* ── ACCESSIBILITÀ WCAG 2.1 AA ─────────────────────────── */
+
+  /* Focus visibile per navigazione da tastiera */
+  :focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Skip link per screen reader */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 8px;
+    background: var(--primary-dark);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 8px; }
+
+  /* Target size minimo 44px (WCAG 2.5.5) */
+  .send-btn, .adv-btn, .run-query-btn { min-height: 44px; min-width: 44px; }
+  .quick-btn { min-height: 44px; }
+  .chip { min-height: 36px; display: inline-flex; align-items: center; }
+  .org-item { min-height: 40px; }
+
+  /* Riduzione movimento per utenti sensibili */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Alto contrasto sistema operativo */
+  @media (forced-colors: active) {
+    .dataset-card, .detail-panel, .msg-bubble { border: 2px solid ButtonText; }
+    .send-btn, .adv-btn.primary { background: ButtonText; color: ButtonFace; }
+  }
+
+
+  .api-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius);
+    background: #1A3A5C; color: white; font-size: 13px; font-weight: 700;
+    cursor: pointer; border: none; font-family: var(--font);
+    text-decoration: none; margin-top: 10px;
+    letter-spacing: .03em;
+  }
+  .api-btn:hover { background: #0D2A47; }
+  .api-section {
+    margin-top: 12px; padding: 10px 14px;
+    background: #EEF4FB; border-radius: var(--radius);
+    border-left: 3px solid #1A3A5C;
+  }
+  .api-section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #1A3A5C; margin-bottom: 6px;
+  }
+
+
+  .hvd-section { margin-top: 14px; }
+  .hvd-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1.5px solid #F4A800; color: #7A4F00;
+    background: #FFF8E1; margin: 2px 2px 2px 0; transition: all .15s;
+    min-height: 32px;
+  }
+  .hvd-chip:hover { background: #F4A800; color: white; }
+  .hvd-chip.active { background: #F4A800; color: white; border-color: #E09600; }
+
+
+  /* ── WIZARD 2 STEP ──────────────────────────────────────────────────── */
+  .input-bar.wizard-mode { padding: 12px 16px; }
+  .wizard-wrap {
+    width: 100%;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .wizard-step {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .wizard-step:last-of-type { border-bottom: none; }
+  .wizard-step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--primary); color: white;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .wizard-step-label {
+    font-size: 11px; font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase; letter-spacing: .08em;
+    white-space: nowrap; flex-shrink: 0; width: 32px;
+  }
+  .wizard-step input {
+    flex: 1; border: none; background: transparent;
+    font-family: var(--font); font-size: 15px; color: var(--text);
+    outline: none; min-width: 0; padding: 2px 0;
+  }
+  .wizard-step input::placeholder { color: var(--text3); font-size: 13px; }
+  .wizard-actions {
+    display: flex; gap: 8px; padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    align-items: center;
+  }
+  .wizard-actions .adv-toggle {
+    flex: 0 0 auto;
+    width: auto;
+  }
+  /* Nascondi wizard steps quando avanzate è aperto */
+  .wizard-step {
+    transition: max-height 0.2s ease, opacity 0.2s ease;
+    max-height: 200px;
+    opacity: 1;
+    overflow: hidden;
+  }
+  .wizard-wrap.adv-open .wizard-step {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  .wizard-wrap.adv-open .wizard-actions {
+    border-top: none;
+  }
+  .wizard-wrap.adv-open .wizard-search-btn {
+    display: none;
+  }
+  .wizard-search-btn {
+    flex: 1; padding: 9px 16px;
+    border-radius: var(--radius);
+    background: var(--primary); color: white;
+    font-family: var(--font); font-size: 14px; font-weight: 700;
+    border: none; cursor: pointer;
+    min-height: 44px;
+  }
+  .wizard-search-btn:hover { background: var(--primary-dark); }
+
+
+  .dataset-kws { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .kw-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    background: var(--surface2); color: var(--text2);
+    border: 1px solid var(--border); font-family: var(--mono);
+  }
+
+
+
+  /* Messaggi bot con contenuto largo: tutta la larghezza */
+  .msg.bot.wide {
+    align-items: stretch;
+    gap: 0;
+  }
+  .msg.bot.wide .msg-avatar {
+    display: none;
+  }
+  .msg.bot.wide .msg-bubble {
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    flex: 1;
+  }
+
+
+  /* ── FIX MOBILE ───────────────────────────────────────── */
+  @media (max-width: 768px) {
+
+    /* Wizard input font più grande per evitare zoom iOS */
+    .wizard-step input {
+      font-size: 16px !important;
+    }
+
+    /* Pannello avanzate: scrollabile su mobile */
+
+
+    /* Griglia avanzate: 1 colonna su mobile */
+    .adv-grid { grid-template-columns: 1fr !important; }
+    .adv-row2 { grid-template-columns: 1fr !important; }
+
+    /* Pulsanti azione avanzate: full width */
+    .adv-actions { flex-direction: column; }
+    .adv-btn { width: 100%; }
+
+    /* Wizard: testo placeholder più corto */
+    #searchInput::placeholder { font-size: 14px; }
+    #wizardOrg { font-size: 16px !important; }
+
+    /* detail-panel padding ridotto */
+    .detail-body { padding: 10px 12px; }
+    .detail-header { padding: 10px 12px; }
+
+    /* Card dataset: padding ridotto */
+    .dataset-card { padding: 10px 12px; }
+
+    /* Pulsanti risorsa: stack verticale */
+    .resource-item-header { flex-wrap: wrap; }
+
+    /* Action chips: wrap */
+    .action-chips { flex-wrap: wrap; gap: 6px; }
+  }
+
+
+    .wizard-search-btn { width: 100%; }
+    .adv-toggle { width: 100%; justify-content: center; }
+
+    /* pannello avanzate: scroll + altezza max */
+    .adv-panel.open {
+      max-height: 60vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .adv-grid { grid-template-columns: 1fr !important; }
+    .adv-row2 { grid-template-columns: 1fr !important; }
+  }
+
+
+  @media (max-width: 768px) {
+    /* Pannello avanzate: max-height ridotto e scroll */
+    .adv-panel.open {
+      max-height: 55vh !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Griglia avanzate: 1 colonna */
+    .adv-grid { grid-template-columns: 1fr !important; }
+    .adv-row2 { grid-template-columns: 1fr !important; }
+    /* Wizard actions: colonna su mobile stretto */
+    .wizard-actions { flex-wrap: wrap; }
+    .wizard-search-btn { flex: 1; }
+    .adv-toggle { flex: 0 0 auto !important; width: auto !important; padding: 8px 12px !important; font-size: 12px !important; border-radius: 20px !important; }
+    /* Input wizard: 16px evita zoom iOS */
+    .wizard-step input { font-size: 16px !important; }
+    #wizardOrg { font-size: 16px !important; }
+  }
+
+
+  .btn-icon { display:inline-block; width:14px; height:14px; vertical-align:-2px; flex-shrink:0; }
+  .chip-icon { display:inline-block; width:12px; height:12px; vertical-align:-1px; flex-shrink:0; }
+
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Salta al contenuto principale</a>
+<header role="banner">
+  <div class="header-left">
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+    <div class="logo-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="20" width="20" height="2" rx="1"/><rect x="4" y="11" width="2" height="9"/><rect x="11" y="11" width="2" height="9"/><rect x="18" y="11" width="2" height="9"/><path d="M2 11l10-8 10 8z"/></svg></div>
+    <div>
+      <div class="header-title">Assistente Open Data · dati.gov.it</div>
+      <div class="header-subtitle">SPARQL · lod.dati.gov.it · DCAT-AP_IT</div>
+    </div>
+  </div>
+  <div class="header-badge">v2026.03.30.7</div>
+</header>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+
+<!-- BARRA FILTRI ATTIVI -->
+<div class="active-bar" id="activeBar">
+  <span class="active-bar-label">🔎 Filtri attivi:</span>
+  <div id="activePills" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+  <button class="clear-all-btn" onclick="clearAllFilters()">✕ Reset</button>
+  <button class="run-query-btn" onclick="runCombinedQuery()">▶ Cerca</button>
+</div>
+
+<div class="main" id="main-content" role="main">
+  <aside class="sidebar" role="complementary" aria-label="Navigazione e filtri" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Azioni rapide</div>
+      <button class="quick-btn" onclick="quickSearch('rifiuti')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Rifiuti</button>
+      <button class="quick-btn" onclick="quickSearch('trasporti')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Trasporti</button>
+      <button class="quick-btn" onclick="quickSearch('ambiente')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8C8 10 5 14 5 21h14V8z"/><path d="M12 12L5 21"/></svg> Ambiente</button>
+      <button class="quick-btn" onclick="quickSearch('scuole')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg> Scuole</button>
+      <button class="quick-btn" onclick="quickSearch('salute')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="20" rx="2"/><rect x="2" y="8" width="20" height="8" rx="2"/></svg> Salute</button>
+      <button class="quick-btn" onclick="loadRecent()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Ultimi aggiornati</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Temi DCAT-AP</div>
+      <div class="theme-chips">
+        <span class="chip" onclick="searchTheme('AGRI','Agricoltura')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22V12M12 12C12 7 7 4 3 5c1 5 5 7 9 7zm0 0c0-5 5-8 9-7-1 5-5 7-9 7z"/></svg> Agricoltura</span>
+        <span class="chip" onclick="searchTheme('ECON','Economia')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg> Economia</span>
+        <span class="chip" onclick="searchTheme('EDUC','Istruzione')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg> Istruzione</span>
+        <span class="chip" onclick="searchTheme('ENER','Energia')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Energia</span>
+        <span class="chip" onclick="searchTheme('ENVI','Ambiente')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8C8 10 5 14 5 21h14V8z"/><path d="M12 12L5 21"/></svg> Ambiente</span>
+        <span class="chip" onclick="searchTheme('GOVE','Governo')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="20" width="20" height="2" rx="1"/><rect x="4" y="11" width="2" height="9"/><rect x="11" y="11" width="2" height="9"/><rect x="18" y="11" width="2" height="9"/><path d="M2 11l10-8 10 8z"/></svg> Governo</span>
+        <span class="chip" onclick="searchTheme('HEAL','Salute')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="20" rx="2"/><rect x="2" y="8" width="20" height="8" rx="2"/></svg> Salute</span>
+        <span class="chip" onclick="searchTheme('INTR','Relazioni int.')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg> Intern.</span>
+        <span class="chip" onclick="searchTheme('JUST','Giustizia')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 6l9 4 9-4M5 15l-2 3h4zm14 0l-2 3h4z"/></svg> Giustizia</span>
+        <span class="chip" onclick="searchTheme('REGI','Regioni')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Regioni</span>
+        <span class="chip" onclick="searchTheme('SOCI','Società')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="17" cy="7" r="3"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg> Società</span>
+        <span class="chip" onclick="searchTheme('TECH','Tecnologia')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg> Tecnologia</span>
+        <span class="chip" onclick="searchTheme('TRAN','Trasporti')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Trasporti</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label" style="color:#7A4F00">HVD — ALTO VALORE</div>
+      <div id="hvdChips" style="padding:4px 0"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Amministrazioni</div>
+          <div class="sidebar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="orgSearch" placeholder="Cerca amministrazione…"
+                   oninput="filterOrgs(this.value)" autocomplete="off" />
+            <div class="ac-dropdown" id="orgAcList"></div>
+          </div>
+          <div id="orgList"><div style="font-size:12px;color:var(--text3)">Caricamento…</div></div>
+    </div>
+  </aside>
+
+  <div class="chat-area" role="region" aria-label="Risultati ricerca">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-icon"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <h2>Cosa stai cercando?</h2>
+        <p>Esplora 68.000+ dataset via SPARQL su <strong>lod.dati.gov.it</strong>. Ricerca per parola chiave, tema DCAT-AP, publisher o filtri avanzati.</p>
+        <div class="welcome-actions">
+          <span class="welcome-chip" onclick="quickSearch('defibrillatori')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="20" rx="2"/><rect x="2" y="8" width="20" height="8" rx="2"/></svg> Defibrillatori</span>
+          <span class="welcome-chip" onclick="quickSearch('qualità aria')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8c0-3 2-5 5-5 2 0 4 1 5 3 1-1 2-2 4-2 3 0 5 2 5 5 0 4-4 6-4 6H5s-2-2-2-5z"/></svg> Qualità aria</span>
+          <span class="welcome-chip" onclick="quickSearch('rifiuti')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Rifiuti</span>
+          <span class="welcome-chip" onclick="quickSearch('comuni')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Comuni</span>
+          <span class="welcome-chip" onclick="searchTheme('TRAN','Trasporti')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Trasporti</span>
+          <span class="welcome-chip" onclick="searchPublisher('Regione Puglia')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg> Reg. Puglia</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RICERCA AVANZATA -->
+    <div class="adv-panel" id="advPanel">
+      <div class="adv-grid">
+        <div class="adv-field">
+          <label>Parole chiave (titolo)</label>
+          <input type="text" id="advQ" placeholder="es. parcheggi, aria, covid…" />
+        </div>
+        <div class="adv-field">
+          <label>Tema DCAT-AP</label>
+          <select id="advTheme">
+            <option value="">— tutti —</option>
+            <option value="AGRI">🌾 Agricoltura</option>
+            <option value="ECON">📈 Economia</option>
+            <option value="EDUC">📚 Istruzione</option>
+            <option value="ENER">⚡ Energia</option>
+            <option value="ENVI">🌍 Ambiente</option>
+            <option value="GOVE">🏛️ Governo</option>
+            <option value="HEAL">❤️ Salute</option>
+            <option value="INTR">🌐 Relazioni int.</option>
+            <option value="JUST">⚖️ Giustizia</option>
+            <option value="REGI">🗺️ Regioni</option>
+            <option value="SOCI">👥 Società</option>
+            <option value="TECH">💻 Tecnologia</option>
+            <option value="TRAN"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Trasporti</option>
+          </select>
+        </div>
+        <div class="adv-field">
+          <label>Categoria HVD</label>
+          <select id="advHvd">
+            <option value="">— Tutte —</option>
+            <option value="c_ac64a52d">🗺️ Geospaziali</option>
+            <option value="c_dd313021">🌍 Terra e Ambiente</option>
+            <option value="c_e1da4e07">📊 Statistici</option>
+            <option value="c_164e0bf5">🌤️ Meteorologici</option>
+            <option value="c_b79e35eb">🚗 Mobilità</option>
+            <option value="c_a9135398">🏢 Imprese</option>
+          </select>
+        </div>
+        <div class="adv-field autocomplete-wrap">
+          <label>Amministrazione (rightsHolder)</label>
+          <input type="text" id="advPub" placeholder="es. Comune di Bari, r_puglia…"
+                 oninput="acPublisher(this.value)" autocomplete="off" />
+          <div class="autocomplete-list" id="acList" style="display:none"></div>
+        </div>
+      </div>
+      <div class="adv-row2">
+        <div class="adv-field">
+          <label>Formato</label>
+          <select id="advFormat">
+            <option value="">— tutti —</option>
+            <option value="CSV">CSV</option>
+            <option value="JSON">JSON</option>
+            <option value="XML">XML</option>
+            <option value="SHP">Shapefile</option>
+            <option value="GEOJSON">GeoJSON</option>
+            <option value="RDF_XML">RDF/XML</option>
+            <option value="TURTLE">Turtle</option>
+            <option value="PDF">PDF</option>
+            <option value="XLSX">XLSX</option>
+            <option value="ZIP">ZIP</option>
+            <option value="WMS">WMS</option>
+            <option value="WFS">WFS</option>
+          </select>
+        </div>
+        <div class="adv-field">
+          <label>Licenza (su distribuzione)</label>
+          <select id="advLicense">
+            <option value="">— tutte —</option>
+            <option value="CC_BY">CC BY 4.0</option>
+            <option value="CC_ZERO">CC0 / Public Domain</option>
+            <option value="IODL">IODL 2.0</option>
+            <option value="CC_BYSA">CC BY-SA 4.0</option>
+          </select>
+        </div>
+        <div class="adv-field">
+          <label>Ordinamento</label>
+          <select id="advSort">
+            <option value="modified">Più recenti</option>
+            <option value="title">Titolo A→Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="adv-actions">
+        <button class="adv-btn primary" onclick="doAdvSearch()">🔍 Cerca</button>
+        <button class="adv-btn secondary" onclick="resetAdv()">✕ Reset</button>
+        <div id="advActiveFilters" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+    </div>
+
+    <div class="input-bar wizard-mode">
+      <div class="wizard-wrap">
+        <div class="wizard-step">
+          <div class="wizard-step-num">1</div>
+          <div class="wizard-step-label">Cosa</div>
+          <input type="text" id="searchInput"
+                 aria-label="Cosa vuoi cercare"
+                 placeholder="es. sinistri stradali, rifiuti, bilancio…"
+                 onkeydown="if(event.key==='Enter') doSearch()"
+                 autocomplete="off" />
+        </div>
+        <div class="wizard-step" style="position:relative">
+          <div class="wizard-step-num">2</div>
+          <div class="wizard-step-label">Dove</div>
+          <input type="text" id="wizardOrg"
+                 aria-label="Amministrazione (opzionale, lascia vuoto per tutte)"
+                 placeholder="es. Regione Puglia, Comune di Bari… (vuoto = tutte)"
+                 oninput="wizardOrgAc(this.value)"
+                 onkeydown="if(event.key==='Enter') doSearch()"
+                 autocomplete="off" />
+          <div class="ac-dropdown" id="wizardOrgList"></div>
+        </div>
+        <div class="wizard-actions">
+          <button class="wizard-search-btn" onclick="doSearch()" aria-label="Avvia ricerca">🔍 Cerca</button>
+          <button class="adv-toggle" id="advToggle" onclick="toggleAdv()" aria-expanded="false" aria-controls="advPanel">⚙️ Avanzata</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const HVD_BASE = 'http://data.europa.eu/bna/';
+const HVD_CATS = [
+  { code: 'c_ac64a52d', label: '🗺️ Geospaziali' },
+  { code: 'c_dd313021', label: '🌍 Terra e Ambiente' },
+  { code: 'c_e1da4e07', label: '📊 Statistici' },
+  { code: 'c_164e0bf5', label: '🌤️ Meteorologici' },
+  { code: 'c_b79e35eb', label: '🚗 Mobilità' },
+  { code: 'c_a9135398', label: '🏢 Imprese' },
+];
+const SPARQL  = 'https://lod.dati.gov.it/sparql';
+const THEME_BASE = 'http://publications.europa.eu/resource/authority/data-theme/';
+const FT_BASE    = 'http://publications.europa.eu/resource/authority/file-type/';
+const LICENSE_BASE = 'http://publications.europa.eu/resource/authority/licence/';
+const PAGE_SIZE = 8;
+const FETCH_SIZE = PAGE_SIZE * 4; // fetch più righe per compensare duplicati SPARQL
+const ORG_PAGE  = 15;  // organizzazioni per pagina
+
+// stato paginazione risultati
+let lastQuery = null; // { type, params, offset, label }
+
+
+
+// ── STATO FILTRI MULTIPLI ─────────────────────────────────────────────────
+const state = {
+  keywords: null,      // stringa libera
+  theme: null,         // { code, label }
+  publisher: null,     // URI catalogo o nome stringa
+  publisherLabel: null,// titolo leggibile
+  publisherType: null,  // 'uri' | 'name'
+  hvd: null             // HVD category code
+};
+
+function updateActiveBar() {
+  const bar   = document.getElementById('activeBar');
+  const pills = document.getElementById('activePills');
+  const entries = [];
+  if (state.keywords)  entries.push({ key:'keywords',  label:'🔍 ' + state.keywords });
+  if (state.hvd)       entries.push({ key:'hvd', label:'⭐ HVD: ' + (HVD_CATS.find(x=>x.code===state.hvd)||{label:state.hvd}).label });
+  if (state.theme)     entries.push({ key:'theme',     label:'🗂️ ' + state.theme.label });
+  if (state.publisher) entries.push({ key:'publisher', label:'🗂️ ' + (state.publisherLabel || state.publisher) });
+
+  if (!entries.length) {
+    bar.classList.remove('visible');
+    return;
+  }
+  bar.classList.add('visible');
+  pills.innerHTML = entries.map(e =>
+    `<span class="active-pill">${e.label}
+       <button onclick="removeFilter('${e.key}')">×</button>
+     </span>`
+  ).join('');
+}
+
+function removeFilter(key) {
+  state[key] = null;
+  // Reset UI elementi specifici
+  if (key === 'theme') document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','active'));
+  if (key === 'hvd') document.querySelectorAll('.hvd-chip').forEach(c=>c.classList.remove('active'));
+  if (key === 'keywords') {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('wizardOrg') && (document.getElementById('wizardOrg').value = '');
+  }
+  if (key === 'publisher') {
+    state.publisherLabel = null; state.publisherType = null;
+    document.querySelectorAll('.org-item').forEach(i=>i.classList.remove('selected'));
+    const wo = document.getElementById('wizardOrg');
+    if (wo) wo.value = '';
+  }
+  updateActiveBar();
+
+  // Se rimane almeno un filtro attivo → rilancia query
+  const hasFilters = state.keywords || state.theme || state.publisher || state.hvd;
+  if (hasFilters) {
+    runCombinedQuery(0);
+  } else {
+    // Nessun filtro rimasto → bacheca pulita
+    clearAllFilters();
+  }
+}
+
+function clearAllFilters() {
+  // Reset state
+  state.keywords = null; state.theme = null; state.hvd = null;
+  state.publisher = null; state.publisherLabel = null; state.publisherType = null;
+  // Reset UI
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','active'));
+  document.querySelectorAll('.hvd-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.org-item').forEach(i=>i.classList.remove('selected'));
+  document.getElementById('searchInput').value = '';
+  const wo = document.getElementById('wizardOrg');
+  if (wo) wo.value = '';
+  // Chiudi pannello avanzate se aperto
+  const panel = document.getElementById('advPanel');
+  if (panel && panel.classList.contains('open')) toggleAdv();
+  updateActiveBar();
+  // Torna alla bacheca: svuota messaggi e mostra welcome
+  const msgs = document.getElementById('messages');
+  if (msgs) msgs.innerHTML = '';
+  const ws = document.getElementById('welcomeScreen');
+  if (!ws) {
+    // Ricrea welcome screen
+    const div = document.createElement('div');
+    div.id = 'welcomeScreen';
+    div.innerHTML = msgs.dataset.welcome || '';
+    msgs.appendChild(div);
+  }
+  // Più semplice: reload
+  location.reload();
+}
+
+async function runCombinedQuery(offset=0) {
+  const parts = [];
+  if (state.keywords)  parts.push('"' + state.keywords + '"');
+  if (state.theme)     parts.push('tema:' + state.theme.label);
+  if (state.hvd) { const h = HVD_CATS.find(x=>x.code===state.hvd); if(h) parts.push('HVD:' + h.label); }
+  if (state.publisher) parts.push('🏛️ ' + (state.publisherLabel || state.publisher));
+  const label = parts.join(' · ');
+
+  if (offset === 0) { clearPreviousResults(); addMsg('🔎 <strong>' + label + '</strong>', true); }
+  addTyping();
+  setBusy(true);
+  lastQuery = { type:'combined', params:{ state: JSON.parse(JSON.stringify(state)) }, offset, label };
+
+  try {
+    var triples = "  ?d a dcat:Dataset . ?d dct:title ?title .\n";
+    if (state.theme)
+      triples += "  ?d dcat:theme <" + THEME_BASE + state.theme.code + "> .\n";
+    if (state.hvd)
+      triples += "  ?d <http://data.europa.eu/r5r/hvdCategory> <" + HVD_BASE + state.hvd + "> .\n";
+    if (state.publisher && state.publisherType === 'uri')
+      triples += "  <" + state.publisher + "> dcat:dataset ?d .\n";
+    if (state.publisher && state.publisherType === 'name')
+      triples += "  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n";
+
+    var filters = "  " + LANG_FILTER + "\n";
+    if (state.keywords)
+      filters += "  FILTER(" + kwFilter(state.keywords.split(/\s+/)) + ")\n";
+    if (state.publisher && state.publisherType === 'name')
+      filters += '  FILTER(CONTAINS(LCASE(STR(?rhName)),LCASE("' + state.publisher.trim() + '")))\n';
+
+    var q = "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+      "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+      "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+      "SELECT DISTINCT ?d ?title ?description ?modified WHERE {\n" +
+      triples +
+      "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+      (state.publisher && state.publisherType !== 'name' ? "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n" : "") +
+      "  OPTIONAL { ?d dct:modified ?modified }\n" +
+      filters +
+      "} ORDER BY DESC(?modified) LIMIT " + FETCH_SIZE + " OFFSET " + offset;
+
+    let rows = await sparql(q);
+
+    removeTyping();
+    const uris = [...new Set(rows.map(r => val(r,'d')).filter(Boolean))];
+    const [rhMap, kwMap] = await Promise.all([fetchRhNames(uris), fetchKeywords(uris)]);
+    renderResults(rows, label, offset > 0, rhMap, kwMap);
+  } catch(e) {
+    removeTyping();
+    addMsg('<div class="error-msg">⚠️ ' + e.message + '</div>');
+  }
+  setBusy(false);
+}
+
+// ── SPARQL FETCH ──────────────────────────────────────────────────────────
+
+// Fetcha rightsHolder per una lista di URI dataset con VALUES
+async function fetchRhNames(uris) {
+  if (!uris.length) return {};
+  const values = uris.map(u => '<' + u + '>').join(' ');
+  const q =
+    "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+    "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+    "SELECT ?d ?rhName ?pubName WHERE {\n" +
+    "  VALUES ?d { " + values + " }\n" +
+    "  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n" +
+    "  OPTIONAL { ?d dct:publisher ?pub . ?pub foaf:name ?pubName }\n" +
+    "}";
+  try {
+    const rows = await sparql(q);
+    // Accumula per dataset: tutti i rightsHolder e il publisher
+    const acc = {};
+    for (const r of rows) {
+      const d  = val(r,'d');
+      const rh = val(r,'rhName').trim();
+      const pb = val(r,'pubName').trim();
+      if (!acc[d]) acc[d] = { rhs: [], pub: pb };
+      if (rh && !acc[d].rhs.includes(rh)) acc[d].rhs.push(rh);
+      if (pb && !acc[d].pub) acc[d].pub = pb;
+    }
+    // Scegli: rightsHolder diverso dal publisher (federatore)
+    const result = {};
+    for (const d of Object.keys(acc)) {
+      const { rhs, pub } = acc[d];
+      const specific = rhs.filter(n => n !== pub);
+      result[d] = (specific.length > 0 ? specific[0] : rhs[0]) || '';
+    }
+    return result;
+  } catch(e) { return {}; }
+}
+
+
+// Fetcha keyword per lista URI dataset
+async function fetchKeywords(uris) {
+  if (!uris.length) return {};
+  const values = uris.map(u => '<' + u + '>').join(' ');
+  const q =
+    "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+    "SELECT ?d ?kw WHERE {\n" +
+    "  VALUES ?d { " + values + " }\n" +
+    "  ?d dcat:keyword ?kw .\n" +
+    "  FILTER(?kw != 'N_A' && ?kw != 'n_a' && ?kw != 'NA' && STR(?kw) != '')\n" +
+    "}";
+  try {
+    const rows = await sparql(q);
+    const map = {};
+    for (const r of rows) {
+      const d  = val(r,'d');
+      const kw = val(r,'kw').trim();
+      if (kw && kw.toLowerCase() !== 'n_a' && kw !== 'NA') {
+        if (!map[d]) map[d] = [];
+        if (!map[d].includes(kw)) map[d].push(kw);
+      }
+    }
+    return map;
+  } catch(e) { return {}; }
+}
+
+async function sparql(query) {
+  const url = new URL('https://lod.dati.gov.it/sparql');
+  url.searchParams.set('query', query);
+  url.searchParams.set('format', 'application/sparql-results+json');
+  const res = await fetch(url.toString(), {
+    headers: { 'Accept': 'application/sparql-results+json' }
+  });
+  if (!res.ok) throw new Error(`SPARQL error ${res.status}`);
+  const data = await res.json();
+  return data.results.bindings;
+}
+
+function val(b, k) { return b[k]?.value || ''; }
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────
+function addMsg(html, isUser = false) {
+  document.getElementById('welcomeScreen')?.remove();
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  const isWide = !isUser && (html.includes('detail-panel') || html.includes('results-container') || html.includes('no-results'));
+  div.className = 'msg ' + (isUser ? 'user' : 'bot') + (isWide ? ' wide' : '');
+  div.innerHTML = `<div class="msg-avatar">${isUser ? '👤' : '🏛️'}</div><div class="msg-bubble">${html}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typingIndicator';
+  div.innerHTML = `<div class="msg-avatar">🏛️</div><div class="typing"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { document.getElementById('typingIndicator')?.remove(); }
+
+function setBusy(v) { const b = document.querySelector('.wizard-search-btn'); if(b) b.disabled = v; }
+
+// ── FORMAT LABEL ──────────────────────────────────────────────────────────
+function fmtLabel(uri) {
+  if (!uri) return '';
+  const p = uri.split('/').pop();
+  return p.replace(/_/g,' ');
+}
+
+function shortDate(iso) { return iso ? iso.slice(0,10) : ''; }
+
+// ── RENDER RESULTS ────────────────────────────────────────────────────────
+function renderResults(rows, label, append=false, rhMap={}, kwMap={}) {
+  // Rimostra wizard-steps se avanzate era aperto
+  const wrap = document.querySelector('.wizard-wrap');
+  if (wrap) wrap.classList.remove('adv-open');
+  // Chiudi pannello avanzate
+  const advPanel = document.getElementById('advPanel');
+  const advToggle = document.getElementById('advToggle');
+  if (advPanel && advPanel.classList.contains('open')) {
+    advPanel.classList.remove('open');
+    if (advToggle) { advToggle.classList.remove('open'); advToggle.textContent = '⚙️ Avanzata'; }
+  }
+  if (!rows.length && !append) {
+    addMsg(`<div class="no-results"><div class="icon">🔎</div>Nessun dataset trovato per <strong>"${label}"</strong>.</div>`);
+    return;
+  }
+  if (!rows.length && append) {
+    addMsg(`<div class="no-results">✅ Nessun altro risultato disponibile.</div>`);
+    return;
+  }
+
+  // Dedup: per ogni URI tieni la riga con rhName non vuoto
+  const seenMap2 = new Map();
+  for (const r of rows) {
+    const d = val(r,'d');
+    if (!seenMap2.has(d)) {
+      seenMap2.set(d, r);
+    } else if (!val(seenMap2.get(d),'rhName') && val(r,'rhName')) {
+      seenMap2.set(d, r);
+    }
+  }
+  const unique = [...seenMap2.values()];
+
+  const hasMore = unique.length >= PAGE_SIZE;
+  const currentOffset = lastQuery ? lastQuery.offset : 0;
+
+  let html = `<div class="results-container">`;
+  if (!append) {
+    html += `<div class="results-header">
+      <span>Risultati per <strong>"${label}"</strong></span>
+      <span class="results-count">${unique.length}${hasMore?'+':''} dataset</span>
+    </div>`;
+  }
+
+  unique.forEach(r => {
+    const title    = val(r,'title');
+    const org      = rhMap[val(r,'d')] || val(r,'rhName') || '';
+    const notes    = val(r,'description').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/<[^>]+>/g,'').trim();
+    const modified = shortDate(val(r,'modified'));
+    const dUri     = val(r,'d');
+
+    // Usa data-attributes per evitare problemi con apostrofi/virgolette nei titoli
+    html += '<div class="dataset-card" ' +
+      'data-uri="' + dUri.replace(/"/g,'&quot;') + '" ' +
+      'data-title="' + title.replace(/"/g,'&quot;') + '" ' +
+      'data-org="' + org.replace(/"/g,'&quot;') + '" ' +
+      'onclick="showDatasetFromCard(this)">' +
+      '<div class="dataset-title">' + title + '</div>' +
+      (org ? '<div class="dataset-org">📌 ' + org + '</div>' : '') +
+      (notes ? '<div class="dataset-notes">' + notes.slice(0,200) + '</div>' : '') +
+      '<div class="dataset-meta">' +
+      (modified ? '<span class="meta-tag date">📅 ' + modified + '</span>' : '') +
+      '</div>' +
+      (kwMap[dUri] && kwMap[dUri].length ? '<div class="dataset-kws">' + kwMap[dUri].slice(0,5).map(k=>'<span class="kw-tag">' + k + '</span>').join('') + '</div>' : '') +
+      '</div>';
+  });
+
+  if (hasMore) {
+    const nextOffset = currentOffset + FETCH_SIZE;
+    html += `<button class="load-more-btn" onclick="loadMoreResults(${nextOffset})">
+      ↓ Carica altri risultati
+    </button>`;
+  }
+
+  if (!append) {
+    html += `<div class="action-chips">
+      <span class="action-chip" onclick="addMsg('💡 Clicca su un dataset per vedere descrizione completa e risorse.')">💡 Come funziona?</span>
+    </div>`;
+  }
+
+  html += `</div>`;
+  addMsg(html);
+}
+
+// ── DETTAGLIO DATASET ─────────────────────────────────────────────────────
+
+function showDatasetFromCard(el) {
+  const uri   = el.dataset.uri;
+  const title = el.dataset.title;
+  const org   = el.dataset.org;
+  showDataset(uri, title, org);
+}
+
+async function showDataset(dUri, title, org) {
+  addMsg('📂 <strong>' + title + '</strong>', true);
+  addTyping();
+  try {
+    const rows = await sparql(
+      "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+      "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+      "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+      "SELECT ?description ?theme ?license ?modified ?distTitle ?format ?accessURL ?downloadURL ?resourceId ?dsTitle ?endpointURL ?endpointDesc WHERE {\n" +
+      "  BIND(<" + dUri + "> AS ?d)\n" +
+      "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+      "  OPTIONAL { ?d dcat:theme ?theme }\n" +
+      "  OPTIONAL { ?d dct:license ?license }\n" +
+      "  OPTIONAL { ?d dct:modified ?modified }\n" +
+      "  OPTIONAL {\n" +
+      "    ?d dcat:distribution ?dist .\n" +
+      "    OPTIONAL { ?dist dct:title ?distTitle }\n" +
+      "    OPTIONAL { ?dist dct:format ?format }\n" +
+      "    OPTIONAL { ?dist dcat:accessURL ?accessURL }\n" +
+      "    OPTIONAL { ?dist dct:identifier ?resourceId }\n" +
+      "  }\n" +
+      "  OPTIONAL {\n" +
+      "    ?ds a <http://www.w3.org/ns/dcat#DataService> .\n" +
+      "    ?ds <http://www.w3.org/ns/dcat#servesDataset> ?d .\n" +
+      "    OPTIONAL { ?ds <http://purl.org/dc/terms/title> ?dsTitle FILTER(LANG(?dsTitle)='it'||LANG(?dsTitle)='') }\n" +
+      "    OPTIONAL { ?ds <http://www.w3.org/ns/dcat#endpointURL> ?endpointURL }\n" +
+      "    OPTIONAL { ?ds <http://www.w3.org/ns/dcat#endpointDescription> ?endpointDesc }\n" +
+      "  }\n" +
+      "} LIMIT 30"
+    );
+    removeTyping();
+
+    const desc     = rows[0] ? val(rows[0],'description').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/<[^>]+>/g,'').trim() : '';
+    const modified = shortDate(val(rows[0]||{},'modified'));
+    const themes   = [...new Set(rows.map(r=>val(r,'theme')).filter(Boolean))];
+
+    // Risorse uniche
+    const distMap = new Map();
+        rows.forEach(r => {
+      const accessURL  = val(r,'accessURL');
+      const downloadURL = val(r,'downloadURL');
+      const key = accessURL || downloadURL;
+      if (key && !distMap.has(key)) distMap.set(key, {
+        title: val(r,'distTitle') || fmtLabel(val(r,'format')) || 'Risorsa',
+        format: fmtLabel(val(r,'format')),
+        formatUri: val(r,'format'),
+        url: accessURL || downloadURL,
+        downloadURL: downloadURL || accessURL,
+        resourceId: val(r,'resourceId')
+      });
+    });
+    const dists = [...distMap.values()];
+
+    // DataService collegati
+    const dsMap = new Map();
+    rows.forEach(r => {
+      const eu = val(r,'endpointURL');
+      if (eu && !dsMap.has(eu)) dsMap.set(eu, {
+        title: val(r,'dsTitle') || 'API',
+        endpointURL: eu,
+        endpointDesc: val(r,'endpointDesc')
+      });
+    });
+    const dataServices = [...dsMap.values()];
+
+    // Genera ID unici per preview container
+    var previewId = 'preview_' + Math.random().toString(36).slice(2);
+
+    // Trova prima risorsa CSV o XLSX per anteprima
+    var previewDist = dists.find(function(d){
+      var f = d.format.toUpperCase();
+      return f === 'CSV' || f === 'XLSX';
+    });
+
+    var resHtml = dists.length
+      ? dists.map(function(d) {
+          var fmt = d.format.toUpperCase();
+          var previewUrl = d.downloadURL || '';
+          var canPreview = fmt === 'CSV' && previewUrl.length > 0;
+          var pid = 'prev_' + Math.random().toString(36).slice(2);
+          return '<div class="resource-item">' +
+            '<div class="resource-item-header">' +
+            '<div><div class="resource-name">' + d.title + '</div>' +
+            (d.format ? '<div style="font-size:12px;color:var(--text3);font-family:var(--mono)">' + d.format + '</div>' : '') +
+            '</div>' +
+            '<div style="display:flex;gap:6px">' +
+            (canPreview ? '<button class="res-btn preview" ' +
+            'data-resid="' + (d.resourceId||'').replace(/"/g,'&quot;') + '" ' +
+            'data-url="' + d.downloadURL.replace(/"/g,'&quot;') + '" ' +
+            'data-fmt="' + fmt + '" ' +
+            'data-pid="' + pid + '" ' +
+            'onclick="previewFromBtn(this)" ' +
+            'style="border-color:var(--success);color:var(--success)">👁 Anteprima</button>' : '') +
+            '<button class="res-btn open" onclick="window.open(\'' + (d.downloadURL||d.url).replace(/'/g,"\'") + '\',\'_blank\')">↗ Apri</button>' +
+            '</div>' +
+            '</div>' +
+            (canPreview ? '<div id="' + pid + '" style="width:100%;margin-top:8px"></div>' : '') +
+            '</div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--text3)">Nessuna distribuzione trovata.</div>';
+
+    // Sezione DataService
+    var dsHtml = '';
+    if (dataServices.length > 0) {
+      dsHtml = '<div class="api-section">' +
+        '<div class="api-section-label">🔌 API / Data Service</div>' +
+        dataServices.map(function(ds) {
+          const docUrl = ds.endpointDesc || ds.endpointURL;
+          return '<div style="margin-bottom:6px">' +
+            '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">' + ds.title + '</div>' +
+            '<a href="' + docUrl + '" target="_blank" class="api-btn">📄 Documentazione API ↗</a>' +
+            (ds.endpointURL !== docUrl ? ' <a href="' + ds.endpointURL + '" target="_blank" class="api-btn" style="background:#2E7D32">⚡ Endpoint ↗</a>' : '') +
+            '</div>';
+        }).join('') +
+        '</div>';
+    }
+
+    var html = '<div class="detail-panel">' +
+      '<div class="detail-header">' +
+        '<h3>' + title + '</h3>' +
+        '<div class="detail-org">📌 ' + org + (modified ? ' · 📅 ' + modified : '') + '</div>' +
+      '</div>' +
+      '<div class="detail-body">' +
+        (desc ? '<div class="detail-desc">' + desc.slice(0,500) + (desc.length>500?'…':'') + '</div>' : '') +
+        dsHtml +
+        (themes.length ? '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">' + themes.map(function(t){ return '<span class="meta-tag">' + fmtLabel(t) + '</span>'; }).join('') + '</div>' : '') +
+        '<div class="resources-label">Distribuzioni (' + dists.length + ')</div>' +
+        resHtml +
+      '</div>' +
+    '</div>' +
+    '<div class="action-chips">' +
+      '<span class="action-chip" onclick="window.open(\'' + dUri + '\',\'_blank\')">🔗 URI dataset</span>' +
+      '<span class="action-chip" onclick="navigator.clipboard.writeText(\'' + dUri + '\').then(function(){ addMsg(\'✅ URI copiato!\'); })">📋 Copia URI</span>' +
+      (org ? '<span class="action-chip" onclick="searchByName(\'' + org.replace(/'/g,"\'") + '\')">🏢 Altri di ' + org.split(' ').slice(0,3).join(' ') + '</span>' : '') +
+    '</div>';
+    addMsg(html);
+  } catch(e) {
+    removeTyping();
+    addMsg('<div class="error-msg">⚠️ ' + e.message + '</div>');
+  }
+}
+
+// ── RICERCA PER KEYWORD ───────────────────────────────────────────────────
+async function doSearch() {
+  const q    = document.getElementById('searchInput').value.trim();
+  const orgEl = document.getElementById('wizardOrg');
+  const org  = orgEl ? orgEl.value.trim() : '';
+
+  if (!q && !org) return;
+
+  // Imposta stato
+  if (org) {
+    state.publisher = org;
+    state.publisherLabel = org;
+    state.publisherType = 'name';
+  } else {
+    state.publisher = null;
+    state.publisherLabel = null;
+    state.publisherType = null;
+  }
+  state.keywords = q || null;
+  updateActiveBar();
+
+  const label = [q, org ? '🏛️ ' + org : ''].filter(Boolean).join(' · ');
+  addMsg('🔍 <strong>' + label + '</strong>', true);
+
+  // Se c'è publisher OPPURE tema/hvd → usa runCombinedQuery (gestisce tutto)
+  if (state.publisher || state.theme || state.hvd) {
+    runCombinedQuery(0);
+  } else if (q) {
+    // Solo keyword libera
+    await searchByKeyword(q.split(/\s+/).filter(Boolean), 0);
+  }
+}
+
+function quickSearch(term) {
+  document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('selected'));
+  event?.currentTarget?.classList.add('selected');
+  state.keywords = term;
+  // Non resetta gli altri filtri attivi (tema, hvd, publisher)
+  updateActiveBar();
+  addMsg('🔍 <strong>' + term + '</strong>', true);
+  // Usa sempre runCombinedQuery per rispettare tutti i filtri attivi
+  runCombinedQuery(0);
+}
+
+async function searchByKeyword(words, offset=0) {
+  const label = Array.isArray(words) ? words.join(' ') : words;
+  const wordsArr = Array.isArray(words) ? words : words.trim().split(/\s+/);
+  lastQuery = { type:'keyword', params:{ q: label }, offset, label };
+  if (offset === 0) clearPreviousResults();
+  addTyping();
+  setBusy(true);
+  try {
+    const rows = await sparql(buildKeywordQuery(wordsArr, offset));
+    removeTyping();
+    if (!rows.length && offset === 0) {
+      addMsg(
+        '<div class="no-results">' +
+        '<div class="icon">🔎</div>' +
+        'Nessun dataset trovato per <strong>"' + label + '"</strong>.<br><br>' +
+        '<span style="font-size:13px;color:var(--text2)">💡 Suggerimento: prova con parole più semplici nel titolo ' +
+        '(es. <em>"sinistri stradali"</em>), poi affina con i filtri ' +
+        '<strong>Amministrazione</strong> o <strong>Tema</strong> nella sidebar.</span>' +
+        '</div>'
+      );
+      setBusy(false);
+      return;
+    }
+    const _uris = [...new Set(rows.map(r => val(r,'d')).filter(Boolean))];
+    const [_rhMap, _kwMap] = await Promise.all([fetchRhNames(_uris), fetchKeywords(_uris)]);
+    renderResults(rows, label, offset > 0, _rhMap, _kwMap);
+  } catch(e) {
+    removeTyping();
+    addMsg('<div class="error-msg">⚠️ ' + e.message + '</div>');
+  }
+  setBusy(false);
+}
+
+// ── TEMA ──────────────────────────────────────────────────────────────────
+async function searchTheme(code, label) {
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected','active'));
+  document.querySelectorAll('.hvd-chip').forEach(c=>c.classList.remove('active'));
+  event?.target?.classList.add('selected');
+  if (state.theme?.code === code) {
+    state.theme = null;
+    event?.target?.classList.remove('selected');
+    updateActiveBar();
+    return;
+  }
+  state.theme = { code, label };
+  updateActiveBar();
+  runCombinedQuery();
+  closeSidebarMobile();
+}
+
+// ── PUBLISHER ─────────────────────────────────────────────────────────────
+async function searchPublisher(pubName) {
+  if (state.publisher === pubName) {
+    state.publisher = null; state.publisherLabel = null; state.publisherType = null;
+    document.querySelectorAll('.org-item').forEach(i=>i.classList.remove('selected'));
+    updateActiveBar();
+    return;
+  }
+  state.publisher = pubName;
+  state.publisherLabel = pubName;
+  state.publisherType = 'name';
+  document.querySelectorAll('.org-item').forEach(i=>{
+    i.classList.toggle('selected', i.dataset.publisher === pubName);
+  });
+  updateActiveBar();
+  runCombinedQuery(0);
+  closeSidebarMobile();
+}
+
+
+async function searchByName(name) {
+  // Toggle
+  if (state.publisher === name && state.publisherType === 'name') {
+    state.publisher = null; state.publisherLabel = null; state.publisherType = null;
+    document.querySelectorAll('.org-item').forEach(i=>i.classList.remove('selected'));
+    updateActiveBar();
+    return;
+  }
+  state.publisher = name;
+  state.publisherLabel = name;
+  state.publisherType = 'name';
+  document.querySelectorAll('.org-item').forEach(i=>{
+    i.classList.toggle('selected', i.dataset.publisher === name);
+  });
+  updateActiveBar();
+  closeSidebarMobile();
+  runCombinedQuery(0);
+}
+
+async function searchByIdentifier(identifier, name) {
+  // Manteniamo per compatibilità ma ora usa foaf:name esatto
+  searchByName(name);
+}
+
+async function searchCatalog(catalogUri, catalogTitle) {
+  if (catalogUri.includes('#')) {
+    addMsg('<div class="error-msg">⚠️ URI catalogo non supportato: ' + catalogTitle + '</div>');
+    return;
+  }
+  if (state.publisher === catalogUri) {
+    state.publisher = null; state.publisherLabel = null; state.publisherType = null;
+    document.querySelectorAll('.org-item').forEach(i=>i.classList.remove('selected'));
+    updateActiveBar();
+    return;
+  }
+  state.publisher = catalogUri;
+  state.publisherLabel = catalogTitle;
+  state.publisherType = 'uri';
+  document.querySelectorAll('.org-item').forEach(i=>{
+    i.classList.toggle('selected', i.dataset.publisher === catalogUri);
+  });
+  updateActiveBar();
+  closeSidebarMobile();
+  runCombinedQuery(0);
+}
+// ── ULTIMI AGGIORNATI ─────────────────────────────────────────────────────
+async function loadRecent(offset=0) {
+  if (offset === 0) clearAllFilters();
+  if (offset === 0) addMsg('🕐 Ultimi dataset aggiornati', true);
+  addTyping();
+  try {
+    const rows = await sparql(buildRecentQuery(offset));
+    lastQuery = { type:'recent', params:{}, offset, label:'ultimi aggiornati' };
+    removeTyping();
+    const _uris = [...new Set(rows.map(r => val(r,'d')).filter(Boolean))];
+    const [_rhMap, _kwMap] = await Promise.all([fetchRhNames(_uris), fetchKeywords(_uris)]);
+    renderResults(rows, 'ultimi aggiornati', offset > 0, _rhMap, _kwMap);
+  } catch(e) { removeTyping(); addMsg(`<div class="error-msg">⚠️ ${e.message}</div>`); }
+}
+
+// ── RICERCA AVANZATA ──────────────────────────────────────────────────────
+function toggleAdv() {
+  const panel = document.getElementById('advPanel');
+  const toggle = document.getElementById('advToggle');
+  const wrap = document.querySelector('.wizard-wrap');
+  const isOpen = panel.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+  toggle.textContent = isOpen ? '✕ Chiudi' : '⚙️ Avanzata';
+  toggle.setAttribute('aria-expanded', isOpen);
+  if (wrap) wrap.classList.toggle('adv-open', isOpen);
+  if (isOpen && window.innerWidth <= 768) {
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+}
+
+function resetAdv() {
+  ['advQ','advTheme','advHvd','advPub','advFormat','advLicense','advSort'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = el.tagName==='SELECT' ? (id==='advSort'?'modified':'') : '';
+  });
+  document.getElementById('advActiveFilters').innerHTML = '';
+}
+
+async function doAdvSearch() {
+  const q       = document.getElementById('advQ').value.trim();
+  const theme   = document.getElementById('advTheme').value;
+  const hvd     = document.getElementById('advHvd') ? document.getElementById('advHvd').value : '';
+  const pub     = document.getElementById('advPub').value.trim();
+  const identifier = document.getElementById('advPub').dataset.identifier || '';
+  const format  = document.getElementById('advFormat').value;
+  const license = document.getElementById('advLicense').value;
+  const sort    = document.getElementById('advSort').value;
+
+  if (!q && !theme && !pub && !format && !license) {
+    addMsg('<div class="error-msg">⚠️ Inserisci almeno un criterio.</div>'); return;
+  }
+
+  const parts = [];
+  if (q)       parts.push('"' + q + '"');
+  if (theme)   parts.push('tema:' + theme);
+  if (pub)     parts.push('amm:' + pub + (identifier ? ' [' + identifier + ']' : ''));
+  if (format)  parts.push('formato:' + format);
+  if (license) parts.push('licenza:' + license);
+  const label = parts.join(' · ');
+
+  addMsg('🔎 Ricerca avanzata: <strong>' + label + '</strong>', true);
+  addTyping();
+
+  document.getElementById('advPanel').classList.remove('open');
+  document.getElementById('advToggle').classList.remove('open');
+  document.getElementById('advToggle').textContent = '⚙️ Avanzata';
+
+  const fc = document.getElementById('advActiveFilters');
+  fc.innerHTML = parts.map(function(p){ return '<span class="filter-tag">' + p + '</span>'; }).join('');
+
+  // Salva per paginazione
+  lastQuery = {
+    type: 'advanced',
+    params: { q, theme, hvd, pub, format, license, sort },
+    offset: 0,
+    label: label
+  };
+
+  try {
+    const rows = await sparql(buildAdvQuery(q, theme, hvd, pub, format, license, sort, 0));
+    removeTyping();
+    const _uris = [...new Set(rows.map(r => val(r,'d')).filter(Boolean))];
+    const [_rhMap, _kwMap] = await Promise.all([fetchRhNames(_uris), fetchKeywords(_uris)]);
+    renderResults(rows, label, false, _rhMap, _kwMap);
+  } catch(e) {
+    removeTyping();
+    addMsg('<div class="error-msg">⚠️ ' + e.message + '</div>');
+  }
+}
+
+function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
+  var triples = "  ?d a dcat:Dataset . ?d dct:title ?title .\n";
+  if (theme)
+    triples += "  ?d dcat:theme <" + THEME_BASE + theme + "> .\n";
+  if (hvd)
+    triples += "  ?d <http://data.europa.eu/r5r/hvdCategory> <" + HVD_BASE + hvd + "> .\n";
+  if (format)
+    triples += "  ?d dcat:distribution ?distFmt . ?distFmt dct:format <" + FT_BASE + format + "> .\n";
+  if (license) {
+    var licMap = {
+      CC_BY:   ['https://creativecommons.org/licenses/by/4.0/','http://creativecommons.org/licenses/by/4.0/','http://creativecommons.org/licenses/by/4.0/it/'],
+      CC_ZERO: ['https://creativecommons.org/publicdomain/zero/1.0/','http://creativecommons.org/publicdomain/zero/1.0/'],
+      IODL:    ['https://www.dati.gov.it/content/italian-open-data-license-v20'],
+      CC_BYSA: ['https://creativecommons.org/licenses/by-sa/4.0/']
+    };
+    var licUris = (licMap[license] || []).map(function(u){ return '<' + u + '>'; }).join(' ');
+    if (licUris)
+      triples += "  ?d dcat:distribution ?distLic . ?distLic dct:license ?lic . VALUES ?lic { " + licUris + " }\n";
+  }
+  if (pub)
+    triples += "  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n";
+
+  var filters = "  " + LANG_FILTER + "\n";
+  if (q)
+    filters += "  FILTER(" + kwFilter(q.trim().split(/\s+/)) + ")\n";
+  if (pub)
+    filters += '  FILTER(CONTAINS(LCASE(STR(?rhName)),"' + pub.toLowerCase().replace(/"/g,'') + '"))\n';
+
+  var orderBy = (sort === 'title') ? '?title' : 'DESC(?modified)';
+  return "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+    "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+    "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+    "SELECT DISTINCT ?d ?title ?description ?modified WHERE {\n" +
+    triples +
+    "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+        "  OPTIONAL { ?d dct:modified ?modified }\n" +
+    filters +
+    "} ORDER BY " + orderBy + " LIMIT " + FETCH_SIZE + " OFFSET " + offset;
+}
+
+
+
+// ── INPUT KEYBOARD ────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+
+// ── AUTOCOMPLETE PUBLISHER ────────────────────────────────────────────────
+let acCache = null;
+let acTimer = null;
+
+async function loadAcCache() {
+  if (acCache) return acCache;
+  const rows = await sparql(
+    "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+    "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+    "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+    "SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {\n" +
+    "  ?d a dcat:Dataset .\n" +
+    "  ?d dct:rightsHolder ?rh .\n" +
+    "  ?rh foaf:name ?name .\n" +
+    "} GROUP BY ?name ORDER BY DESC(?count) LIMIT 500"
+  );
+  // Deduplica per nome normalizzato (trim + lowercase)
+  const byName = new Map();
+  rows.forEach(r => {
+    const n = val(r,'name').trim();
+    const c = parseInt(val(r,'count')||'0');
+    const key = n.toLowerCase();
+    if (!byName.has(key) || c > byName.get(key).count)
+      byName.set(key, { name: n, count: c });
+  });
+  acCache = [...byName.values()].sort((a,b) => b.count - a.count);
+  return acCache;
+}
+
+async function acPublisher(q) {
+  clearTimeout(acTimer);
+  const list = document.getElementById('acList');
+  if (!q || q.length < 2) { list.style.display = 'none'; return; }
+  acTimer = setTimeout(async () => {
+    const data = await loadAcCache();
+    const ql = q.toLowerCase();
+    // cerca su nome E su identifier IPA
+    const matches = data.filter(d =>
+      d.name.toLowerCase().includes(ql) || (d.identifier||'').toLowerCase().includes(ql)
+    ).slice(0, 10);
+    if (!matches.length) { list.style.display = 'none'; return; }
+    list.innerHTML = matches.map(m => {
+      const safeName = m.name.replace(/'/g,"\\'");
+      return '<div class="ac-item" onclick="selectPub(\'' + safeName + '\')">' +
+        '<span>' + m.name + '</span>' +
+        '<span class="ac-count">' + (m.count||0).toLocaleString('it') + ' ds</span>' +
+        '</div>';
+    }).join('');
+    list.style.display = 'block';
+  }, 250);
+}
+
+function selectPub(name) {
+  document.getElementById('advPub').value = name;
+  document.getElementById('advPub').dataset.name = name;
+  document.getElementById('acList').style.display = 'none';
+}
+
+
+
+
+// ── MOBILE SIDEBAR ───────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const isOpen   = sidebar.classList.toggle('open');
+  overlay.classList.toggle('open', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+// Chiudi sidebar mobile dopo azione
+function closeSidebarMobile() {
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+
+
+// ── ANTEPRIMA DATI CSV/XLSX ───────────────────────────────────────────────
+
+function previewFromBtn(el) {
+  tryDataPreview(
+    el.dataset.resid || '',
+    el.dataset.url,
+    el.dataset.fmt,
+    el.dataset.pid
+  );
+}
+
+async function tryDataPreview(resourceId, resourceUrl, format, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '<div class="data-preview-loading">⏳ Caricamento anteprima…</div>';
+
+  if (!resourceUrl) {
+    container.innerHTML = '<div class="data-preview-loading">⚠️ URL risorsa non disponibile.</div>';
+    return;
+  }
+
+  try {
+    const resp = await fetch(resourceUrl, { signal: AbortSignal.timeout(30000), redirect: 'follow' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    // Verifica Content-Type: deve essere CSV o testo, non HTML
+    const ct = resp.headers.get('content-type') || '';
+    if (ct.includes('text/html') || ct.includes('application/xhtml'))
+      throw new Error('Il server ha restituito una pagina HTML invece del file');
+
+    const fmt = format.toUpperCase();
+    if (fmt === 'CSV') {
+      const text = await resp.text();
+      const allRows = parseCSV(text);
+      if (allRows.length < 2) throw new Error('Nessun dato nel file');
+
+      const totalRows = allRows.length - 1; // escludi header
+      const headers   = allRows[0].map(function(h,i){ return { id: h.trim() || ('col'+i) }; });
+      const records   = allRows.slice(1, 11).map(function(r){
+        var obj = {};
+        headers.forEach(function(h,i){ obj[h.id] = (r[i]||'').trim(); });
+        return obj;
+      });
+      renderPreviewTable(container, headers, records, totalRows);
+
+    } else if (fmt === 'XLSX') {
+      container.innerHTML =
+        '<div class="data-preview-loading">📥 File XLSX: ' +
+        '<a href="' + resourceUrl + '" target="_blank" ' +
+        'style="color:var(--primary);font-weight:600">Scarica per visualizzare ↗</a></div>';
+    }
+  } catch(e) {
+    var msg = '⚠️ Anteprima non disponibile';
+    if (e.name === 'TimeoutError' || (e.message && e.message.includes('aborted')))
+      msg = '⏱️ Timeout — il file è troppo grande o il server è lento';
+    else if (e.message && e.message.includes('CORS'))
+      msg = '🔒 CORS bloccato — il server non permette accesso diretto';
+    else if (e.message && e.message.includes('HTTP'))
+      msg = '⚠️ ' + e.message;
+    container.innerHTML =
+      '<div class="data-preview-loading">' + msg + '. ' +
+      '<a href="' + resourceUrl + '" target="_blank" ' +
+      'style="color:var(--primary);font-weight:600">Apri direttamente ↗</a></div>';
+  }
+}
+
+function parseCSV(text) {
+  var lines = text.split('\n').filter(function(l){ return l.trim(); });
+  if (!lines.length) return [];
+
+  // Auto-detect separatore: conta occorrenze di ; , \t nella prima riga
+  var first = lines[0];
+  var counts = {
+    ';': (first.match(/;/g)||[]).length,
+    ',': (first.match(/,/g)||[]).length,
+    '\t': (first.match(/\t/g)||[]).length
+  };
+  var sep = ';'; // default italiano
+  var max = 0;
+  Object.keys(counts).forEach(function(k){ if (counts[k] > max) { max = counts[k]; sep = k; } });
+
+  return lines.map(function(line) {
+    var result = [], current = '', inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === sep && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  });
+}
+
+function renderPreviewTable(container, fields, records, total) {
+  var cols = fields.filter(function(f){ return f.id !== '_id'; }).slice(0, 10);
+  var thead = '<tr>' + cols.map(function(f){
+    return '<th>' + (f.id||'').toString().slice(0,20) + '</th>';
+  }).join('') + '</tr>';
+  var tbody = records.map(function(r){
+    return '<tr>' + cols.map(function(f){
+      var v = (r[f.id] !== undefined && r[f.id] !== null) ? String(r[f.id]) : '';
+      return '<td title="' + v.replace(/"/g,'&quot;') + '">' + v.slice(0,40) + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+  container.innerHTML =
+    '<div class="data-preview-header">' +
+      '<span>📊 Anteprima dati — prime ' + records.length + ' righe su ' + total.toLocaleString('it') + ' totali</span>' +
+    '</div>' +
+    '<div class="data-preview-table"><table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>';
+}
+
+
+// ── HVD CATEGORIES ───────────────────────────────────────────────────────
+function initHvdChips() {
+  const c = document.getElementById('hvdChips');
+  if (!c) return;
+  c.innerHTML = HVD_CATS.map(h =>
+    '<span class="hvd-chip" data-code="' + h.code + '" onclick="selectHvd(this)">' + h.label + '</span>'
+  ).join('');
+}
+
+function selectHvd(el) {
+  const code = el.dataset.code;
+  if (state.hvd === code) {
+    state.hvd = null;
+    el.classList.remove('active');
+  } else {
+    document.querySelectorAll('.hvd-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    state.hvd = code;
+  }
+  updateActiveBar();
+  runCombinedQuery(0);
+}
+
+
+// ── WIZARD AUTOCOMPLETE ───────────────────────────────────────────────────
+let wizardOrgTimer = null;
+let wizardOrgSelected = null; // { name, type } — nome ente selezionato
+
+function wizardOrgAc(q) {
+  clearTimeout(wizardOrgTimer);
+  wizardOrgSelected = null;
+  const dropdown = document.getElementById('wizardOrgList');
+  if (!q || q.length < 2) {
+    dropdown.classList.remove('open');
+    dropdown.innerHTML = '';
+    return;
+  }
+  wizardOrgTimer = setTimeout(async () => {
+    try {
+      const ql = q.toLowerCase().replace(/"/g, '');
+      const rows = await sparql(
+        "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+        "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+        "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+        "SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {\n" +
+        "  ?d a dcat:Dataset .\n" +
+        "  ?d dct:rightsHolder ?rh .\n" +
+        "  ?rh foaf:name ?name .\n" +
+        '  FILTER(CONTAINS(LCASE(STR(?name)),"' + ql + '"))\n' +
+        "} GROUP BY ?name ORDER BY DESC(?count) LIMIT 10"
+      );
+      if (!rows.length) { dropdown.classList.remove('open'); return; }
+      const seen = new Set();
+      const unique = [];
+      rows.forEach(r => {
+        const n = val(r,'name').trim();
+        if (!seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); unique.push({ name: n, count: parseInt(val(r,'count')||'0') }); }
+      });
+      dropdown.innerHTML = unique.map(function(m) {
+        return '<div class="ac-item" data-name="' + m.name.replace(/"/g,'&quot;') + '" onclick="selectWizardOrg(this)">' +
+          '<span>' + m.name + '</span>' +
+          '<span class="ac-count">' + m.count.toLocaleString('it') + ' ds</span>' +
+          '</div>';
+      }).join('');
+      dropdown.classList.add('open');
+    } catch(e) { dropdown.classList.remove('open'); }
+  }, 350);
+}
+
+function selectWizardOrg(el) {
+  const name = el.dataset.name;
+  document.getElementById('wizardOrg').value = name;
+  wizardOrgSelected = { name };
+  document.getElementById('wizardOrgList').classList.remove('open');
+  document.getElementById('wizardOrgList').innerHTML = '';
+}
+
+
+// Pulisce tutti i messaggi precedenti prima di una nuova ricerca
+function clearPreviousResults() {
+  const msgs = document.getElementById('messages');
+  if (!msgs) return;
+  // Rimuovi tutti i messaggi (bot e user) — pulito per la nuova ricerca
+  const allMsgs = msgs.querySelectorAll('.msg');
+  allMsgs.forEach(m => m.remove());
+}
+
+// ── PAGINAZIONE RISULTATI ────────────────────────────────────────────────
+const LANG_FILTER = "FILTER(LANG(?title)='it'||LANG(?title)='')";
+const SPARQL_PREFIXES = "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+  "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+  "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n";
+const SPARQL_SELECT = "SELECT DISTINCT ?d ?title ?description ?modified WHERE {\n";
+const SPARQL_OPTIONALS =
+  "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+  "  OPTIONAL { ?d dct:modified ?modified }\n";
+
+// Stopword italiane da ignorare nel fallback OR
+const STOPWORDS = new Set(['il','lo','la','i','gli','le','un','una','uno','di','a','da','in','con','su','per','tra','fra','e','o','ma','non','che','è','si','del','dei','delle','della','degli','al','ai','alle','alla','agli','nel','nei','nelle','nella','negli','sul','sui','sulle','sulla','sugli','col','coi']);
+
+function kwFilterOr(words) {
+  const significant = words.filter(w => w.length >= 3 && !STOPWORDS.has(w.toLowerCase()));
+  const useWords = significant.length > 0 ? significant : words;
+  return useWords.map(function(w) {
+    var wl = w.toLowerCase().replace(/"/g, "");
+    return '(CONTAINS(LCASE(?title),"' + wl + '")||CONTAINS(LCASE(STR(?description)),"' + wl + '"))';
+  }).join(" || ");
+}
+
+function kwFilter(words) {
+  return words.map(function(w, i) {
+    var wl = w.toLowerCase().replace(/"/g, "");
+    var kv = "kw" + i; // variabile unica per ogni parola
+    return '(CONTAINS(LCASE(?title),"' + wl + '")||' +
+           'CONTAINS(LCASE(STR(?description)),"' + wl + '")||' +
+           'EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?' + kv + ' . FILTER(CONTAINS(LCASE(STR(?' + kv + ')),"' + wl + '")) })';
+  }).join(" && ");
+}
+
+function buildKeywordQuery(words, offset, useOr=false) {
+  return SPARQL_PREFIXES + SPARQL_SELECT +
+    "  ?d a dcat:Dataset . ?d dct:title ?title .\n" +
+        "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+    "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n" +
+    "  OPTIONAL { ?d dct:modified ?modified }\n" +
+    "  " + LANG_FILTER + "\n" +
+    "  FILTER(" + (useOr ? kwFilterOr(words) : kwFilter(words)) + ")\n" +
+    "} ORDER BY DESC(?modified) LIMIT " + FETCH_SIZE + " OFFSET " + offset;
+}
+
+function buildRecentQuery(offset) {
+  return SPARQL_PREFIXES + SPARQL_SELECT +
+    "  ?d a dcat:Dataset . ?d dct:title ?title . ?d dct:modified ?modified .\n" +
+    "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+    "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n" +
+    "  OPTIONAL { ?d dct:modified ?modified }\n" +
+    "  " + LANG_FILTER + "\n" +
+    "} ORDER BY DESC(?modified) LIMIT " + FETCH_SIZE + " OFFSET " + offset;
+}
+
+function buildCombinedQuery(s, offset) {
+  var triples = "  ?d a dcat:Dataset . ?d dct:title ?title .\n";
+  if (s.theme)
+    triples += "  ?d dcat:theme <" + THEME_BASE + s.theme.code + "> .\n";
+  if (s.hvd)
+    triples += "  ?d <http://data.europa.eu/r5r/hvdCategory> <" + HVD_BASE + s.hvd + "> .\n";
+  if (s.publisher && s.publisherType === 'uri')
+    triples += "  <" + s.publisher + "> dcat:dataset ?d .\n";
+  if (s.publisher && s.publisherType === 'name')
+    triples += "  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n";
+
+  var filters = "  " + LANG_FILTER + "\n";
+  if (s.keywords)
+    filters += "  FILTER(" + kwFilter(s.keywords.split(/\s+/)) + ")\n";
+  if (s.publisher && s.publisherType === 'name')
+    filters += '  FILTER(CONTAINS(LCASE(STR(?rhName)),LCASE("' + s.publisher.trim() + '")))\n';
+
+  return "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+    "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+    "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+    "SELECT DISTINCT ?d ?title ?description ?modified WHERE {\n" +
+    triples +
+    "  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }\n" +
+    (s.publisher && s.publisherType !== 'name' ? "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n" : "") +
+    "  OPTIONAL { ?d dct:modified ?modified }\n" +
+    filters +
+    "} ORDER BY DESC(?modified) LIMIT " + FETCH_SIZE + " OFFSET " + offset;
+}
+
+async function loadMoreResults(offset) {
+  if (!lastQuery) return;
+  addTyping();
+  setBusy(true);
+  try {
+    let rows = [];
+    const lq = lastQuery;
+    if (lq.type === 'advanced') {
+      const p = lq.params;
+      rows = await sparql(buildAdvQuery(p.q, p.theme, p.hvd||'', p.pub, p.format, p.license, p.sort, offset));
+    } else if (lq.type === 'recent') {
+      rows = await sparql(buildRecentQuery(offset));
+    } else if (lq.type === 'keyword') {
+      const words = lq.params.q.trim().split(/\s+/);
+      rows = await sparql(buildKeywordQuery(words, offset));
+    } else if (lq.type === 'combined') {
+      rows = await sparql(buildCombinedQuery(lq.params.state, offset));
+    }
+    lastQuery.offset = offset;
+    removeTyping();
+    const _uris = [...new Set(rows.map(r => val(r,'d')).filter(Boolean))];
+    const [_rhMap, _kwMap] = await Promise.all([fetchRhNames(_uris), fetchKeywords(_uris)]);
+    renderResults(rows, lq.label, true, _rhMap, _kwMap);
+  } catch(e) {
+    removeTyping();
+    addMsg('<div class="error-msg">⚠️ ' + e.message + '</div>');
+  }
+  setBusy(false);
+}
+
+// ── PAGINAZIONE ORGANIZZAZIONI ────────────────────────────────────────────
+let orgOffset = 0;
+let orgLoading = false;
+
+async function loadOrgs(offset=0) {
+  if (orgLoading) return;
+  orgLoading = true;
+  try {
+    const rows = await sparql(
+      "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+      "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+      "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+      "SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {\n" +
+      "  ?d a dcat:Dataset .\n" +
+      "  ?d dct:rightsHolder ?rh .\n" +
+      "  ?rh foaf:name ?name .\n" +
+      "} GROUP BY ?name ORDER BY DESC(?count) LIMIT " + ORG_PAGE + " OFFSET " + offset
+    );
+
+    const list = document.getElementById('orgList');
+    const prevBtn = list.querySelector('.load-more-orgs');
+    if (prevBtn) prevBtn.remove();
+
+    const seenOrgs = new Set();
+    const fragment = rows.filter(r => {
+      const n = val(r,'name').trim().toLowerCase();
+      if (seenOrgs.has(n)) return false;
+      seenOrgs.add(n); return true;
+    }).map(r => {
+      const name = val(r,'name').trim();
+      const count = parseInt(val(r,'count'));
+      const safeName = name.replace(/'/g,"\'");
+      return '<div class="org-item" data-publisher="' + name + '" onclick="searchByName(\'' + safeName + '\')">' +
+        '<div class="org-dot"></div>' +
+        '<span>' + name + '</span>' +
+        '<span style="margin-left:auto;font-size:12px;color:var(--text3);font-family:var(--mono)">' +
+          count.toLocaleString('it') + '</span>' +
+        '</div>';
+    }).join('');
+
+    if (offset === 0) list.innerHTML = fragment;
+    else list.insertAdjacentHTML('beforeend', fragment);
+
+    if (rows.length >= ORG_PAGE) {
+      const btn = document.createElement('button');
+      btn.className = 'load-more-orgs';
+      btn.textContent = '↓ Altre amministrazioni…';
+      btn.onclick = () => { orgOffset += ORG_PAGE; loadOrgs(orgOffset); };
+      list.appendChild(btn);
+    }
+    orgOffset = offset;
+  } catch(e) {
+    if (offset === 0)
+      document.getElementById('orgList').innerHTML = '<div style="font-size:11px;color:var(--text3)">Non disponibile</div>';
+  }
+  orgLoading = false;
+}
+
+
+// ── RICERCA SIDEBAR AMMINISTRAZIONI ──────────────────────────────────────
+let orgSearchTimer = null;
+
+async function filterOrgs(q) {
+  clearTimeout(orgSearchTimer);
+  const dropdown = document.getElementById('orgAcList');
+  if (!q || q.length < 2) {
+    dropdown.classList.remove('open');
+    dropdown.innerHTML = '';
+    return;
+  }
+  orgSearchTimer = setTimeout(async () => {
+    try {
+      const ql = q.toLowerCase().replace(/"/g, '');
+      const rows = await sparql(
+        "PREFIX dcat: <http://www.w3.org/ns/dcat#>\n" +
+        "PREFIX dct: <http://purl.org/dc/terms/>\n" +
+        "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+        "SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {\n" +
+        "  ?d a dcat:Dataset .\n" +
+        "  ?d dct:rightsHolder ?rh .\n" +
+        "  ?rh foaf:name ?name .\n" +
+        '  FILTER(CONTAINS(LCASE(STR(?name)),"' + ql + '"))\n' +
+        "} GROUP BY ?name ORDER BY DESC(?count) LIMIT 12"
+      );
+      if (!rows.length) { dropdown.classList.remove('open'); return; }
+
+      // Deduplica per nome
+      const seen = new Set();
+      const unique = [];
+      rows.forEach(r => {
+        const n = val(r,'name').trim();
+        if (!seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); unique.push({ name: n, count: parseInt(val(r,'count')||'0') }); }
+      });
+
+      dropdown.innerHTML = unique.map(function(m) {
+        return '<div class="ac-item" data-name="' + m.name.replace(/"/g,'&quot;') + '" onclick="selectOrgFromData(this)">' +
+          '<span>' + m.name + '</span>' +
+          '<span class="ac-count">' + m.count.toLocaleString('it') + ' ds</span>' +
+          '</div>';
+      }).join('');
+      dropdown.classList.add('open');
+    } catch(e) {
+      dropdown.classList.remove('open');
+    }
+  }, 350);
+}
+
+function selectOrgFromData(el) {
+  const name = el.dataset.name;
+  document.getElementById('orgSearch').value = name;
+  document.getElementById('orgAcList').classList.remove('open');
+  document.getElementById('orgAcList').innerHTML = '';
+  searchByName(name);
+}
+
+function selectOrgFromSearch(name) {
+  // Chiudi dropdown e pulisci input
+  document.getElementById('orgSearch').value = name;
+  document.getElementById('orgAcList').classList.remove('open');
+  document.getElementById('orgAcList').innerHTML = '';
+  // Seleziona l'amministrazione
+  searchByName(name);
+}
+
+// Chiudi dropdown se click fuori
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.sidebar-search')) {
+    const dd = document.getElementById('orgAcList');
+    if (dd) { dd.classList.remove('open'); }
+  }
+  if (!e.target.closest('.autocomplete-wrap')) {
+    const al = document.getElementById('acList');
+    if (al) al.style.display = 'none';
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadOrgs();
+initHvdChips();
+</script>
+
+<script>
+// Riceve query di ricerca dal chatbot parent via postMessage
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'CKAN_SEARCH' && e.data.query) {
+    const input = document.getElementById('searchInput');
+    if (input) {
+      input.value = e.data.query;
+      // Simula click sul pulsante di ricerca
+      const btn = document.querySelector('.wizard-search-btn, [onclick*="doSearch"], button[type="submit"]');
+      if (btn) btn.click();
+      else if (typeof doSearch === 'function') doSearch();
+      else if (typeof quickSearch === 'function') quickSearch(e.data.query);
+    }
+  }
+});
+</script>
+</body>
+</html>

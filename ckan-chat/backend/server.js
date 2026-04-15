@@ -459,6 +459,74 @@ Se trovi dataset mostra: nome, organizzazione, descrizione breve e link.`;
   }
 }
 
+
+// ─── Intent classifier ───────────────────────────────────────────────────────
+// Ollama fa UNA SOLA cosa: classificare l'intenzione in 4 categorie.
+// Output atteso: SEARCH | VALIDATE | ENRICH | OFF_TOPIC
+// ~1 secondo su CPU, nessun tool definition, prompt minimale.
+
+const INTENT_PROMPT = `Sei un classificatore di intenzioni. Rispondi con UNA SOLA parola tra:
+SEARCH - l'utente vuole cercare dataset o dati aperti
+VALIDATE - l'utente vuole validare un file CSV
+ENRICH - l'utente vuole convertire CSV in RDF/TTL o arricchire semanticamente
+OFF_TOPIC - la domanda non riguarda open data
+
+Rispondi SOLO con la parola, nessun'altra parola, nessun punto.`;
+
+async function classifyIntent(userMessage) {
+  try {
+    if (LLM_PROVIDER === "mistral") {
+      const response = await fetch(MISTRAL_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${MISTRAL_API_KEY}` },
+        body: JSON.stringify({
+          model: MISTRAL_MODEL,
+          messages: [{ role: "system", content: INTENT_PROMPT }, { role: "user", content: userMessage }],
+          max_tokens: 5, temperature: 0,
+        }),
+      });
+      if (!response.ok) return "SEARCH";
+      const data = await response.json();
+      const raw = data.choices?.[0]?.message?.content ?? "SEARCH";
+      return parseIntent(raw);
+    } else {
+      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: OLLAMA_MODEL,
+          messages: [{ role: "system", content: INTENT_PROMPT }, { role: "user", content: userMessage }],
+          stream: false,
+          options: { temperature: 0, num_predict: 10 },
+        }),
+      });
+      if (!res.ok) return "SEARCH";
+      const data = await res.json();
+      const raw = data.message?.content ?? "SEARCH";
+      return parseIntent(stripThinkTags(raw));
+    }
+  } catch (e) {
+    console.error("[intent] errore:", e.message);
+    return "SEARCH";
+  }
+}
+
+function parseIntent(raw) {
+  const t = raw.trim().toUpperCase();
+  if (t.includes("VALIDATE")) return "VALIDATE";
+  if (t.includes("ENRICH")) return "ENRICH";
+  if (t.includes("OFF_TOPIC") || t.includes("OFF TOPIC")) return "OFF_TOPIC";
+  return "SEARCH"; // default sicuro
+}
+
+app.post("/api/intent", async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: "message required" });
+  const intent = await classifyIntent(message);
+  console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
+  res.json({ intent });
+});
+
 // ─── Risposta di rifiuto fuori tema ──────────────────────────────────────────
 
 const OFF_TOPIC_REPLY = `Mi dispiace, posso aiutarti solo con domande relative a **open data**, **dataset** e **portali CKAN**.
