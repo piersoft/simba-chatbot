@@ -431,7 +431,11 @@ async function chatWithTools(messages, model) {
       }
 
       console.log(`[tool] ${fnName}`, JSON.stringify(fnArgs).slice(0, 120));
+      console.log(`[tool-debug] fnName type=${typeof fnName} fnArgs type=${typeof fnArgs}`);
+      console.log(`[tool-debug] toolsRouteMap keys=${Object.keys(toolsRouteMap).join(",")}`);
+      console.log(`[tool-debug] MCP_URLS[0]=${MCP_URLS[0]}`);
       toolCallsLog.push({ tool: fnName, args: fnArgs });
+      console.log(`[tool-debug] push ok, ora chiamo callTool`);
 
       let result;
       try {
