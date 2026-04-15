@@ -928,3 +928,8 @@ body {
   margin: 8px 0; white-space: pre;
 }
 .ttl-download-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+.ttl-fmt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.fmt-btn { padding: 5px 12px; border-radius: 6px; border: 2px solid #ce93d8; background: #fff; color: #6a1b9a; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.fmt-btn:hover { background: #f3e5f5; }
+.fmt-btn.active { background: #6a1b9a; color: #fff; border-color: #6a1b9a; }

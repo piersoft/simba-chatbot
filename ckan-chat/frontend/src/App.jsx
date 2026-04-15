@@ -518,7 +518,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             ✅ Valida CSV
           </button>
           <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
-            🔄 Trasforma in TTL
+            🔄 Trasforma in RDF TTL/XML
           </button>
         </div>
 
@@ -619,6 +619,15 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                   value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
                 <input type="text" className="csv-url-input" placeholder="Nome PA (es. Comune di Bari)"
                   value={ttlPa} onChange={e => setTtlPa(e.target.value)} />
+              </div>
+              <div className="ttl-fmt-row">
+                <span className="convert-label">Formato output:</span>
+                <button className={`fmt-btn ${ttlFmt==="ttl" ? "active" : ""}`} onClick={() => setTtlFmt("ttl")}>
+                  🐢 RDF/Turtle (.ttl)
+                </button>
+                <button className={`fmt-btn ${ttlFmt==="rdfxml" ? "active" : ""}`} onClick={() => setTtlFmt("rdfxml")}>
+                  📄 RDF/XML (.rdf)
+                </button>
               </div>
               {ttlTab === "url" ? (
                 <>
