@@ -97,24 +97,25 @@ const OLLAMA_TOOL_WHITELIST = new Set([
 ]);
 
 async function getTools() {
-  if (toolsCache) return toolsCache;
+  if (toolsCache && toolsCache.length > 0) return toolsCache;
   const allTools = [];
   toolsRouteMap = {};
   for (const url of MCP_URLS) {
     try {
+      console.log(`[tools] interrogo ${url}...`);
       const res = await mcpCallTo(url, "tools/list");
       const tools = res.result?.tools ?? [];
       for (const t of tools) {
         toolsRouteMap[t.name] = url;
         allTools.push(t);
       }
-      console.log(`[tools] ${url} → ${tools.length} tool`);
+      console.log(`[tools] ${url} → ${tools.length} tool: ${tools.map(t=>t.name).join(", ")}`);
     } catch (e) {
-      console.warn(`[tools] ${url} non raggiungibile: ${e.message}`);
+      console.warn(`[tools] ERRORE ${url}: ${e.message}`);
     }
   }
-  toolsCache = allTools;
-  return toolsCache;
+  if (allTools.length > 0) toolsCache = allTools; // non cachare se vuoto
+  return allTools;
 }
 
 function getToolsForProvider(allTools) {
