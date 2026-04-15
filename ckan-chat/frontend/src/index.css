@@ -626,3 +626,124 @@ body {
 .welcome-chips .chip:hover {
   background: var(--primary-light, #cce3f5);
 }
+
+/* ── Dataset Cards ──────────────────────────────────────────────────── */
+.dataset-list { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 8px; }
+
+.dataset-card {
+  background: var(--bg-secondary, #f8f9fa);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+.dataset-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+
+.dataset-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: #fff;
+  gap: 8px;
+}
+.dataset-card-title { font-weight: 600; font-size: 14px; flex: 1; }
+.dataset-card-title a { color: #0066cc; text-decoration: none; }
+.dataset-card-title a:hover { text-decoration: underline; }
+.dataset-card-toggle { color: #888; font-size: 12px; flex-shrink: 0; padding-top: 2px; }
+
+.dataset-card-meta { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 14px 6px; }
+.dataset-tag {
+  font-size: 11px; color: #555;
+  background: #eef2f7; border-radius: 4px; padding: 2px 7px;
+}
+
+.dataset-card-desc { font-size: 13px; color: #444; padding: 0 14px 8px; line-height: 1.5; }
+
+.dataset-card-resources { padding: 8px 14px; border-top: 1px solid #eee; background: #fafbfc; }
+.loading-small { font-size: 12px; color: #888; }
+.no-csv { font-size: 12px; color: #aaa; font-style: italic; }
+
+.csv-resource {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid #f0f0f0; gap: 8px;
+}
+.csv-resource:last-child { border-bottom: none; }
+.csv-name { font-size: 12px; color: #333; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csv-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.dataset-card-footer { padding: 8px 14px; border-top: 1px solid #eee; }
+
+.btn-small {
+  font-size: 11px; padding: 3px 10px; border-radius: 4px;
+  border: 1px solid #ccc; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+}
+.btn-download { background: #f5f5f5; color: #333; }
+.btn-download:hover { background: #e8e8e8; }
+.btn-validate { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+.btn-validate:hover { background: #c8e6c9; }
+.btn-view { background: #e3f2fd; color: #1565c0; border-color: #90caf9; font-size: 12px; }
+.btn-view:hover { background: #bbdefb; }
+
+.load-more-btn {
+  margin-top: 10px; width: 100%; padding: 8px;
+  background: #f0f4ff; color: #3355cc; border: 1px solid #c0d0ff;
+  border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.load-more-btn:hover { background: #dce7ff; }
+
+/* ── Validate Report ──────────────────────────────────────────────────── */
+.validate-report { font-size: 13px; }
+
+.validate-verdict {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 14px;
+}
+.verdict-ok   { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.verdict-warn { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+.verdict-fail { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.validate-score { font-size: 12px; opacity: .8; }
+
+.validate-summary { font-size: 12px; color: #555; margin-bottom: 6px; }
+.validate-url { font-size: 11px; color: #888; margin-bottom: 8px; word-break: break-all; }
+.validate-url a { color: #0066cc; }
+
+.validate-checks {
+  background: #fafbfc; border: 1px solid #eee; border-radius: 4px;
+  padding: 8px 10px; max-height: 200px; overflow-y: auto;
+}
+.validate-check-line { font-size: 12px; padding: 2px 0; line-height: 1.5; }
+.validate-check-line.muted { color: #aaa; font-style: italic; }
+
+/* ── CSV Box manuale ──────────────────────────────────────────────────── */
+.csv-box {
+  margin: 8px 16px; padding: 14px; background: #f0f8ff;
+  border: 1px solid #b3d9ff; border-radius: 8px;
+}
+.csv-box p { font-size: 14px; margin-bottom: 10px; }
+.csv-box-row { display: flex; gap: 8px; }
+.csv-url-input {
+  flex: 1; padding: 8px 12px; border: 1px solid #ccc;
+  border-radius: 6px; font-size: 13px;
+}
+.btn-validate-box {
+  padding: 8px 16px; background: #2e7d32; color: #fff;
+  border: none; border-radius: 6px; cursor: pointer; font-size: 13px;
+  white-space: nowrap;
+}
+.btn-validate-box:hover { background: #1b5e20; }
+.btn-validate-box:disabled { background: #aaa; cursor: not-allowed; }
+
+/* ── Welcome ──────────────────────────────────────────────────────────── */
+.welcome { text-align: center; padding: 60px 24px 40px; }
+.welcome-icon { font-size: 48px; margin-bottom: 16px; }
+.welcome h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+.welcome p { font-size: 15px; line-height: 1.6; margin-bottom: 24px; color: #555; }
+.welcome-chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.welcome-chips .chip {
+  background: #e8f3fb; color: #0066cc; border: 1px solid #cce3f5;
+  border-radius: 20px; padding: 8px 16px; font-size: 14px; cursor: pointer;
+}
+.welcome-chips .chip:hover { background: #cce3f5; }

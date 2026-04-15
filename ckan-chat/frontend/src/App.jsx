@@ -1,91 +1,49 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import StatusBar from "./components/StatusBar";
-import ToolCallBadge from "./components/ToolCallBadge";
+import DatasetCard from "./components/DatasetCard";
+import ValidateReport from "./components/ValidateReport";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
-const BASE_PATH   = import.meta.env.VITE_BASE_PATH ?? "/";
 
 const SUGGESTIONS = [
   { text: "Cerca dataset sulla qualità dell'aria", icon: "🔍" },
-  { text: "Trova dataset sui rifiuti in Lombardia", icon: "🔍" },
-  { text: "Valida questo CSV: https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/esempio.csv", icon: "✅" },
-  { text: "Dataset sull'energia rinnovabile", icon: "🔍" },
-  { text: "Cerca dati sulla mobilità urbana", icon: "🔍" },
+  { text: "Trova dati sui rifiuti urbani",          icon: "🔍" },
+  { text: "Dataset sulla mobilità e trasporti",     icon: "🔍" },
+  { text: "Dati sull'energia rinnovabile",           icon: "🔍" },
+  { text: "Valida CSV da URL",                       icon: "✅", action: "validate_prompt" },
 ];
 
-const OFF_TOPIC_MSG = `Mi dispiace, posso aiutarti solo con:
-- 🔍 **Ricerca** di dataset e dati aperti
-- ✅ **Validazione** di file CSV per la PA
-- 🔄 **Conversione** CSV → RDF/Linked Data
-
-Prova con: *"Cerca dataset sulla qualità dell'aria"*`;
-
-// Estrae la query di ricerca dalla domanda utente
-function extractSearchQuery(text) {
-  return text
-    .replace(/^(cerca|trovami|mostrami|dammi|elenca|mostra|trova)\s+/i, "")
-    .replace(/\b(dataset|dati aperti|open data|portale ckan)\b/gi, "")
-    .replace(/https?:\/\/[^\s]+/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-// Estrae URL CSV dalla domanda
-function extractCsvUrl(text) {
-  const m = text.match(/https?:\/\/[^\s]+/);
-  return m ? m[0] : null;
-}
+const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jailbreak"];
 
 export default function App() {
-  const [messages, setMessages]     = useState([]);
-  const [input, setInput]           = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [health, setHealth]         = useState(null);
-  const [toolCalls, setToolCalls]   = useState([]);
+  const [messages,    setMessages]    = useState([]);
+  const [input,       setInput]       = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [health,      setHealth]      = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // modalità attiva: null | "search" | "validate" | "enrich"
-  const [activeMode, setActiveMode] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [validateResult, setValidateResult] = useState(null);
+  const [csvUrl,      setCsvUrl]      = useState("");
+  const [showCsvBox,  setShowCsvBox]  = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
-  const iframeRef = useRef(null);
 
   useEffect(() => { fetchHealth(); }, []);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
-
   useEffect(() => {
     if (!sidebarOpen) return;
-    const handler = (e) => { if (!e.target.closest(".sidebar")) setSidebarOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const h = (e) => { if (!e.target.closest(".sidebar")) setSidebarOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, [sidebarOpen]);
-
-  // Quando cambia searchQuery, comunica all'iframe dell'assistente
-  useEffect(() => {
-    if (activeMode !== "search" || !searchQuery || !iframeRef.current) return;
-    // Aspetta che l'iframe sia caricato prima di mandare il messaggio
-    const send = () => {
-      try {
-        iframeRef.current?.contentWindow?.postMessage(
-          { type: "CKAN_SEARCH", query: searchQuery }, "*"
-        );
-      } catch {}
-    };
-    iframeRef.current.addEventListener("load", send, { once: true });
-    send(); // prova subito se già caricato
-  }, [activeMode, searchQuery]);
 
   async function fetchHealth() {
     try {
       const r = await fetch(`${BACKEND_URL}/api/health`);
       setHealth(await r.json());
-    } catch {
-      setHealth({ backend: "error", ollama: "error", mcp: "error" });
-    }
+    } catch { setHealth({ backend: "error", ollama: "error", mcp: "error" }); }
   }
 
+  // ── Classifica intenzione (Ollama, 1 token) ──────────────────────────────
   async function classifyIntent(text) {
     try {
       const r = await fetch(`${BACKEND_URL}/api/intent`, {
@@ -94,112 +52,190 @@ export default function App() {
         body: JSON.stringify({ message: text }),
       });
       if (!r.ok) return "SEARCH";
-      const data = await r.json();
-      return data.intent ?? "SEARCH";
-    } catch {
-      return "SEARCH";
-    }
+      return (await r.json()).intent ?? "SEARCH";
+    } catch { return "SEARCH"; }
   }
 
-  async function validateCsv(url) {
-    try {
-      const r = await fetch(`${BACKEND_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: `valida il CSV: ${url}` }],
-        }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      return data.reply;
-    } catch (e) {
-      return `❌ Errore validazione: ${e.message}`;
-    }
+  // ── Ricerca SPARQL ────────────────────────────────────────────────────────
+  async function doSearch(query, offset = 0) {
+    const r = await fetch(`${BACKEND_URL}/api/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, offset }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
   }
 
+  // ── Validazione CSV ───────────────────────────────────────────────────────
+  async function doValidate(url) {
+    const r = await fetch(`${BACKEND_URL}/api/validate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return (await r.json()).report ?? "";
+  }
+
+  // ── Aggiunge un messaggio alla chat ───────────────────────────────────────
+  function addMsg(role, content, extra = {}) {
+    setMessages(prev => [...prev, { role, content, ...extra }]);
+  }
+
+  // ── Handler principale ────────────────────────────────────────────────────
   async function sendMessage(text) {
     if (!text.trim() || loading) return;
-
-    const blocklist = ["ignore previous", "system prompt", "forget instructions", "jailbreak"];
-    if (blocklist.some(p => text.toLowerCase().includes(p))) { alert("Input non valido."); return; }
-    if (text.length > 2000) { alert("Messaggio troppo lungo (max 2000 caratteri)."); return; }
+    if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) { alert("Input non valido."); return; }
+    if (text.length > 2000) { alert("Messaggio troppo lungo."); return; }
 
     setSidebarOpen(false);
-    const userMsg = { role: "user", content: text };
-    setMessages(prev => [...prev, userMsg]);
+    setShowCsvBox(false);
+    addMsg("user", text);
     setInput("");
     setLoading(true);
-    setToolCalls([]);
-    setActiveMode(null);
-    setValidateResult(null);
 
-    // 1. Classifica l'intenzione
-    const intent = await classifyIntent(text);
+    try {
+      const intent = await classifyIntent(text);
 
-    if (intent === "OFF_TOPIC") {
-      setMessages(prev => [...prev, { role: "assistant", content: OFF_TOPIC_MSG }]);
-      setLoading(false);
-      return;
-    }
-
-    if (intent === "SEARCH") {
-      const q = extractSearchQuery(text);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: `🔍 Ricerca in corso per **"${q}"** nel catalogo dati.gov.it...`,
-        isSearch: true,
-      }]);
-      setSearchQuery(q);
-      setActiveMode("search");
-      setLoading(false);
-      return;
-    }
-
-    if (intent === "VALIDATE") {
-      const csvUrl = extractCsvUrl(text);
-      if (!csvUrl) {
-        setMessages(prev => [...prev, {
-          role: "assistant",
-          content: "Per validare un CSV dimmi l'URL del file.\nEsempio: *\"Valida questo CSV: https://example.com/dati.csv\"*",
-        }]);
-        setLoading(false);
+      if (intent === "OFF_TOPIC") {
+        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- 🔍 Ricerca dataset open data italiani\n- ✅ Validazione file CSV per la PA\n- 🔄 Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca dataset sulla qualità dell'aria"*`);
         return;
       }
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: `✅ Validazione CSV in corso: \`${csvUrl}\`...`,
-      }]);
-      const result = await validateCsv(csvUrl);
-      setValidateResult({ url: csvUrl, report: result });
-      setMessages(prev => [...prev, { role: "assistant", content: result }]);
-      setToolCalls([{ tool: "csv_validate", args: { csv_url: csvUrl } }]);
-      setLoading(false);
-      return;
-    }
 
-    if (intent === "ENRICH") {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "🔄 La funzione di conversione CSV → RDF/Linked Data è in arrivo!\n\nNel frattempo puoi usare il tool online: https://piersoft.github.io/CSV-to-RDF/",
-      }]);
-      setLoading(false);
-      return;
-    }
+      if (intent === "VALIDATE") {
+        const url = text.match(/https?:\/\/[^\s]+/)?.[0];
+        if (!url) {
+          addMsg("assistant", "Per validare un CSV dimmi l'URL del file.\n\nOppure usa il box qui sotto per incollarlo:");
+          setShowCsvBox(true);
+          return;
+        }
+        addMsg("assistant", `✅ Validazione in corso per:\n\`${url}\``, { type: "validating" });
+        const report = await doValidate(url);
+        addMsg("assistant", report, { type: "validate_report", url });
+        return;
+      }
 
-    setLoading(false);
+      if (intent === "ENRICH") {
+        addMsg("assistant", `🔄 La conversione CSV → RDF/Linked Data è in arrivo!\n\nNel frattempo usa il tool online: https://piersoft.github.io/CSV-to-RDF/`);
+        return;
+      }
+
+      // SEARCH — estrae la query e chiama SPARQL
+      const query = text
+        .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
+        .replace(/\b(dataset|open data)\b/gi, "")
+        .replace(/\s+/g, " ").trim() || text;
+
+      addMsg("assistant", `🔍 Ricerca di **"${query}"** in corso…`, { type: "searching" });
+
+      const { datasets } = await doSearch(query);
+
+      if (!datasets.length) {
+        addMsg("assistant", `Nessun dataset trovato per **"${query}"**.\n\nProva con termini più generici.`);
+        return;
+      }
+
+      addMsg("assistant", `Trovati risultati per **"${query}"** — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
+        type: "search_results",
+        datasets,
+        query,
+        offset: 0,
+      });
+
+    } catch (e) {
+      addMsg("assistant", `❌ Errore: ${e.message}`);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  // ── "Carica altri" ────────────────────────────────────────────────────────
+  async function loadMore(query, currentOffset) {
+    const newOffset = currentOffset + 8;
+    setLoading(true);
+    try {
+      const { datasets } = await doSearch(query, newOffset);
+      if (!datasets.length) { addMsg("assistant", "Nessun altro risultato disponibile."); return; }
+      addMsg("assistant", `Altri risultati per **"${query}"**:`, {
+        type: "search_results", datasets, query, offset: newOffset,
+      });
+    } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
+    finally { setLoading(false); }
+  }
+
+  // ── Valida CSV da card ────────────────────────────────────────────────────
+  async function validateFromCard(url, datasetTitle) {
+    addMsg("user",      `Valida CSV: ${url}`);
+    addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
+    setLoading(true);
+    try {
+      const report = await doValidate(url);
+      addMsg("assistant", report, { type: "validate_report", url });
+    } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
+    finally { setLoading(false); }
+  }
+
+  // ── Valida CSV da box manuale ─────────────────────────────────────────────
+  async function validateFromBox() {
+    if (!csvUrl.trim()) return;
+    setShowCsvBox(false);
+    await validateFromCard(csvUrl.trim(), "CSV fornito");
+    setCsvUrl("");
   }
 
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   }
 
-  function resetChat() {
-    setMessages([]);
-    setToolCalls([]);
-    setActiveMode(null);
-    setSearchQuery("");
-    setValidateResult(null);
+  // ── Render messaggio ──────────────────────────────────────────────────────
+  function renderMessage(m, i) {
+    if (m.type === "search_results") {
+      return (
+        <div key={i} className="message assistant">
+          <div className="message-bubble">
+            <p dangerouslySetInnerHTML={{ __html: mdToHtml(m.content) }} />
+            <div className="dataset-list">
+              {m.datasets.map((d, j) => (
+                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} />
+              ))}
+            </div>
+            <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)}>
+              Carica altri risultati ↓
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (m.type === "validate_report") {
+      return (
+        <div key={i} className="message assistant">
+          <div className="message-bubble">
+            <ValidateReport report={m.content} url={m.url} />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={i} className={`message ${m.role}`}>
+        <div className="message-bubble">
+          {m.content.split("\n").map((line, j) => (
+            <p key={j} dangerouslySetInnerHTML={{ __html: mdToHtml(line) || "&nbsp;" }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function mdToHtml(text) {
+    return (text || "")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g,   "<em>$1</em>")
+      .replace(/`(.+?)`/g,     "<code>$1</code>")
+      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   }
 
   return (
@@ -215,34 +251,27 @@ export default function App() {
 
         <StatusBar health={health} onRefresh={fetchHealth} />
 
-        {toolCalls.length > 0 && (
-          <div className="sidebar-section">
-            <div className="section-label">Ultima Query</div>
-            <div className="tool-calls-list">
-              {toolCalls.map((tc, i) => <ToolCallBadge key={i} toolCall={tc} />)}
-            </div>
-          </div>
-        )}
-
         <div className="sidebar-section suggestions-section">
           <div className="section-label">Suggerimenti</div>
           {SUGGESTIONS.map((s, i) => (
-            <button key={i} className="suggestion-btn" onClick={() => sendMessage(s.text)} disabled={loading}>
+            <button key={i} className="suggestion-btn"
+              onClick={() => s.action === "validate_prompt"
+                ? (addMsg("user","Valida un CSV"), setShowCsvBox(true))
+                : sendMessage(s.text)}
+              disabled={loading}>
               {s.icon} {s.text}
             </button>
           ))}
         </div>
 
-        <button className="clear-btn" onClick={resetChat}>Nuova conversazione</button>
+        <button className="clear-btn" onClick={() => { setMessages([]); setShowCsvBox(false); }}>
+          Nuova conversazione
+        </button>
       </aside>
 
       <main className="chat-area">
         <div className="chat-header">
           <span className="chat-header-title">🏛️ Esplora i Dati Aperti Italiani</span>
-          <span className="chat-header-subtitle">
-            {activeMode === "search" ? "📊 Assistente CKAN attivo" :
-             activeMode === "validate" ? "✅ Validatore CSV attivo" : ""}
-          </span>
         </div>
 
         <div className="messages">
@@ -250,57 +279,41 @@ export default function App() {
             <div className="welcome">
               <div className="welcome-icon">🏛️</div>
               <h2>Assistente Open Data</h2>
-              <p>Cerca dataset, valida CSV o converti in Linked Data.<br />Tutto basato su dati.gov.it e ontologie PA italiane.</p>
+              <p>Cerca dataset, valida CSV o converti in Linked Data.<br />
+                 Basato su dati.gov.it e ontologie PA italiane.</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>🔍 Cerca dataset</span>
-                <span className="chip" onClick={() => sendMessage("Valida questo CSV: https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/esempio.csv")}>✅ Valida CSV</span>
+                <span className="chip" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); }}>✅ Valida CSV</span>
                 <span className="chip" onClick={() => sendMessage("Converti CSV in RDF")}>🔄 CSV → RDF</span>
               </div>
             </div>
           )}
 
-          {messages.map((m, i) => (
-            <div key={i} className={`message ${m.role}`}>
-              <div className="message-bubble">
-                {m.content.split("\n").map((line, j) => {
-                  // Rendering minimale markdown: **bold**, *italic*, link
-                  const html = line
-                    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-                    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-                    .replace(/`(.+?)`/g, "<code>$1</code>")
-                    .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-                  return <p key={j} dangerouslySetInnerHTML={{ __html: html || "&nbsp;" }} />;
-                })}
-              </div>
-            </div>
-          ))}
+          {messages.map(renderMessage)}
 
           {loading && (
             <div className="message assistant">
-              <div className="message-bubble typing">
-                <span /><span /><span />
-              </div>
+              <div className="message-bubble typing"><span /><span /><span /></div>
             </div>
           )}
 
-          {/* Pannello assistente CKAN embedded */}
-          {activeMode === "search" && (
-            <div className="embedded-panel">
-              <iframe
-                ref={iframeRef}
-                src={`/chatbot/assistant.html`}
-                title="Assistente CKAN"
-                className="ckan-iframe"
-                onLoad={() => {
-                  if (searchQuery) {
-                    try {
-                      iframeRef.current?.contentWindow?.postMessage(
-                        { type: "CKAN_SEARCH", query: searchQuery }, "*"
-                      );
-                    } catch {}
-                  }
-                }}
-              />
+          {/* Box validazione CSV manuale */}
+          {showCsvBox && (
+            <div className="csv-box">
+              <p>📎 Incolla l'URL del file CSV da validare:</p>
+              <div className="csv-box-row">
+                <input
+                  type="url"
+                  className="csv-url-input"
+                  placeholder="https://esempio.com/dati.csv"
+                  value={csvUrl}
+                  onChange={e => setCsvUrl(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && validateFromBox()}
+                />
+                <button className="btn-validate-box" onClick={validateFromBox} disabled={!csvUrl.trim()}>
+                  ✅ Valida
+                </button>
+              </div>
             </div>
           )}
 
@@ -312,9 +325,9 @@ export default function App() {
             ref={inputRef}
             className="chat-input"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Cerca dataset, valida un CSV, converti in RDF..."
+            placeholder="Cerca dataset, valida un CSV, converti in RDF…"
             rows={1}
             disabled={loading}
           />
