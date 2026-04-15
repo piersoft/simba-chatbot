@@ -80,10 +80,9 @@ ${triples}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)
 ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
 
-// Cache autocomplete rightsHolder (dct:rightsHolder)
-let acCache = null;
-async function loadAcCache() {
-  if (acCache) return acCache;
+// Autocomplete rightsHolder — query SPARQL live con CONTAINS (come sidebar originale)
+async function searchRightsHolder(q) {
+  const ql = q.toLowerCase().replace(/"/g, "");
   const rows = await sparqlFetch(
     `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
@@ -92,17 +91,13 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   ?d a dcat:Dataset .
   ?d dct:rightsHolder ?rh .
   ?rh foaf:name ?name .
-} GROUP BY ?name ORDER BY DESC(?count) LIMIT 500`
+  FILTER(CONTAINS(LCASE(STR(?name)),"${ql}"))
+} GROUP BY ?name ORDER BY DESC(?count) LIMIT 12`
   );
-  const byName = new Map();
-  rows.forEach(r => {
-    const n = val(r, "name").trim();
-    const c = parseInt(val(r, "count") || "0");
-    const key = n.toLowerCase();
-    if (!byName.has(key) || c > byName.get(key).count) byName.set(key, { name: n, count: c });
-  });
-  acCache = [...byName.values()].sort((a, b) => b.count - a.count);
-  return acCache;
+  const seen = new Set();
+  return rows
+    .map(r => ({ name: val(r, "name").trim(), count: parseInt(val(r, "count") || "0") }))
+    .filter(m => { const k = m.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
 export default function AdvancedSearch({ onResults, onLoading }) {
@@ -119,17 +114,16 @@ export default function AdvancedSearch({ onResults, onLoading }) {
   const acTimer = useRef(null);
 
   async function handlePubInput(v) {
-    setPub(v);
+    setRh(v);
     clearTimeout(acTimer.current);
     if (v.length < 2) { setShowAc(false); return; }
     acTimer.current = setTimeout(async () => {
       try {
-        const data = await loadAcCache();
-        const matches = data.filter(d => d.name.toLowerCase().includes(v.toLowerCase())).slice(0, 10);
+        const matches = await searchRightsHolder(v);
         setAcList(matches);
         setShowAc(matches.length > 0);
       } catch {}
-    }, 250);
+    }, 350);
   }
 
   async function doSearch() {
