@@ -5,8 +5,15 @@ const FT_BASE     = "http://publications.europa.eu/resource/authority/file-type/
 
 function val(b, k) {
   const v = b[k]?.value || "";
-  if (k === "downloadURL" && v) console.log("[val] downloadURL raw:", JSON.stringify(v));
-  return v.replace(/&amp;/g, "&").replace(/&#38;/g, "&");
+  let url = v.replace(/&amp;/g, "&").replace(/&#38;/g, "&");
+  // L'endpoint SPARQL tronca i & negli URL — ricostruisce i parametri Google Sheets
+  if (url.includes("docs.google.com") || url.includes("spreadsheets")) {
+    url = url
+      .replace(/([?&]gid=\d+)(single=)/, "$1&$2")
+      .replace(/(single=true)(output=)/, "$1&$2")
+      .replace(/(output=csv)(&|$)/, "$1$2");
+  }
+  return url;
 }
 
 function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
