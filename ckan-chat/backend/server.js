@@ -569,7 +569,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
 async function sparqlQuery(query) {
   const url = `${SPARQL_ENDPOINT}?query=${encodeURIComponent(query)}&format=application%2Fsparql-results%2Bjson`;
   const res = await fetch(url, {
-    headers: { Accept: "application/sparql-results+json" },
+    headers: {
+      "Accept": "application/sparql-results+json",
+      "User-Agent": "Mozilla/5.0 (compatible; ckan-opendata-assistant/1.0; +https://dati.gov.it)",
+    },
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`SPARQL error ${res.status}`);
