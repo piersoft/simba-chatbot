@@ -557,7 +557,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           </a>
         </div>
 
-        <button className="clear-btn" onClick={() => { resetChat(); }}>
+        <button className="clear-btn" aria-label="Nuova conversazione" onClick={() => { resetChat(); }}>
           Nuova conversazione
         </button>
       </aside>
@@ -703,6 +703,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           <textarea
             ref={inputRef}
             className="chat-input"
+            aria-label="Scrivi un messaggio"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
@@ -710,7 +711,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
             rows={1}
             disabled={loading}
           />
-          <button className="send-btn" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
+          <button className="send-btn" aria-label="Invia messaggio" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
             {loading ? <Icon name="hourglass-split" /> : <Icon name="send-fill" />}
           </button>
         </div>
