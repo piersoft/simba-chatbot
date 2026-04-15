@@ -564,7 +564,13 @@ app.post("/api/validate", async (req, res) => {
   if (!url) return res.status(400).json({ error: "url required" });
   console.log(`[validate] ${url}`);
   try {
-    await getTools(); // assicura che toolsRouteMap sia popolato
+    // Forza reload tool se csv_validate non è ancora in mappa
+    if (!toolsRouteMap["csv_validate"]) {
+      toolsCache = null;
+      toolsRouteMap = {};
+      await getTools();
+    }
+    console.log(`[validate] routeMap keys: ${Object.keys(toolsRouteMap).join(", ")}`);
     const result = await callTool("csv_validate", { csv_url: url, summary_only: false });
     res.json({ report: result });
   } catch (e) {
