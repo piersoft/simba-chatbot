@@ -507,7 +507,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           <button className="tool-card tool-search" onClick={() => { setSidebarOpen(false); setShowCsvBox(false); setShowTtlBox(false); inputRef.current?.focus(); }} disabled={loading}>
             🔍 Cerca dataset
           </button>
-          <button className="tool-card tool-validate" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }} disabled={loading}>
+          <button className="tool-card tool-validate" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }} disabled={loading}>
             ✅ Valida CSV
           </button>
           <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
@@ -547,7 +547,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
                  Basato su dati.gov.it e ontologie PA italiane.</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>🔍 Cerca dataset</span>
-                <span className="chip" onClick={() => { addMsg("user","Valida un CSV"); setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }}>✅ Valida CSV</span>
+                <span className="chip" onClick={() => { setShowCsvBox(true); setShowTtlBox(false); setSidebarOpen(false); }}>✅ Valida CSV</span>
                 <span className="chip" onClick={() => sendMessage("Converti CSV in RDF")}>🔄 CSV → RDF</span>
               </div>
             </div>
