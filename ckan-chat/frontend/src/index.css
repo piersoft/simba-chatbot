@@ -725,7 +725,7 @@ body {
 
 .validate-checks {
   background: #fafbfc; border: 1px solid #eee; border-radius: 4px;
-  padding: 8px 10px; max-height: 200px; overflow-y: auto;
+  padding: 8px 10px;
 }
 .validate-check-line { font-size: 12px; padding: 2px 0; line-height: 1.5; }
 .validate-check-line.muted { color: #aaa; font-style: italic; }
