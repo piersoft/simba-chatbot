@@ -605,10 +605,12 @@ SELECT DISTINCT ?d ?title ?description ?modified ?publisher WHERE {
           {/* Box conversione TTL */}
           {showTtlBox && (
             <div className="csv-box ttl-box">
-              <div className="csv-box-tabs">
-                <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}>🔗 Da URL</button>
-                <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}>📁 Carica file</button>
-              </div>
+              {!ttlCsvText && (
+                <div className="csv-box-tabs">
+                  <button className={`csv-tab ${ttlTab==="url" ? "active":""}`} onClick={() => setTtlTab("url")}>🔗 Da URL</button>
+                  <button className={`csv-tab ${ttlTab==="upload" ? "active":""}`} onClick={() => setTtlTab("upload")}>📁 Carica file</button>
+                </div>
+              )}
               <div className="ttl-meta-row">
                 <input type="text" className="csv-url-input" placeholder="Codice IPA (es. c_b220)"
                   value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
