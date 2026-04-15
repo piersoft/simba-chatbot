@@ -5,7 +5,8 @@ const FT_BASE     = "http://publications.europa.eu/resource/authority/file-type/
 
 function val(b, k) {
   const v = b[k]?.value || "";
-  return v.replace(/&amp;/g, "&");
+  if (k === "downloadURL" && v) console.log("[val] downloadURL raw:", JSON.stringify(v));
+  return v.replace(/&amp;/g, "&").replace(/&#38;/g, "&");
 }
 
 function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
