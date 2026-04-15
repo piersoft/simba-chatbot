@@ -7,8 +7,16 @@ function val(b, k) { return b[k]?.value || ""; }
 function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
 
 async function sparql(query) {
-  const url = `${SPARQL_URL}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-  const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+  // Usa POST per evitare problemi con URL lunghi o caratteri speciali nei valori
+  const endpoint = SPARQL_URL;
+  const r = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Accept": "application/sparql-results+json",
+    },
+    body: `query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`,
+  });
   if (!r.ok) throw new Error(`SPARQL ${r.status}`);
   return (await r.json()).results.bindings;
 }
