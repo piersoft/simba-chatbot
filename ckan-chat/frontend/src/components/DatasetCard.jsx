@@ -3,7 +3,11 @@ import { useState } from "react";
 const SPARQL_URL = "https://lod.dati.gov.it/sparql";
 const FT_BASE    = "http://publications.europa.eu/resource/authority/file-type/";
 
-function val(b, k) { return b[k]?.value || ""; }
+function val(b, k) {
+  const v = b[k]?.value || "";
+  // L'endpoint SPARQL a volte restituisce & come &amp; nei valori URI
+  return v.replace(/&amp;/g, "&");
+}
 function fmtLabel(uri) { return uri ? uri.replace(FT_BASE,"").replace(/_/g," ") : ""; }
 
 async function sparql(query) {
