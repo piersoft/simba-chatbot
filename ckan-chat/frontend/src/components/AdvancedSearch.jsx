@@ -127,11 +127,11 @@ export default function AdvancedSearch({ onResults, onLoading }) {
   }
 
   async function doSearch() {
-    if (!q && !theme && !hvd && !pub && !format && !license) return;
+    if (!q && !theme && !hvd && !rh && !format && !license) return;
     setOpen(false);
     onLoading(true);
     try {
-      const rows = await sparqlFetch(buildAdvQuery(q, theme, hvd, pub, format, license, sort, 0));
+      const rows = await sparqlFetch(buildAdvQuery(q, theme, hvd, rh, format, license, sort, 0));
       const seen = new Map();
       for (const b of rows) {
         const uri = val(b, "d");
@@ -148,7 +148,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
         });
       }
       const datasets = [...seen.values()].slice(0, 8);
-      const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, pub].filter(Boolean).join(" · ");
+      const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, rh].filter(Boolean).join(" · ");
       onResults(datasets, label || "Ricerca avanzata");
     } catch(e) {
       onResults([], `Errore: ${e.message}`);
@@ -157,7 +157,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
   }
 
   function reset() {
-    setQ(""); setTheme(""); setHvd(""); setPub("");
+    setQ(""); setTheme(""); setHvd(""); setRh("");
     setFormat(""); setLicense(""); setSort("modified");
     setAcList([]); setShowAc(false);
   }
@@ -196,14 +196,14 @@ export default function AdvancedSearch({ onResults, onLoading }) {
 
             <div className="adv-field" style={{ position: "relative" }}>
               <label>Amministrazione (titolare dati)</label>
-              <input type="text" value={pub} onChange={e => handlePubInput(e.target.value)}
+              <input type="text" value={rh} onChange={e => handlePubInput(e.target.value)}
                 placeholder="es. Comune di Bari, Regione Puglia…"
                 onBlur={() => setTimeout(() => setShowAc(false), 200)}
                 autoComplete="off" />
               {showAc && (
                 <div className="ac-dropdown">
                   {acList.map((m, i) => (
-                    <div key={i} className="ac-item" onMouseDown={() => { setPub(m.name); setShowAc(false); }}>
+                    <div key={i} className="ac-item" onMouseDown={() => { setRh(m.name); setShowAc(false); }}>
                       <span>{m.name}</span>
                       <span className="ac-count">{m.count.toLocaleString("it")} ds</span>
                     </div>
