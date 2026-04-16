@@ -17,6 +17,8 @@ const SUGGESTIONS = [
 
 const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jailbreak"];
 
+const SPARQL_EP = "https://lod.dati.gov.it/sparql";
+
 export default function App() {
   const [messages,    setMessages]    = useState([]);
   const [pageTitle,   setPageTitle]   = useState("Esplora i Dati Aperti Italiani");
@@ -80,7 +82,6 @@ export default function App() {
 
   // ── Ricerca SPARQL — chiamata diretta dal browser (come l'assistente CKAN) ──
   async function doSearch(query, offset = 0) {
-    const SPARQL_EP = "https://lod.dati.gov.it/sparql";
     const FETCH_SIZE = 32; // come l'assistente: fetch più righe per deduplicare
     const PAGE_SIZE  = 8;
     const STOPWORDS = new Set(["il","lo","la","i","gli","le","un","una","uno",
