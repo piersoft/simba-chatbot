@@ -813,9 +813,11 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
     const rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
     const text = await rdfRes.text();
     if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
-    const enrichTitle = (req.body.pa || url || "upload").split("?")[0].slice(0, 200);
+    // dataset_id: usa URL se disponibile, altrimenti nome PA, altrimenti ipa
+    const enrichTitle = (pa || url || ipa || "upload").split("?")[0].slice(0, 200);
+    const enrichId    = url ? url.split("?")[0].slice(0, 200) : enrichTitle;
     emitEvent("ttl_create", {
-      dataset_id: url || "upload",
+      dataset_id: enrichId,
       dataset_title: enrichTitle,
       format: fmt || "ttl",
       triples_count: (text.match(/\.\s*$/gm) || []).length,

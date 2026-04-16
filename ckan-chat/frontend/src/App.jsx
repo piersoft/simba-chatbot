@@ -457,7 +457,7 @@ SELECT ?ipaCode WHERE {
       } catch { /* se non scaricabile, lascia null */ }
       const report = await doValidate(url, datasetTitle);
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
-      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText });
+      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }
   }
@@ -483,16 +483,17 @@ SELECT ?ipaCode WHERE {
     finally { setLoading(false); setCsvFile(null); }
   }
 
-  async function doEnrichText(csv_text, filename, fmt = "ttl") {
+  async function doEnrichText(csv_text, filename, fmt = "ttl", paName = "") {
     // Conversione diretta da testo CSV (file già caricato) — niente box IPA/PA
-    addMsg("user", `Converti in ${fmt.toUpperCase()}: ${filename}`);
-    addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${filename}"** in corso…`);
+    const title = paName || filename.replace(/\.csv$/i,"");
+    addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
+    addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${title}"** in corso…`);
     setLoading(true);
     try {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: apiHeaders(),
-        body: JSON.stringify({ csv_text, pa: filename.replace(/\.csv$/i,""), ipa: "ente", fmt }),
+        body: JSON.stringify({ csv_text, pa: title, ipa: "ente", fmt }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
@@ -633,7 +634,7 @@ SELECT ?ipaCode WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={doEnrichText} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={(csv_text, filename, fmt) => doEnrichText(csv_text, filename, fmt, m.datasetTitle || m.publisher || "")} />
           </div>
         </div>
       );
