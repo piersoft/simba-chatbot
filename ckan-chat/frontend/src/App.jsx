@@ -138,14 +138,15 @@ export default function App() {
     async function runQuery(words, useOr, off) {
       const doveFilter = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
+  OPTIONAL { ?rh dct:identifier ?ipaCode }
   FILTER(CONTAINS(LCASE(STR(?rhName)),"${dove.toLowerCase().replace(/"/g,'')}"))
 `
-        : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+        : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName . OPTIONAL { ?rh dct:identifier ?ipaCode } }
 `;
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?ipaCode ?landingPage WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
@@ -181,6 +182,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
         publisher:   b.rhName?.value || (dove || ""),
+        ipaCode:     b.ipaCode?.value || "",
         viewUrl,
         csvResources: [],
       });
@@ -422,14 +424,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   }
 
   // ── Valida CSV da card ────────────────────────────────────────────────────
-  async function validateFromCard(url, datasetTitle, publisher = "") {
+  async function validateFromCard(url, datasetTitle, publisher = "", ipaCode = "") {
     addMsg("user",      `Valida CSV: ${url}`);
     setPageTitle("✅ Validazione CSV — Open Data Italia");
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
       const report = await doValidate(url, datasetTitle);
-      addMsg("assistant", report, { type: "validate_report", url, publisher });
+      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }
   }
@@ -480,13 +482,13 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     setLoading(false);
   }
 
-  function openTtlBox(url, fmt = "ttl", csvText = null, pa = "") {
+  function openTtlBox(url, fmt = "ttl", csvText = null, pa = "", ipa = "") {
     setShowCsvBox(false);
     setTtlCsvText(csvText);
     setTtlUrl(csvText ? "" : (url || ""));
     setTtlTab(csvText ? "upload" : "url");
     setTtlFmt(fmt);
-    setTtlIpa("");
+    setTtlIpa(ipa);
     setTtlPa(pa);
     setShowTtlBox(true);
   }
@@ -605,7 +607,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "")} onEnrichText={doEnrichText} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={doEnrichText} />
           </div>
         </div>
       );

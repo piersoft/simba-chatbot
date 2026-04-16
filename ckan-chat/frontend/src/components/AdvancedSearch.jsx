@@ -64,7 +64,7 @@ function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
     const uris = (LICENSE_MAP[license] || []).map(u => `<${u}>`).join(" ");
     if (uris) triples += `  ?d <http://www.w3.org/ns/dcat#distribution> ?distLic . ?distLic <http://purl.org/dc/terms/license> ?lic . VALUES ?lic { ${uris} }\n`;
   }
-  if (pub) triples += "  ?d <http://purl.org/dc/terms/rightsHolder> ?rh . ?rh <http://xmlns.com/foaf/0.1/name> ?rhName .\n";
+  if (pub) triples += "  ?d <http://purl.org/dc/terms/rightsHolder> ?rh . ?rh <http://xmlns.com/foaf/0.1/name> ?rhName .\n  OPTIONAL { ?rh <http://purl.org/dc/terms/identifier> ?ipaCode }\n";
 
   let filters = "  FILTER(LANG(?title)='it'||LANG(?title)='')\n";
   if (q)   filters += `  FILTER(${kwFilter(q.trim().split(/\s+/))})\n`;
@@ -72,11 +72,11 @@ function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
 
   const orderBy = sort === "title" ? "?title" : "DESC(?modified)";
   // Se non c'è già il rightsHolder nei triples (filtro per pub), lo aggiungiamo come OPTIONAL
-  const rhOptional = pub ? "" : "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n";
+  const rhOptional = pub ? "" : "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName . OPTIONAL { ?rh dct:identifier ?ipaCode } }\n";
   return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?ipaCode ?landingPage WHERE {
 ${triples}${rhOptional}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
@@ -149,6 +149,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
           modified:    val(b, "modified").slice(0, 10),
           rightsHolder: val(b, "rhName") || (rh || ""),
           publisher:    val(b, "rhName") || (rh || ""),
+          ipaCode:      val(b, "ipaCode") || "",
           viewUrl,
           csvResources: [],
         });
