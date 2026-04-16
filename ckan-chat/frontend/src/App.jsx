@@ -138,7 +138,38 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
         csvResources: [],
       });
     }
-    const datasets = [...seen.values()].slice(0, PAGE_SIZE);
+    let datasets = [...seen.values()].slice(0, PAGE_SIZE);
+
+    // Seconda query per rightsHolder preciso (come fetchRhNames dell'assistente originale)
+    // Risolve il problema dei dataset federati dove il rightsHolder non è nella query principale
+    if (datasets.length > 0) {
+      try {
+        const uris = datasets.map(d => `<${d.uri}>`).join(" ");
+        const rhQ = `PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+SELECT ?d ?rhName WHERE {
+  VALUES ?d { ${uris} }
+  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
+}`;
+        const rhUrl = `${SPARQL_EP}?query=${encodeURIComponent(rhQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const rhR = await fetch(rhUrl, { headers: { Accept: "application/sparql-results+json" } });
+        if (rhR.ok) {
+          const rhData = await rhR.json();
+          const rhMap = {};
+          for (const b of rhData.results?.bindings ?? []) {
+            const d = b.d?.value;
+            const name = b.rhName?.value?.trim();
+            if (d && name && !rhMap[d]) rhMap[d] = name;
+          }
+          datasets = datasets.map(d => ({
+            ...d,
+            publisher: rhMap[d.uri] || d.publisher,
+          }));
+        }
+      } catch(e) { /* ignora errori della seconda query */ }
+    }
+
     return { datasets, query, offset };
   }
 
