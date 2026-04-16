@@ -81,7 +81,7 @@ export default function App() {
   }
 
   // ── Ricerca SPARQL — chiamata diretta dal browser (come l'assistente CKAN) ──
-  async function doSearch(query, offset = 0) {
+  async function doSearch(query, offset = 0, dove = "") {
     const FETCH_SIZE = 32; // come l'assistente: fetch più righe per deduplicare
     const PAGE_SIZE  = 8;
     const STOPWORDS = new Set(["il","lo","la","i","gli","le","un","una","uno",
@@ -103,6 +103,12 @@ export default function App() {
     }
 
     async function runQuery(words, useOr, off) {
+      const doveFilter = dove
+        ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rightsHolder .
+  FILTER(CONTAINS(LCASE(STR(?rightsHolder)),"${dove.toLowerCase().replace(/"/g,'')}"))
+`
+        : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rightsHolder }
+`;
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -112,8 +118,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
   FILTER(LANG(?title)='it'||LANG(?title)='')
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rightsHolder }
-  FILTER(${kwFilter(words, useOr)})
+${doveFilter}  FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
       const url = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
       const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
@@ -904,8 +909,18 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
           </div>
           <div className="wizard-actions">
             <button className="wizard-search-btn" aria-label="Cerca" onClick={() => {
-              const query = wizardDove ? `${input} ${wizardDove}`.trim() : input.trim();
-              sendMessage(query);
+              if (!input.trim()) return;
+              const userMsg = wizardDove ? `${input.trim()} · ${wizardDove}` : input.trim();
+              addMsg("user", userMsg);
+              doSearch(input.trim(), 0, wizardDove).then(({ datasets, query, offset }) => {
+                if (!datasets.length) {
+                  addMsg("assistant", `Nessun dataset trovato per **"${userMsg}"**.`);
+                } else {
+                  addMsg("assistant", `Trovati risultati per **"${userMsg}"**:`, {
+                    type: "search_results", datasets, query: userMsg, offset,
+                  });
+                }
+              }).catch(e => addMsg("assistant", `❌ Errore: ${e.message}`));
             }} disabled={loading || !input.trim()}>
               {loading ? <Icon name="hourglass-split" /> : <><Icon name="search" size={15}/> Cerca</>}
             </button>
