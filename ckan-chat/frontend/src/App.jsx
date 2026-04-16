@@ -908,11 +908,19 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
             )}
           </div>
           <div className="wizard-actions">
-            <button className="wizard-search-btn" aria-label="Cerca" onClick={() => {
+            <button className="wizard-search-btn" aria-label="Cerca" onClick={async () => {
               if (!input.trim()) return;
-              const userMsg = wizardDove ? `${input.trim()} · ${wizardDove}` : input.trim();
+              if (!wizardDove) {
+                // Solo COSA → usa il flusso normale con intent+SPARQL ASK
+                sendMessage(input.trim());
+                return;
+              }
+              // COSA + DOVE → query SPARQL diretta con filtro rightsHolder
+              const userMsg = `${input.trim()} · ${wizardDove}`;
               addMsg("user", userMsg);
-              doSearch(input.trim(), 0, wizardDove).then(({ datasets, query, offset }) => {
+              setLoading(true);
+              try {
+                const { datasets, offset } = await doSearch(input.trim(), 0, wizardDove);
                 if (!datasets.length) {
                   addMsg("assistant", `Nessun dataset trovato per **"${userMsg}"**.`);
                 } else {
@@ -920,7 +928,11 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
                     type: "search_results", datasets, query: userMsg, offset,
                   });
                 }
-              }).catch(e => addMsg("assistant", `❌ Errore: ${e.message}`));
+              } catch(e) {
+                addMsg("assistant", `❌ Errore: ${e.message}`);
+              } finally {
+                setLoading(false);
+              }
             }} disabled={loading || !input.trim()}>
               {loading ? <Icon name="hourglass-split" /> : <><Icon name="search" size={15}/> Cerca</>}
             </button>
