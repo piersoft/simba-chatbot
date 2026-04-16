@@ -260,6 +260,23 @@ Disponibile su `/chatbot/analytics` (protetta da HTTP Basic Auth).
 
 Mostra: sessioni uniche, ricerche per giorno, top keyword, top dataset validati/TTL, tasso off-topic, latenza Ollama, errori per tipo.
 
+### Variabili d'ambiente analytics
+
+```env
+ANALYTICS_PORT=3004
+ANALYTICS_TOKEN=cambia-questo-token-in-produzione
+CHATBOT_ORIGIN=https://il-tuo-dominio.it
+VITE_ANALYTICS_URL=          # lascia vuoto con nginx
+VITE_ANALYTICS_TOKEN=cambia-questo-token-in-produzione
+```
+
+### Verifica funzionamento
+
+```bash
+curl http://localhost:3004/health
+curl "http://localhost:3004/stats/overview" -H "Authorization: Bearer changeme"
+```
+
 ### Scalabilità
 
 Il database SQLite è sufficiente fino a ~50.000 eventi/giorno. Per volumi maggiori, sostituire `db/sqlite.js` con `db/clickhouse.js` (stessa interfaccia) senza modificare nient'altro.
