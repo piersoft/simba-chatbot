@@ -71,11 +71,13 @@ function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
   if (pub) filters += `  FILTER(CONTAINS(LCASE(STR(?rhName)),"${pub.toLowerCase().replace(/"/g,"")}"))\n`;
 
   const orderBy = sort === "title" ? "?title" : "DESC(?modified)";
+  // Se non c'è già il rightsHolder nei triples (filtro per pub), lo aggiungiamo come OPTIONAL
+  const rhOptional = pub ? "" : "  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n";
   return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified WHERE {
-${triples}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName WHERE {
+${triples}${rhOptional}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
 ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
@@ -142,7 +144,8 @@ export default function AdvancedSearch({ onResults, onLoading }) {
           title:       val(b, "title"),
           description: val(b, "description"),
           modified:    val(b, "modified").slice(0, 10),
-          rightsHolder: "",
+          rightsHolder: val(b, "rhName") || (rh || ""),
+          publisher:    val(b, "rhName") || (rh || ""),
           viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
           csvResources: [],
         });
