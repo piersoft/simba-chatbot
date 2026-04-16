@@ -195,7 +195,7 @@ export default function AnalyticsDashboard() {
         alignItems:"center", gap:12, position:"sticky", top:0, zIndex:100,
         boxShadow:"0 2px 8px rgba(0,0,0,0.2)" }}>
         <span style={{ fontSize:18 }}>📊</span>
-        <span style={{ fontSize:15, fontWeight:700, color:"#fff" }}>CKAN Chatbot — Analytics</span>
+        <span style={{ fontSize:15, fontWeight:700, color:"#fff" }}>Chatbot — Analytics</span>
         <div style={{ flex:1 }} />
         <span style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>
           Aggiornato {lastRefresh.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
@@ -409,7 +409,7 @@ export default function AnalyticsDashboard() {
 
         <div style={{ marginTop:40, paddingTop:16, borderTop:`1px solid ${C.border}`,
           display:"flex", justifyContent:"space-between", fontSize:12, color:C.muted }}>
-          <span>CKAN Analytics — <strong>Piersoft</strong></span>
+          <span>Chatbot Analytics — <strong>Piersoft</strong></span>
           <span>analytics-service :3004 · Auto-refresh 2 min</span>
         </div>
       </div>
