@@ -40,11 +40,14 @@ async function downloadWorker() {
 let workerHandler = null;
 
 async function loadWorker() {
-  if (!existsSync(WORKER_PATH)) {
-    const ok = await downloadWorker();
-    if (!ok) { console.error("[rdf-mcp] worker.js non disponibile — uscita"); process.exit(1); }
+  // Scarica sempre all'avvio per garantire l'ultima versione
+  const downloaded = await downloadWorker();
+  if (!downloaded && !existsSync(WORKER_PATH)) {
+    console.error("[rdf-mcp] worker.js non disponibile — uscita"); process.exit(1);
   }
-
+  if (!downloaded) {
+    console.warn("[rdf-mcp] Download fallito, uso worker.js in cache");
+  }
   // Leggo il sorgente e converto l'export Cloudflare in funzione eseguibile
   let src = readFileSync(WORKER_PATH, "utf-8");
 
