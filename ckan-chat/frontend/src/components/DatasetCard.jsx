@@ -110,7 +110,11 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
       </div>
 
       <div className="dataset-card-meta">
-        {dataset.publisher && <span className="dataset-tag">{dataset.publisher}</span>}
+        {dataset.publisher && (
+          <span className="dataset-org">
+            <i className="bi bi-pin-map-fill" style={{fontSize:"11px"}}/> {dataset.publisher}
+          </span>
+        )}
         {dataset.modified  && <span className="dataset-tag">{dataset.modified}</span>}
       </div>
 

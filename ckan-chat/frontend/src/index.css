@@ -1195,3 +1195,9 @@ body {
   font-family: 'Titillium Web', Arial, sans-serif;
   font-size: 10px; font-weight: 300; color: #5c6f82; line-height: 1.2;
 }
+
+.dataset-org {
+  font-size: 13px; color: var(--text2); font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'Roboto Mono', monospace;
+}
