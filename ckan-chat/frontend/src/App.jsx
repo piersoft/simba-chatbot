@@ -157,9 +157,11 @@ SELECT ?d ?rhName WHERE {
         if (rhR.ok) {
           const rhData = await rhR.json();
           const rhMap = {};
+          console.log("[fetchRhNames] bindings:", rhData.results?.bindings?.length, rhData.results?.bindings?.slice(0,2));
           for (const b of rhData.results?.bindings ?? []) {
             const d = b.d?.value;
             const name = b.rhName?.value?.trim();
+            console.log("[fetchRhNames] d:", d, "name:", name);
             if (d && name && !rhMap[d]) rhMap[d] = name;
           }
           datasets = datasets.map(d => ({
