@@ -204,7 +204,7 @@ Il backend applica i seguenti controlli su tutti gli endpoint:
 - **Rate limiting globale**: max 60 richieste/minuto per IP su `/api/`
 - **Rate limiting strict**: max 20 richieste/minuto su validate, enrich, intent
 - **Blocco SSRF**: gli endpoint che accettano URL esterni rifiutano indirizzi IP privati, localhost e link non HTTPS
-- **Limite payload**: body JSON max 2 MB, CSV max 500 KB
+- **Limite payload**: body JSON max 2 MB, CSV max 2 MB
 - **Validazione input**: lunghezza massima messaggi (500 caratteri), codice IPA solo alfanumerico
 - **Header di sicurezza**: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`
 
