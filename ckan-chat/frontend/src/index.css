@@ -1201,3 +1201,63 @@ body {
   display: inline-flex; align-items: center; gap: 4px;
   font-family: 'Roboto Mono', monospace;
 }
+
+/* ── Wizard COSA + DOVE ──────────────────────────────────────────────────── */
+.wizard-bar {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--white);
+}
+.wizard-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--gray-200);
+}
+.wizard-step:last-of-type { border-bottom: none; }
+.wizard-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary); color: white;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.wizard-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--primary); 
+  width: 36px; flex-shrink: 0; margin-top: 4px;
+}
+.wizard-input {
+  flex: 1; border: none; background: transparent;
+  font-family: 'Titillium Web', sans-serif; font-size: 15px;
+  color: var(--text); outline: none; resize: none;
+  min-width: 0; line-height: 1.4;
+}
+.wizard-input::placeholder { color: var(--text3); font-size: 14px; }
+.wizard-actions {
+  display: flex; gap: 8px; padding-top: 8px; align-items: center;
+}
+.wizard-search-btn {
+  flex: 1; padding: 10px 20px; border-radius: 6px;
+  background: var(--primary); color: white; border: none;
+  font-family: 'Titillium Web', sans-serif; font-size: 14px;
+  font-weight: 700; cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.wizard-search-btn:hover { background: var(--primary-dark); }
+.wizard-search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Autocomplete DOVE */
+.dove-ac-list {
+  position: absolute; bottom: calc(100% + 4px); left: 0; right: 0;
+  background: white; border: 1.5px solid var(--primary);
+  border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  max-height: 220px; overflow-y: auto; z-index: 200;
+}
+.dove-ac-item {
+  padding: 8px 12px; font-size: 14px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--gray-200); transition: background 0.1s;
+}
+.dove-ac-item:hover { background: var(--primary-bg); color: var(--primary-dark); }
+.dove-ac-count {
+  font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--text3);
+}

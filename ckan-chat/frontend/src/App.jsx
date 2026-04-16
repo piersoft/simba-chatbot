@@ -30,6 +30,11 @@ export default function App() {
   const [csvFile,     setCsvFile]     = useState(null);
   const [showTtlBox,  setShowTtlBox]  = useState(false);
   const [showHelp,    setShowHelp]    = useState(false);
+  const [wizardDove,  setWizardDove]  = useState("");
+  const [doveAcList,  setDoveAcList]  = useState([]);
+  const [showDoveAc,  setShowDoveAc]  = useState(false);
+  const doveAcTimer = useRef(null);
+  const doveRef     = useRef(null);
   const [ttlUrl,      setTtlUrl]      = useState("");
   const [ttlFile,     setTtlFile]     = useState(null);
   const [ttlTab,      setTtlTab]      = useState("url");
@@ -157,11 +162,9 @@ SELECT ?d ?rhName WHERE {
         if (rhR.ok) {
           const rhData = await rhR.json();
           const rhMap = {};
-          console.log("[fetchRhNames] bindings:", rhData.results?.bindings?.length, rhData.results?.bindings?.slice(0,2));
           for (const b of rhData.results?.bindings ?? []) {
             const d = b.d?.value;
             const name = b.rhName?.value?.trim();
-            console.log("[fetchRhNames] d:", d, "name:", name);
             if (d && name && !rhMap[d]) rhMap[d] = name;
           }
           datasets = datasets.map(d => ({
@@ -244,6 +247,42 @@ SELECT ?d ?rhName WHERE {
     setTtlCsvText(null);
     setCsvFile(null);
     setTtlFile(null);
+  }
+
+  // Autocomplete DOVE — rightsHolder live SPARQL
+  async function handleDoveInput(v) {
+    setWizardDove(v);
+    clearTimeout(doveAcTimer.current);
+    if (v.length < 2) { setShowDoveAc(false); return; }
+    doveAcTimer.current = setTimeout(async () => {
+      try {
+        const ql = v.toLowerCase().replace(/"/g, "");
+        const q = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:rightsHolder ?rh .
+  ?rh foaf:name ?name .
+  FILTER(CONTAINS(LCASE(STR(?name)),"${ql}"))
+} GROUP BY ?name ORDER BY DESC(?count) LIMIT 10`;
+        const url = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+        if (!r.ok) return;
+        const data = await r.json();
+        const seen = new Set();
+        const results = [];
+        for (const b of data.results?.bindings ?? []) {
+          const name = b.name?.value?.trim();
+          if (name && !seen.has(name.toLowerCase())) {
+            seen.add(name.toLowerCase());
+            results.push({ name, count: parseInt(b.count?.value || "0") });
+          }
+        }
+        setDoveAcList(results);
+        setShowDoveAc(results.length > 0);
+      } catch {}
+    }, 350);
   }
 
   async function sendMessage(text) {
@@ -815,25 +854,61 @@ SELECT ?d ?rhName WHERE {
           </div>
         )}
         <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
-        <div className="input-area">
-          <textarea
-            ref={inputRef}
-            className="chat-input"
-            aria-label="Scrivi un messaggio"
-            value={input}
-            onChange={e => {
-              setInput(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-            onKeyDown={handleKey}
-            placeholder="Cerca dataset open data italiani…"
-            rows={1}
-            disabled={loading}
-          />
-          <button className="send-btn" aria-label="Invia messaggio" onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
-            {loading ? <Icon name="hourglass-split" /> : <Icon name="send-fill" />}
-          </button>
+        <div className="wizard-bar">
+          <div className="wizard-step">
+            <span className="wizard-num">1</span>
+            <span className="wizard-label">Cosa</span>
+            <textarea
+              ref={inputRef}
+              className="wizard-input"
+              aria-label="Cosa vuoi cercare"
+              value={input}
+              onChange={e => {
+                setInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
+              }}
+              onKeyDown={handleKey}
+              placeholder="es. defibrillatori, rifiuti, bilancio…"
+              rows={1}
+              disabled={loading}
+            />
+          </div>
+          <div className="wizard-step" style={{position:"relative"}}>
+            <span className="wizard-num">2</span>
+            <span className="wizard-label">Dove</span>
+            <input
+              ref={doveRef}
+              type="text"
+              className="wizard-input"
+              aria-label="Amministrazione (opzionale)"
+              value={wizardDove}
+              onChange={e => handleDoveInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { setShowDoveAc(false); sendMessage(input); } if (e.key === "Escape") setShowDoveAc(false); }}
+              onBlur={() => setTimeout(() => setShowDoveAc(false), 200)}
+              placeholder="es. Comune di Bari… (vuoto = tutti)"
+              disabled={loading}
+              autoComplete="off"
+            />
+            {showDoveAc && (
+              <div className="dove-ac-list">
+                {doveAcList.map((m, i) => (
+                  <div key={i} className="dove-ac-item" onMouseDown={() => { setWizardDove(m.name); setShowDoveAc(false); }}>
+                    <span>{m.name}</span>
+                    <span className="dove-ac-count">{m.count.toLocaleString("it")} ds</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="wizard-actions">
+            <button className="wizard-search-btn" aria-label="Cerca" onClick={() => {
+              const query = wizardDove ? `${input} ${wizardDove}`.trim() : input.trim();
+              sendMessage(query);
+            }} disabled={loading || !input.trim()}>
+              {loading ? <Icon name="hourglass-split" /> : <><Icon name="search" size={15}/> Cerca</>}
+            </button>
+          </div>
         </div>
 
       </main>
