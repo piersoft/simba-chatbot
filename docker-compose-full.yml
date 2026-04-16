@@ -79,6 +79,7 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
+      ANALYTICS_URL: http://analytics-service:3004
     depends_on:
       - validatore-mcp
       - rdf-mcp
@@ -91,6 +92,8 @@ services:
       args:
         VITE_BACKEND_URL: ${VITE_BACKEND_URL:-}
         VITE_BASE_PATH: /chatbot/
+        VITE_ANALYTICS_URL: ${VITE_ANALYTICS_URL:-}
+        VITE_ANALYTICS_TOKEN: ${VITE_ANALYTICS_TOKEN:-changeme}
     container_name: ckan-chat-frontend
     restart: unless-stopped
     ports:
@@ -98,5 +101,25 @@ services:
     depends_on:
       - backend
 
+  # ── Analytics Service ───────────────────────────────────────────────────────
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    container_name: analytics-service
+    restart: unless-stopped
+    ports:
+      - "${ANALYTICS_PORT:-3004}:3004"
+    environment:
+      PORT: 3004
+      CHATBOT_ORIGIN: ${CHATBOT_ORIGIN:-https://chatbot.piersoftckan.biz}
+      ANALYTICS_TOKEN: ${ANALYTICS_TOKEN:-changeme}
+      SQLITE_PATH: /app/data/analytics.db
+    volumes:
+      - analytics_data:/app/data
+    depends_on:
+      - backend
+
 volumes:
   ollama_data:
+  analytics_data:

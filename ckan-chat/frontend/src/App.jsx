@@ -4,8 +4,20 @@ import DatasetCard from "./components/DatasetCard";
 import ValidateReport from "./components/ValidateReport";
 import Icon from "./components/Icon";
 import AdvancedSearch from "./components/AdvancedSearch";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
+
+// ── Session ID — generato una volta per sessione browser ──────────────────────
+if (!sessionStorage.getItem("ckan_sid")) {
+  sessionStorage.setItem("ckan_sid", crypto.randomUUID());
+}
+const SESSION_ID = sessionStorage.getItem("ckan_sid");
+
+// Header comuni a tutte le richieste verso il backend
+function apiHeaders(extra = {}) {
+  return { "Content-Type": "application/json", "x-session-id": SESSION_ID, ...extra };
+}
 
 const SUGGESTIONS = [
   { text: "Cerca dataset sulla qualità dell'aria", icon: "🔍" },
@@ -20,6 +32,11 @@ const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jail
 const SPARQL_EP = "https://lod.dati.gov.it/sparql";
 
 export default function App() {
+  // Route semplice: /analytics mostra la dashboard, tutto il resto il chatbot
+  if (window.location.pathname.endsWith("/analytics") || window.location.pathname.endsWith("/analytics/")) {
+    return <AnalyticsDashboard />;
+  }
+
   const [messages,    setMessages]    = useState([]);
   const [pageTitle,   setPageTitle]   = useState("Esplora i Dati Aperti Italiani");
   const [input,       setInput]       = useState("");
@@ -72,7 +89,7 @@ export default function App() {
     try {
       const r = await fetch(`${BACKEND_URL}/api/intent`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ message: text }),
       });
       if (!r.ok) return "SEARCH";
@@ -170,7 +187,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         if (!isHtml && hasSep) {
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: apiHeaders(),
             body: JSON.stringify({ csv_text, filename: url.split("/").pop() }),
           });
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -184,7 +201,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
     // Passa l URL al backend che scarica server-side e segue i redirect
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders(),
       body: JSON.stringify({ url }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -346,7 +363,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       // Passa sempre l'URL al backend — rdf-mcp lo scarica direttamente
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ url, pa: datasetTitle, ipa, fmt }),
       });
       if (!r.ok) {
@@ -407,7 +424,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       const text = await csvFile.text();
       const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ csv_text: text, filename: csvFile.name }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -425,7 +442,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     try {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ csv_text, pa: filename.replace(/\.csv$/i,""), ipa: "ente", fmt }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -483,7 +500,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       const csv_text = hasMemory ? ttlCsvText : await ttlFile.text();
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ csv_text, pa, ipa, fmt }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);

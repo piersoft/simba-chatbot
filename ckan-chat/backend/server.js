@@ -7,6 +7,37 @@ import fetch from "node-fetch";
 import rateLimit from "express-rate-limit";
 import { routeQuestion } from "./router.js";
 
+// ─── Analytics: fire-and-forget ───────────────────────────────────────────────
+const ANALYTICS_URL = process.env.ANALYTICS_URL || "http://analytics-service:3004";
+
+function anonymizeIP(ip) {
+  if (!ip) return null;
+  const v4 = (ip || "").match(/^(\d+\.\d+\.\d+)\.\d+$/);
+  if (v4) return v4[1] + ".0";
+  if (ip.includes(":")) return ip.split(":").slice(0, 4).join(":") + ":0:0:0:0";
+  return ip;
+}
+
+function emitEvent(type, payload, req) {
+  const event = {
+    type,
+    session_id: req?.headers?.["x-session-id"] || null,
+    ip: anonymizeIP(
+      req?.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() || req?.ip || ""
+    ),
+    user_agent: (req?.headers?.["user-agent"] || "").slice(0, 200),
+    ts: new Date().toISOString(),
+    ...payload,
+  };
+  fetch(`${ANALYTICS_URL}/event`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+    signal: AbortSignal.timeout(2000),
+  }).catch(() => {});
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const app = express();
 
 app.set("trust proxy", 1);
@@ -700,6 +731,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
   if (isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
   if (url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
   console.log(`[validate] ${url}`);
+  const t0val = Date.now();
   try {
     // Forza reload tool se csv_validate non è ancora in mappa
     if (!toolsRouteMap["csv_validate"]) {
@@ -709,9 +741,17 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     }
     console.log(`[validate] routeMap keys: ${Object.keys(toolsRouteMap).join(", ")}`);
     const result = await callTool("csv_validate", { csv_url: url, summary_only: false });
+    emitEvent("validate", {
+      dataset_id: url,
+      dataset_title: url.split("/").pop().slice(0, 200),
+      validation_ok: !result.includes("ERROR") && !result.includes("INVALID"),
+      errors_count: (result.match(/error/gi) || []).length,
+      latency_ms: Date.now() - t0val,
+    }, req);
     res.json({ report: result });
   } catch (e) {
     console.error("[validate] errore:", e.message);
+    emitEvent("error", { error_type: "validate_error", error_message: e.message.slice(0, 300), endpoint: "/api/validate" }, req);
     res.status(500).json({ error: e.message });
   }
 });
@@ -750,13 +790,22 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
       setTimeout(() => tempCsvFiles.delete(tempId), 120000); // cleanup dopo 2 min
     }
     const params = new URLSearchParams({ url: csvUrl, ipa: ipa || "ente", pa: pa || "Ente Pubblico", fmt: fmt || "ttl" });
+    const t0enrich = Date.now();
     const rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
     const text = await rdfRes.text();
     if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
+    emitEvent("ttl_create", {
+      dataset_id: url || "upload",
+      dataset_title: (url || "upload").split("/").pop().slice(0, 200),
+      format: fmt || "ttl",
+      triples_count: (text.match(/\.\s*$/gm) || []).length,
+      latency_ms: Date.now() - t0enrich,
+    }, req);
     res.setHeader("Content-Type", rdfRes.headers.get("Content-Type") || "text/turtle");
     res.send(text);
   } catch (e) {
     console.error("[enrich] errore:", e.message);
+    emitEvent("error", { error_type: "enrich_error", error_message: e.message.slice(0, 300), endpoint: "/api/enrich" }, req);
     res.status(500).json({ error: e.message });
   }
 });
@@ -767,12 +816,21 @@ app.post("/api/validate-text", strictLimiter, async (req, res) => {
   if (!csv_text) return res.status(400).json({ error: "csv_text required" });
   if (csv_text.length > 2000000) return res.status(400).json({ error: "File CSV troppo grande (max 2MB)." });
   console.log(`[validate-text] ${filename || "upload"} (${csv_text.length} chars)`);
+  const t0vt = Date.now();
   try {
     if (!toolsRouteMap["csv_validate"]) { toolsCache = null; toolsRouteMap = {}; await getTools(); }
     const result = await callTool("csv_validate", { csv_text, summary_only: false });
+    emitEvent("validate", {
+      dataset_id: filename || "upload",
+      dataset_title: (filename || "upload").slice(0, 200),
+      validation_ok: !result.includes("ERROR") && !result.includes("INVALID"),
+      errors_count: (result.match(/error/gi) || []).length,
+      latency_ms: Date.now() - t0vt,
+    }, req);
     res.json({ report: result });
   } catch (e) {
     console.error("[validate-text] errore:", e.message);
+    emitEvent("error", { error_type: "validate_error", error_message: e.message.slice(0, 300), endpoint: "/api/validate-text" }, req);
     res.status(500).json({ error: e.message });
   }
 });
@@ -844,14 +902,22 @@ app.post("/api/chat", async (req, res) => {
   const onTopic = await isQuestionOnTopic(lastMsg);
   if (!onTopic) {
     console.log(`[guardrail] domanda fuori tema bloccata: "${lastMsg.slice(0, 80)}"`);
+    emitEvent("off_topic", { query_preview: lastMsg.slice(0, 100), guardrail_layer: "classifier" }, req);
     return res.json({ reply: OFF_TOPIC_REPLY, toolCalls: [] });
   }
 
+  const t0chat = Date.now();
   try {
     const { reply, toolCalls } = await chatWithTools(messages, model);
+    emitEvent("search", {
+      query: lastMsg.slice(0, 500),
+      datasets_found: toolCalls?.length || 0,
+      latency_ms: Date.now() - t0chat,
+    }, req);
     res.json({ reply, toolCalls });
   } catch (e) {
     console.error(e);
+    emitEvent("error", { error_type: "chat_error", error_message: e.message.slice(0, 300), endpoint: "/api/chat" }, req);
     res.status(500).json({ error: e.message });
   }
 });
