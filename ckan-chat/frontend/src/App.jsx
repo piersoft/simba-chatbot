@@ -317,7 +317,9 @@ SELECT ?ipaCode WHERE {
       const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
       if (!r.ok) return "";
       const data = await r.json();
-      return data.results?.bindings?.[0]?.ipaCode?.value || "";
+      const val = data.results?.bindings?.[0]?.ipaCode?.value || "";
+      // Se è una partita IVA (11 cifre numeriche) = errore nei metadati, scarta
+      return /^\d{11}$/.test(val) ? "" : val;
     } catch { return ""; }
   }
 
