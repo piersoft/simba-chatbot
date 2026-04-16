@@ -144,7 +144,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         title:       b.title?.value ?? "",
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
-        publisher:   (dove || b.rightsHolder?.value) ?? "",
+        publisher:   dove ? dove : (b.rightsHolder?.value ?? ""),
         viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
         csvResources: [],
       });
