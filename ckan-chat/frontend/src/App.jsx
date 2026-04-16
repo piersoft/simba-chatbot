@@ -384,14 +384,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   }
 
   // ── Valida CSV da card ────────────────────────────────────────────────────
-  async function validateFromCard(url, datasetTitle) {
+  async function validateFromCard(url, datasetTitle, publisher = "") {
     addMsg("user",      `Valida CSV: ${url}`);
     setPageTitle("✅ Validazione CSV — Open Data Italia");
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
       const report = await doValidate(url);
-      addMsg("assistant", report, { type: "validate_report", url });
+      addMsg("assistant", report, { type: "validate_report", url, publisher });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }
   }
@@ -442,14 +442,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     setLoading(false);
   }
 
-  function openTtlBox(url, fmt = "ttl", csvText = null) {
+  function openTtlBox(url, fmt = "ttl", csvText = null, pa = "") {
     setShowCsvBox(false);
     setTtlCsvText(csvText);
     setTtlUrl(csvText ? "" : (url || ""));
     setTtlTab(csvText ? "upload" : "url");
     setTtlFmt(fmt);
     setTtlIpa("");
-    setTtlPa("");
+    setTtlPa(pa);
     setShowTtlBox(true);
   }
 
@@ -567,7 +567,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText)} onEnrichText={doEnrichText} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "")} onEnrichText={doEnrichText} />
           </div>
         </div>
       );
