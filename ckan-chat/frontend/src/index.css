@@ -1261,3 +1261,47 @@ body {
 .dove-ac-count {
   font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--text3);
 }
+
+/* ── Privacy banner GDPR ─────────────────────────────────────────────────── */
+.privacy-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: #1e293b;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.25);
+}
+.privacy-banner a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.privacy-banner button {
+  flex-shrink: 0;
+  background: #0066CC;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.privacy-banner button:hover {
+  background: #0052a3;
+}
+@media (max-width: 600px) {
+  .privacy-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

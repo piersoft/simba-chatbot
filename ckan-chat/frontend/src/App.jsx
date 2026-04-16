@@ -4,8 +4,35 @@ import DatasetCard from "./components/DatasetCard";
 import ValidateReport from "./components/ValidateReport";
 import Icon from "./components/Icon";
 import AdvancedSearch from "./components/AdvancedSearch";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
+
+// ── Session ID — generato una volta per sessione browser ──────────────────────
+if (!sessionStorage.getItem("ckan_sid")) {
+  sessionStorage.setItem("ckan_sid", crypto.randomUUID());
+}
+const SESSION_ID = sessionStorage.getItem("ckan_sid");
+
+// Header comuni a tutte le richieste verso il backend
+function apiHeaders(extra = {}) {
+  return { "Content-Type": "application/json", "x-session-id": SESSION_ID, ...extra };
+}
+
+// Invia evento analytics fire-and-forget dal frontend
+// Usato per eventi che non passano per il backend (es. ricerca SPARQL diretta)
+function emitAnalytics(type, payload = {}) {
+  fetch("/analytics-api/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type,
+      session_id: SESSION_ID,
+      ts: new Date().toISOString(),
+      ...payload,
+    }),
+  }).catch(() => {});
+}
 
 const SUGGESTIONS = [
   { text: "Cerca dataset sulla qualità dell'aria", icon: "🔍" },
@@ -20,6 +47,11 @@ const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jail
 const SPARQL_EP = "https://lod.dati.gov.it/sparql";
 
 export default function App() {
+  // Route semplice: /analytics mostra la dashboard, tutto il resto il chatbot
+  if (window.location.pathname.endsWith("/analytics") || window.location.pathname.endsWith("/analytics/")) {
+    return <AnalyticsDashboard />;
+  }
+
   const [messages,    setMessages]    = useState([]);
   const [pageTitle,   setPageTitle]   = useState("Esplora i Dati Aperti Italiani");
   const [input,       setInput]       = useState("");
@@ -31,6 +63,7 @@ export default function App() {
   const [csvTab,      setCsvTab]      = useState("url"); // "url" | "upload"
   const [csvFile,     setCsvFile]     = useState(null);
   const [showTtlBox,  setShowTtlBox]  = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(() => !localStorage.getItem("privacy_ok"));
   const [showHelp,    setShowHelp]    = useState(false);
   const [wizardDove,  setWizardDove]  = useState("");
   const [doveAcList,  setDoveAcList]  = useState([]);
@@ -72,7 +105,7 @@ export default function App() {
     try {
       const r = await fetch(`${BACKEND_URL}/api/intent`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ message: text }),
       });
       if (!r.ok) return "SEARCH";
@@ -158,7 +191,8 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
   }
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
-  async function doValidate(url) {
+  async function doValidate(url, datasetTitle = "") {
+    const title = datasetTitle || url.split("/").pop().split("?")[0] || url;
     // 1. Prima prova dal browser (segue redirect, nessun CORS problem su CSV diretti)
     try {
       const csvRes = await fetch(url);
@@ -170,8 +204,8 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         if (!isHtml && hasSep) {
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ csv_text, filename: url.split("/").pop() }),
+            headers: apiHeaders(),
+            body: JSON.stringify({ csv_text, filename: title }),
           });
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return (await r.json()).report ?? "";
@@ -181,11 +215,11 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       console.warn("[doValidate] browser fetch fallito:", e.message);
     }
     // 2. Il browser ha ricevuto HTML (accessURL → pagina CKAN) o CORS bloccato
-    // Passa l URL al backend che scarica server-side e segue i redirect
+    // Passa URL e titolo al backend
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
+      headers: apiHeaders(),
+      body: JSON.stringify({ url, dataset_title: title }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return (await r.json()).report ?? "";
@@ -193,6 +227,10 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 
   // ── Callback per risultati ricerca avanzata ─────────────────────────────
   function handleAdvResults(datasets, label) {
+    emitAnalytics("search", {
+      query: label.slice(0, 500),
+      datasets_found: datasets.length,
+    });
     if (!datasets.length) {
       addMsg("assistant", `Nessun dataset trovato per **"${label}"**.`);
       return;
@@ -346,7 +384,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       // Passa sempre l'URL al backend — rdf-mcp lo scarica direttamente
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ url, pa: datasetTitle, ipa, fmt }),
       });
       if (!r.ok) {
@@ -384,14 +422,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   }
 
   // ── Valida CSV da card ────────────────────────────────────────────────────
-  async function validateFromCard(url, datasetTitle, publisher = "") {
+  async function validateFromCard(url, datasetTitle) {
     addMsg("user",      `Valida CSV: ${url}`);
     setPageTitle("✅ Validazione CSV — Open Data Italia");
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
-      const report = await doValidate(url);
-      addMsg("assistant", report, { type: "validate_report", url, publisher });
+      const report = await doValidate(url, datasetTitle);
+      addMsg("assistant", report, { type: "validate_report", url });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }
   }
@@ -407,7 +445,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       const text = await csvFile.text();
       const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ csv_text: text, filename: csvFile.name }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -425,7 +463,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     try {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ csv_text, pa: filename.replace(/\.csv$/i,""), ipa: "ente", fmt }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -442,14 +480,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     setLoading(false);
   }
 
-  function openTtlBox(url, fmt = "ttl", csvText = null, pa = "") {
+  function openTtlBox(url, fmt = "ttl", csvText = null) {
     setShowCsvBox(false);
     setTtlCsvText(csvText);
     setTtlUrl(csvText ? "" : (url || ""));
     setTtlTab(csvText ? "upload" : "url");
     setTtlFmt(fmt);
     setTtlIpa("");
-    setTtlPa(pa);
+    setTtlPa("");
     setShowTtlBox(true);
   }
 
@@ -483,7 +521,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       const csv_text = hasMemory ? ttlCsvText : await ttlFile.text();
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders(),
         body: JSON.stringify({ csv_text, pa, ipa, fmt }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -567,7 +605,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "")} onEnrichText={doEnrichText} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText)} onEnrichText={doEnrichText} />
           </div>
         </div>
       );
@@ -594,6 +632,17 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
 
   return (
     <div className="app">
+      {showPrivacy && (
+        <div className="privacy-banner">
+          <span>
+            Questo servizio raccoglie dati anonimi sull'utilizzo (query, sessione, IP parziale) per migliorare il servizio.
+            Nessun dato personale identificabile viene conservato.
+          </span>
+          <button onClick={() => { localStorage.setItem("privacy_ok", "1"); setShowPrivacy(false); }}>
+            Ho capito ✕
+          </button>
+        </div>
+      )}
       <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
       <div className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
@@ -893,7 +942,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
               addMsg("user", userMsg);
               setLoading(true);
               try {
+                const t0w = Date.now();
                 const { datasets, offset } = await doSearch(input.trim(), 0, wizardDove);
+                emitAnalytics("search", {
+                  query: input.trim().slice(0, 500),
+                  where: wizardDove || null,
+                  datasets_found: datasets.length,
+                  latency_ms: Date.now() - t0w,
+                });
                 if (!datasets.length) {
                   addMsg("assistant", `Nessun dataset trovato per **"${userMsg}"**.`);
                 } else {
