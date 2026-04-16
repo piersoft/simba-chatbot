@@ -76,9 +76,10 @@ function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
   return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
 ${triples}${rhOptional}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
 ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
 
@@ -139,6 +140,8 @@ export default function AdvancedSearch({ onResults, onLoading }) {
         const uri = val(b, "d");
         if (!uri || seen.has(uri)) continue;
         const id = uri.split("/").pop();
+        const landingPage = val(b, "landingPage");
+        const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
         seen.set(uri, {
           uri, id,
           title:       val(b, "title"),
@@ -146,7 +149,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
           modified:    val(b, "modified").slice(0, 10),
           rightsHolder: val(b, "rhName") || (rh || ""),
           publisher:    val(b, "rhName") || (rh || ""),
-          viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
+          viewUrl,
           csvResources: [],
         });
       }

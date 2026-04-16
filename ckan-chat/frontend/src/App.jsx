@@ -112,12 +112,13 @@ export default function App() {
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
 ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
       const url = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
@@ -139,13 +140,15 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       const uri = b.d?.value ?? "";
       if (!uri || seen.has(uri)) continue;
       const id = uri.split("/").pop();
+      const landingPage = b.landingPage?.value;
+      const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
       seen.set(uri, {
         uri, id,
         title:       b.title?.value ?? "",
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
         publisher:   b.rhName?.value || (dove || ""),
-        viewUrl:     `https://www.dati.gov.it/view-dataset/dataset?id=${id}`,
+        viewUrl,
         csvResources: [],
       });
     }
