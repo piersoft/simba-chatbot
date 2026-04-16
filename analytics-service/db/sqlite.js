@@ -237,8 +237,15 @@ function avgPayloadField(type, field, from, to) {
   return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
 }
 
+function deleteOlderThan(cutoff) {
+  const result = getDb().prepare(
+    `DELETE FROM events WHERE ts < ?`
+  ).run(cutoff);
+  return result.changes;
+}
+
 module.exports = {
-  init, insertEvent,
+  init, insertEvent, deleteOlderThan,
   countDistinct, countEvents,
   avgLatency, percentileLatency,
   topQueries, topRightsHolders,

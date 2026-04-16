@@ -18,6 +18,23 @@ function anonymizeIP(ip) {
   return ip;
 }
 
+// Estrae solo OS e browser dal user-agent, senza versione specifica
+// Es. "Mozilla/5.0 (Windows NT 10.0) Chrome/120" → "Windows / Chrome"
+function parseUA(ua) {
+  if (!ua) return null;
+  const os = /Windows/.test(ua) ? "Windows"
+    : /Mac OS/.test(ua) ? "macOS"
+    : /Android/.test(ua) ? "Android"
+    : /iPhone|iPad/.test(ua) ? "iOS"
+    : /Linux/.test(ua) ? "Linux" : "Other";
+  const browser = /Edg\//.test(ua) ? "Edge"
+    : /OPR\/|Opera/.test(ua) ? "Opera"
+    : /Chrome/.test(ua) ? "Chrome"
+    : /Firefox/.test(ua) ? "Firefox"
+    : /Safari/.test(ua) ? "Safari" : "Other";
+  return `${os} / ${browser}`;
+}
+
 function emitEvent(type, payload, req) {
   const event = {
     type,
@@ -25,7 +42,7 @@ function emitEvent(type, payload, req) {
     ip: anonymizeIP(
       req?.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() || req?.ip || ""
     ),
-    user_agent: (req?.headers?.["user-agent"] || "").slice(0, 200),
+    user_agent: parseUA(req?.headers?.["user-agent"]),
     ts: new Date().toISOString(),
     ...payload,
   };

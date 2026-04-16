@@ -63,6 +63,7 @@ export default function App() {
   const [csvTab,      setCsvTab]      = useState("url"); // "url" | "upload"
   const [csvFile,     setCsvFile]     = useState(null);
   const [showTtlBox,  setShowTtlBox]  = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(() => !localStorage.getItem("privacy_ok"));
   const [showHelp,    setShowHelp]    = useState(false);
   const [wizardDove,  setWizardDove]  = useState("");
   const [doveAcList,  setDoveAcList]  = useState([]);
@@ -631,6 +632,18 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
 
   return (
     <div className="app">
+      {showPrivacy && (
+        <div className="privacy-banner">
+          <span>
+            Questo servizio raccoglie dati anonimi sull'utilizzo (query, sessione, IP parziale) per migliorare il servizio.
+            Nessun dato personale identificabile viene conservato.{" "}
+            <a href="https://www.dati.gov.it/policy" target="_blank" rel="noopener noreferrer">Privacy policy</a>
+          </span>
+          <button onClick={() => { localStorage.setItem("privacy_ok", "1"); setShowPrivacy(false); }}>
+            Ho capito ✕
+          </button>
+        </div>
+      )}
       <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
       <div className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 

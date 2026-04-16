@@ -151,8 +151,22 @@ app.get('/stats/performance', statsLimiter, authStats, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Retention: cancella eventi più vecchi di 90 giorni ───────────────────────
+function runRetention() {
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    const deleted = db.deleteOlderThan(cutoff);
+    if (deleted > 0) console.log(`[retention] cancellati ${deleted} eventi prima di ${cutoff.slice(0,10)}`);
+  } catch (e) {
+    console.error('[retention] errore:', e.message);
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`analytics-service listening on :${PORT}`);
   db.init();
+  // Esegui retention subito all'avvio e poi ogni 24 ore
+  runRetention();
+  setInterval(runRetention, 24 * 60 * 60 * 1000);
 });
