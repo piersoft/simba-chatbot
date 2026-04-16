@@ -19,6 +19,21 @@ function apiHeaders(extra = {}) {
   return { "Content-Type": "application/json", "x-session-id": SESSION_ID, ...extra };
 }
 
+// Invia evento analytics fire-and-forget dal frontend
+// Usato per eventi che non passano per il backend (es. ricerca SPARQL diretta)
+function emitAnalytics(type, payload = {}) {
+  fetch("/analytics-api/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type,
+      session_id: SESSION_ID,
+      ts: new Date().toISOString(),
+      ...payload,
+    }),
+  }).catch(() => {});
+}
+
 const SUGGESTIONS = [
   { text: "Cerca dataset sulla qualità dell'aria", icon: "🔍" },
   { text: "Trova dati sui rifiuti urbani",          icon: "🔍" },
@@ -210,6 +225,10 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 
   // ── Callback per risultati ricerca avanzata ─────────────────────────────
   function handleAdvResults(datasets, label) {
+    emitAnalytics("search", {
+      query: label.slice(0, 500),
+      datasets_found: datasets.length,
+    });
     if (!datasets.length) {
       addMsg("assistant", `Nessun dataset trovato per **"${label}"**.`);
       return;
@@ -910,7 +929,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
               addMsg("user", userMsg);
               setLoading(true);
               try {
+                const t0w = Date.now();
                 const { datasets, offset } = await doSearch(input.trim(), 0, wizardDove);
+                emitAnalytics("search", {
+                  query: input.trim().slice(0, 500),
+                  where: wizardDove || null,
+                  datasets_found: datasets.length,
+                  latency_ms: Date.now() - t0w,
+                });
                 if (!datasets.length) {
                   addMsg("assistant", `Nessun dataset trovato per **"${userMsg}"**.`);
                 } else {
