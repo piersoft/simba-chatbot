@@ -778,7 +778,7 @@ SELECT ?ipaCode WHERE {
               </>
             ) : (
               <>
-                <p>Carica un file CSV dal tuo computer (max 2 MB):</p>
+                <p>Carica un file CSV dal tuo computer (max 10 MB):</p>
                 <div className="csv-box-row">
                   <input type="file" accept=".csv,.tsv,.txt" ref={csvFileRef} style={{display:"none"}}
                     onChange={e => setCsvFile(e.target.files[0] || null)} />
@@ -886,7 +886,7 @@ SELECT ?ipaCode WHERE {
             <p>Clicca <strong>Valida CSV</strong> nella sidebar, poi scegli:</p>
             <ul>
               <li><strong>Da URL</strong> — incolla il link diretto al file CSV (anche Google Sheets)</li>
-              <li><strong>Carica file</strong> — carica un file .csv dal tuo computer (max 2 MB)</li>
+              <li><strong>Carica file</strong> — carica un file .csv dal tuo computer (max 10 MB)</li>
             </ul>
             <p>Il validatore controlla struttura, contenuto, qualità open data e linked data secondo le linee guida AgID. Punteggio da 0 a 100.</p>
 

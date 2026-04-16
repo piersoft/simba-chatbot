@@ -66,7 +66,7 @@ app.use(cors({
   methods: ["GET", "POST"],
 }));
 
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "10mb" }));
 
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
@@ -794,7 +794,7 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
   if (!url && !csv_text) return res.status(400).json({ error: "url o csv_text richiesto" });
   if (url && isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
   if (url && url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
-  if (csv_text && csv_text.length > 2000000) return res.status(400).json({ error: "File CSV troppo grande (max 2MB)." });
+  if (csv_text && csv_text.length > 10000000) return res.status(400).json({ error: "File CSV troppo grande (max 10MB)." });
   if (ipa && !/^[a-z0-9_]{1,20}$/i.test(ipa)) return res.status(400).json({ error: "Codice IPA non valido." });
   console.log(`[enrich] url=${url || "upload"} ipa=${ipa} pa=${pa}`);
   try {
@@ -834,7 +834,7 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
 app.post("/api/validate-text", strictLimiter, async (req, res) => {
   const { csv_text, filename } = req.body;
   if (!csv_text) return res.status(400).json({ error: "csv_text required" });
-  if (csv_text.length > 2000000) return res.status(400).json({ error: "File CSV troppo grande (max 2MB)." });
+  if (csv_text.length > 10000000) return res.status(400).json({ error: "File CSV troppo grande (max 10MB)." });
   console.log(`[validate-text] ${filename || "upload"} (${csv_text.length} chars)`);
   const t0vt = Date.now();
   try {
