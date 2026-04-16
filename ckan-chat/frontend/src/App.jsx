@@ -138,15 +138,14 @@ export default function App() {
     async function runQuery(words, useOr, off) {
       const doveFilter = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
-  OPTIONAL { ?rh dct:identifier ?ipaCode }
   FILTER(CONTAINS(LCASE(STR(?rhName)),"${dove.toLowerCase().replace(/"/g,'')}"))
 `
-        : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName . OPTIONAL { ?rh dct:identifier ?ipaCode } }
+        : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
 `;
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?ipaCode ?landingPage WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
@@ -182,13 +181,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
         publisher:   b.rhName?.value || (dove || ""),
-        ipaCode:     (() => {
-          const v = b.ipaCode?.value || "";
-          // Codice IPA: formato tipo c_f152, r_puglia, m_mm, agid ecc. — non partita IVA (11 cifre)
-          if (/^\d{11}$/.test(v)) return ""; // è una partita IVA, scarta
-          if (v.length > 30) return ""; // troppo lungo per un codice IPA
-          return v;
-        })(),
+        ipaCode:     "",
         viewUrl,
         csvResources: [],
       });
@@ -308,6 +301,24 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
         setShowDoveAc(results.length > 0);
       } catch {}
     }, 350);
+  }
+
+  // Recupera codice IPA preciso del rightsHolder tramite query dedicata
+  async function fetchIpaCode(datasetUri) {
+    try {
+      const q = `PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+SELECT ?ipaCode WHERE {
+  <${datasetUri}> dct:rightsHolder ?rh .
+  ?rh dct:identifier ?ipaCode .
+} LIMIT 1`;
+      const url = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+      const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+      if (!r.ok) return "";
+      const data = await r.json();
+      return data.results?.bindings?.[0]?.ipaCode?.value || "";
+    } catch { return ""; }
   }
 
   async function sendMessage(text) {
@@ -430,13 +441,14 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   }
 
   // ── Valida CSV da card ────────────────────────────────────────────────────
-  async function validateFromCard(url, datasetTitle, publisher = "", ipaCode = "") {
+  async function validateFromCard(url, datasetTitle, publisher = "", datasetUri = "") {
     addMsg("user",      `Valida CSV: ${url}`);
     setPageTitle("✅ Validazione CSV — Open Data Italia");
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
       const report = await doValidate(url, datasetTitle);
+      const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }
