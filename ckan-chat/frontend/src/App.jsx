@@ -190,7 +190,8 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
   }
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
-  async function doValidate(url) {
+  async function doValidate(url, datasetTitle = "") {
+    const title = datasetTitle || url.split("/").pop().split("?")[0] || url;
     // 1. Prima prova dal browser (segue redirect, nessun CORS problem su CSV diretti)
     try {
       const csvRes = await fetch(url);
@@ -203,7 +204,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
             headers: apiHeaders(),
-            body: JSON.stringify({ csv_text, filename: url.split("/").pop() }),
+            body: JSON.stringify({ csv_text, filename: title }),
           });
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return (await r.json()).report ?? "";
@@ -213,11 +214,11 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       console.warn("[doValidate] browser fetch fallito:", e.message);
     }
     // 2. Il browser ha ricevuto HTML (accessURL → pagina CKAN) o CORS bloccato
-    // Passa l URL al backend che scarica server-side e segue i redirect
+    // Passa URL e titolo al backend
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: apiHeaders(),
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, dataset_title: title }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return (await r.json()).report ?? "";
@@ -426,7 +427,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
-      const report = await doValidate(url);
+      const report = await doValidate(url, datasetTitle);
       addMsg("assistant", report, { type: "validate_report", url });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }

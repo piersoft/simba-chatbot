@@ -731,6 +731,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
   if (isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
   if (url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
   console.log(`[validate] ${url}`);
+  const { dataset_title: reqTitle } = req.body;
   const t0val = Date.now();
   try {
     // Forza reload tool se csv_validate non è ancora in mappa
@@ -741,9 +742,10 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     }
     console.log(`[validate] routeMap keys: ${Object.keys(toolsRouteMap).join(", ")}`);
     const result = await callTool("csv_validate", { csv_url: url, summary_only: false });
+    const cleanTitle = reqTitle || url.split("/").pop().split("?")[0] || url;
     emitEvent("validate", {
       dataset_id: url,
-      dataset_title: url.split("/").pop().slice(0, 200),
+      dataset_title: cleanTitle.slice(0, 200),
       validation_ok: !result.includes("ERROR") && !result.includes("INVALID"),
       errors_count: (result.match(/error/gi) || []).length,
       latency_ms: Date.now() - t0val,
@@ -794,9 +796,10 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
     const rdfRes = await fetch(`${RDF_MCP_URL}/?${params}`, { signal: AbortSignal.timeout(60000) });
     const text = await rdfRes.text();
     if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
+    const enrichTitle = (req.body.pa || url || "upload").split("?")[0].slice(0, 200);
     emitEvent("ttl_create", {
       dataset_id: url || "upload",
-      dataset_title: (url || "upload").split("/").pop().slice(0, 200),
+      dataset_title: enrichTitle,
       format: fmt || "ttl",
       triples_count: (text.match(/\.\s*$/gm) || []).length,
       latency_ms: Date.now() - t0enrich,
@@ -820,9 +823,10 @@ app.post("/api/validate-text", strictLimiter, async (req, res) => {
   try {
     if (!toolsRouteMap["csv_validate"]) { toolsCache = null; toolsRouteMap = {}; await getTools(); }
     const result = await callTool("csv_validate", { csv_text, summary_only: false });
+    const cleanFilename = (filename || "upload").split("?")[0].slice(0, 200);
     emitEvent("validate", {
-      dataset_id: filename || "upload",
-      dataset_title: (filename || "upload").slice(0, 200),
+      dataset_id: cleanFilename || "upload",
+      dataset_title: cleanFilename || "upload",
       validation_ok: !result.includes("ERROR") && !result.includes("INVALID"),
       errors_count: (result.match(/error/gi) || []).length,
       latency_ms: Date.now() - t0vt,
