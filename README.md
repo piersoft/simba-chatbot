@@ -8,15 +8,15 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
 
 ```
 [Browser]
-    ↓ HTTP :80 (nginx) oppure :8080 (diretto)
+    ↓ HTTP :80 / :443 (nginx) oppure :8080 (diretto)
 [Frontend React :8080]
-    ↓ /api/
-[Backend Node.js :3001]
-    ├── Ollama :11434          ← classificazione intenzione (AI locale)
-    ├── validatore-mcp :3002   ← validazione CSV PA italiana
-    └── rdf-mcp :3003          ← conversione CSV → RDF/TTL (worker.js CSV-to-RDF)
+    ├── /api/          → [Backend Node.js :3001]
+    │                       ├── Ollama :11434          ← classificazione intenzione
+    │                       ├── validatore-mcp :3002   ← validazione CSV PA
+    │                       └── rdf-mcp :3003          ← CSV → RDF/TTL
+    └── /analytics-api/ → [Analytics Service :3004]   ← eventi, statistiche, dashboard
 
-[Browser] ──SPARQL──→ lod.dati.gov.it   ← ricerca dataset (direttamente dal browser)
+[Browser] ──SPARQL──→ lod.dati.gov.it   ← ricerca dataset (diretta dal browser)
 ```
 
 
@@ -131,6 +131,23 @@ server {
     location /api/ {
         proxy_pass http://127.0.0.1:3001/api/;
         proxy_set_header Host $host;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 300s;
+        client_max_body_size 20m;
+    }
+    # Analytics service — protetto da HTTP Basic Auth
+    location /chatbot/analytics {
+        auth_basic "Analytics — accesso riservato";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+    }
+    location /analytics-api/ {
+        proxy_pass http://127.0.0.1:3004/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
     }
     location = /favicon.ico { return 204; }
     location / { return 444; }
@@ -143,6 +160,17 @@ nginx -t && systemctl restart nginx
 ```
 
 Il chatbot sarà disponibile su `http://YOUR_SERVER_IP/chatbot`.
+
+Per proteggere la dashboard analytics con login HTTP Basic:
+
+```bash
+apt install -y apache2-utils
+htpasswd -c /etc/nginx/.htpasswd admin
+# inserisci la password quando richiesto
+nginx -t && systemctl reload nginx
+```
+
+La dashboard analytics sarà disponibile su `http://YOUR_SERVER_IP/chatbot/analytics`.
 
 ---
 
@@ -160,11 +188,16 @@ ckan-mcp-server-docker-ollama/
 │       ├── src/
 │       │   ├── App.jsx
 │       │   └── components/
-│       │       ├── DatasetCard.jsx    ← card con distribuzioni SPARQL
-│       │       ├── ValidateReport.jsx ← report validazione
-│       │       ├── AdvancedSearch.jsx ← filtri DCAT-AP
+│       │       ├── DatasetCard.jsx         ← card con distribuzioni SPARQL
+│       │       ├── ValidateReport.jsx      ← report validazione
+│       │       ├── AdvancedSearch.jsx      ← filtri DCAT-AP
+│       │       ├── AnalyticsDashboard.jsx  ← dashboard analytics
 │       │       └── StatusBar.jsx
 │       └── Dockerfile
+├── analytics-service/
+│   ├── server.js                 ← Express: eventi, statistiche, retention 90gg
+│   ├── db/sqlite.js              ← adapter SQLite (drop-in per ClickHouse)
+│   └── Dockerfile
 ├── validatore-mcp/
 │   └── src/validator.js          ← validazione CSV PA italiana
 └── rdf-mcp/
@@ -190,10 +223,46 @@ docker compose -f docker-compose-full.yml ps
 docker logs -f ckan-chat-backend
 docker logs -f rdf-mcp --tail=20
 docker logs -f validatore-mcp --tail=20
+docker logs -f analytics-service --tail=50
 docker compose -f docker-compose-full.yml up --build frontend -d
 docker compose -f docker-compose-full.yml up --build backend -d
+docker compose -f docker-compose-full.yml up --build analytics-service -d
 docker compose -f docker-compose-full.yml down --remove-orphans
 ```
+
+---
+
+## Analytics
+
+Il sistema include un servizio di analytics (`analytics-service :3004`) che raccoglie eventi anonimi per monitorare l'utilizzo del chatbot.
+
+### Dati raccolti
+
+| Evento | Cosa viene salvato |
+|--------|--------------------|
+| `search` | Query cercata, rightsHolder, numero dataset trovati, latenza |
+| `validate` | Nome dataset/file, esito validazione, numero errori |
+| `ttl_create` | Nome dataset, formato (ttl/rdf), numero triple |
+| `off_topic` | Prime 100 caratteri del messaggio bloccato |
+| `error` | Tipo errore, endpoint coinvolto |
+
+### Privacy e GDPR
+
+- **IP anonimizzato**: ultimo ottetto azzerato (`1.2.3.0`) — impossibile risalire all'utente
+- **User agent**: salvato solo come `OS / Browser` (es. `Windows / Chrome`), senza versione
+- **Session ID**: UUID casuale generato nel browser, senza correlazione con l'identità
+- **Retention automatica**: i dati vengono cancellati automaticamente dopo **90 giorni**
+- **Nessun dato personale** identificabile viene conservato
+
+### Dashboard
+
+Disponibile su `/chatbot/analytics` (protetta da HTTP Basic Auth).
+
+Mostra: sessioni uniche, ricerche per giorno, top keyword, top dataset validati/TTL, tasso off-topic, latenza Ollama, errori per tipo.
+
+### Scalabilità
+
+Il database SQLite è sufficiente fino a ~50.000 eventi/giorno. Per volumi maggiori, sostituire `db/sqlite.js` con `db/clickhouse.js` (stessa interfaccia) senza modificare nient'altro.
 
 ---
 
