@@ -1,4 +1,4 @@
-# 🏛 Assistente Open Data Italiani
+# Assistente Open Data Italiani
 
 Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica Amministrazione italiana. Interamente **self-hosted**, senza dipendenze da Cloudflare o altri servizi cloud esterni.
 
