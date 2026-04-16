@@ -192,6 +192,17 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
     setMessages(prev => [...prev, { role, content, ...extra }]);
   }
 
+  function replaceLastMsg(role, content, extra = {}) {
+    setMessages(prev => {
+      const msgs = [...prev];
+      // Trova e sostituisce l'ultimo messaggio loading_ttl
+      const idx = msgs.map(m => m.type).lastIndexOf("loading_ttl");
+      if (idx !== -1) msgs[idx] = { role, content, ...extra };
+      else msgs.push({ role, content, ...extra });
+      return msgs;
+    });
+  }
+
   // ── Handler principale ────────────────────────────────────────────────────
   function resetChat() {
     setMessages([]);
@@ -298,7 +309,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
       const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
-      addMsg("assistant", `✅ Conversione completata! ${lines.length} triple generate.`, {
+      replaceLastMsg("assistant", `✅ Conversione completata! ${lines.length} triple generate.`, {
         type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt
       });
     } catch (e) {
@@ -430,7 +441,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rightsHolder WHERE {
       const preview = lines.slice(0, 30).join("\n");
       const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
-      addMsg("assistant", `✅ Conversione completata!`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt });
+      replaceLastMsg("assistant", `✅ Conversione completata!`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); setTtlFile(null); setTtlIpa(""); setTtlPa(""); setTtlCsvText(null); }
   }
