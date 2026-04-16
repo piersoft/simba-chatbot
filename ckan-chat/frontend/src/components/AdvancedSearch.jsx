@@ -149,7 +149,12 @@ export default function AdvancedSearch({ onResults, onLoading }) {
           modified:    val(b, "modified").slice(0, 10),
           rightsHolder: val(b, "rhName") || (rh || ""),
           publisher:    val(b, "rhName") || (rh || ""),
-          ipaCode:      val(b, "ipaCode") || "",
+          ipaCode:      (() => {
+            const v = val(b, "ipaCode");
+            if (/^\d{11}$/.test(v)) return ""; // partita IVA, scarta
+            if (v.length > 30) return "";
+            return v;
+          })(),
           viewUrl,
           csvResources: [],
         });

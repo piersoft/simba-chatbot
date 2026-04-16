@@ -182,7 +182,13 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         description: b.description?.value ?? "",
         modified:    b.modified?.value?.slice(0,10) ?? "",
         publisher:   b.rhName?.value || (dove || ""),
-        ipaCode:     b.ipaCode?.value || "",
+        ipaCode:     (() => {
+          const v = b.ipaCode?.value || "";
+          // Codice IPA: formato tipo c_f152, r_puglia, m_mm, agid ecc. — non partita IVA (11 cifre)
+          if (/^\d{11}$/.test(v)) return ""; // è una partita IVA, scarta
+          if (v.length > 30) return ""; // troppo lungo per un codice IPA
+          return v;
+        })(),
         viewUrl,
         csvResources: [],
       });
