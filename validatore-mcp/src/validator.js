@@ -132,7 +132,7 @@ export function checksContenuto(rows, headers) {
     const uniqIds = new Set(ids);
     if (uniqIds.size < ids.length * 0.98) push('C3', 'Colonna ID con duplicati', `"${headers[colIdx]}" ha valori ripetuti.`, 'warn');
     else push('C3', 'Colonna ID univoca', `"${headers[colIdx]}" ha valori univoci.`, 'pass');
-  } else push('C3', 'Nessuna colonna ID', 'Aggiungere un identificatore univoco.', 'warn');
+  } else push('C3', 'Nessuna colonna ID', 'Aggiungere un identificatore univoco (es. colonna "id" in minuscolo).', 'warn');
 
   const dateCols = normH.map((h, i) => [h, i]).filter(([h]) => /data|date|anno|year|timestamp/.test(h));
   if (dateCols.length > 0) {
@@ -198,7 +198,7 @@ export function checksLinkeddata(rows, headers) {
   });
   if (hasUUID) push('L1', 'UUID come identificatore', 'Ottimo per URI stabili.', 'pass');
   else if (idCandidates.length) push('L1', 'Identificatore non UUID', 'Preferire UUID per URI stabili.', 'info');
-  else push('L1', 'Nessun identificatore univoco', 'Aggiungere colonna ID.', 'warn');
+  else push('L1', 'Nessun identificatore univoco', 'Aggiungere colonna "id" in minuscolo.', 'warn');
 
   const onto_map = {
     'lat': 'CLV (Geolocation)', 'lon': 'CLV', 'latitude': 'CLV', 'longitude': 'CLV',
