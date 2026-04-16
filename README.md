@@ -197,16 +197,16 @@ docker compose -f docker-compose-full.yml down --remove-orphans
 
 ---
 
-## API Backend
+## Sicurezza
 
-| Metodo | Path | Descrizione |
-|---|---|---|
-| `GET` | `/api/health` | Stato backend, Ollama, validatore, rdf-mcp |
-| `POST` | `/api/intent` | Classifica intenzione utente (Ollama) |
-| `POST` | `/api/sparql` | Proxy SPARQL verso lod.dati.gov.it |
-| `POST` | `/api/validate` | Valida CSV da URL |
-| `POST` | `/api/validate-text` | Valida CSV da testo grezzo |
-| `POST` | `/api/enrich` | Converti CSV in RDF/TTL o RDF/XML |
+Il backend applica i seguenti controlli su tutti gli endpoint:
+
+- **Rate limiting globale**: max 60 richieste/minuto per IP su `/api/`
+- **Rate limiting strict**: max 20 richieste/minuto su validate, enrich, intent
+- **Blocco SSRF**: gli endpoint che accettano URL esterni rifiutano indirizzi IP privati, localhost e link non HTTPS
+- **Limite payload**: body JSON max 2 MB, CSV max 500 KB
+- **Validazione input**: lunghezza massima messaggi (500 caratteri), codice IPA solo alfanumerico
+- **Header di sicurezza**: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`
 
 ---
 

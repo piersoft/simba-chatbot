@@ -18,7 +18,7 @@ app.use(cors({
   methods: ["GET", "POST"],
 }));
 
-app.use(express.json({ limit: "20mb" }));
+app.use(express.json({ limit: "2mb" }));
 
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
@@ -26,6 +26,39 @@ app.use((req, res, next) => {
   res.setHeader("Strict-Transport-Security", "max-age=31536000");
   res.setHeader("Content-Security-Policy", "default-src 'self'");
   next();
+});
+
+// ─── Sicurezza: blocco SSRF ──────────────────────────────────────────────────
+function isPrivateOrDangerous(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    // Solo HTTPS
+    if (u.protocol !== "https:") return true;
+    const host = u.hostname.toLowerCase();
+    // Blocca IP privati, localhost, metadati cloud
+    const blocked = [
+      /^localhost$/, /^127\./, /^10\./, /^192\.168\./,
+      /^172\.(1[6-9]|2\d|3[01])\./, /^::1$/, /^0\.0\.0\.0$/,
+      /^169\.254\./, /^metadata\./, /^fd[0-9a-f]{2}:/i
+    ];
+    return blocked.some(r => r.test(host));
+  } catch { return true; }
+}
+
+// ─── Rate limiting globale ────────────────────────────────────────────────────
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Troppe richieste. Riprova tra un minuto." }
+});
+app.use("/api/", globalLimiter);
+
+const strictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: "Troppe richieste su questo endpoint." }
 });
 
 app.use("/api/chat", rateLimit({
@@ -620,9 +653,10 @@ function parseIntent(raw) {
   return "SEARCH"; // default sicuro
 }
 
-app.post("/api/intent", async (req, res) => {
+app.post("/api/intent", strictLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "message required" });
+  if (message.length > 500) return res.status(400).json({ error: "Messaggio troppo lungo (max 500 caratteri)." });
   const intent = await classifyIntent(message);
   console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
   res.json({ intent });
@@ -660,9 +694,11 @@ app.get("/api/resources/:datasetId", async (req, res) => {
 // ─── Validate endpoint diretto ───────────────────────────────────────────────
 // Chiama validatore-mcp direttamente senza passare per Ollama.
 
-app.post("/api/validate", async (req, res) => {
+app.post("/api/validate", strictLimiter, async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "url required" });
+  if (isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
+  if (url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
   console.log(`[validate] ${url}`);
   try {
     // Forza reload tool se csv_validate non è ancora in mappa
@@ -694,9 +730,13 @@ app.get("/tmp-csv/:id", (req, res) => {
   res.send(csv);
 });
 
-app.post("/api/enrich", async (req, res) => {
+app.post("/api/enrich", strictLimiter, async (req, res) => {
   const { url, csv_text, ipa, pa, fmt } = req.body;
   if (!url && !csv_text) return res.status(400).json({ error: "url o csv_text richiesto" });
+  if (url && isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
+  if (url && url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
+  if (csv_text && csv_text.length > 500000) return res.status(400).json({ error: "File CSV troppo grande (max 500KB)." });
+  if (ipa && !/^[a-z0-9_]{1,20}$/i.test(ipa)) return res.status(400).json({ error: "Codice IPA non valido." });
   console.log(`[enrich] url=${url || "upload"} ipa=${ipa} pa=${pa}`);
   try {
     let csvUrl = url;
@@ -722,9 +762,10 @@ app.post("/api/enrich", async (req, res) => {
 });
 
 // Validazione da testo CSV grezzo (upload file dal browser)
-app.post("/api/validate-text", async (req, res) => {
+app.post("/api/validate-text", strictLimiter, async (req, res) => {
   const { csv_text, filename } = req.body;
   if (!csv_text) return res.status(400).json({ error: "csv_text required" });
+  if (csv_text.length > 500000) return res.status(400).json({ error: "File CSV troppo grande (max 500KB)." });
   console.log(`[validate-text] ${filename || "upload"} (${csv_text.length} chars)`);
   try {
     if (!toolsRouteMap["csv_validate"]) { toolsCache = null; toolsRouteMap = {}; await getTools(); }
@@ -815,7 +856,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-app.get("/api/health", async (req, res) => {
+app.get("/api/health", rateLimit({ windowMs: 60000, max: 10, message: { error: "Too many requests" } }), async (req, res) => {
   const status = { backend: "ok", ollama: "n/a", validatore: "unknown", rdf: "unknown" };
   if (LLM_PROVIDER === "ollama") {
     try {
