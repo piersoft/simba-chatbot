@@ -636,8 +636,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
         <div className="privacy-banner">
           <span>
             Questo servizio raccoglie dati anonimi sull'utilizzo (query, sessione, IP parziale) per migliorare il servizio.
-            Nessun dato personale identificabile viene conservato.{" "}
-            <a href="https://www.dati.gov.it/policy" target="_blank" rel="noopener noreferrer">Privacy policy</a>
+            Nessun dato personale identificabile viene conservato.
           </span>
           <button onClick={() => { localStorage.setItem("privacy_ok", "1"); setShowPrivacy(false); }}>
             Ho capito ✕
