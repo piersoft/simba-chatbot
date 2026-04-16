@@ -449,9 +449,15 @@ SELECT ?ipaCode WHERE {
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
+      // Scarica il CSV dal browser (evita 403 server-side su rdf-mcp)
+      let csvText = null;
+      try {
+        const csvRes = await fetch(url);
+        if (csvRes.ok) csvText = await csvRes.text();
+      } catch { /* se non scaricabile, lascia null */ }
       const report = await doValidate(url, datasetTitle);
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
-      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode });
+      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); }
   }
