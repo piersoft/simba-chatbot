@@ -61,7 +61,7 @@ body {
 .sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
-  background: #0066CC;
+  background: #17324d;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -76,7 +76,7 @@ body {
   gap: 12px;
   padding: 18px 16px;
   background: #ffffff;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 3px solid #0066cc;
 }
 
 .logo-icon {
@@ -965,8 +965,8 @@ body {
 .tool-search:hover   { background: #e8f0fe; }
 .tool-validate { background: #006b38; color: #fff; }
 .tool-validate:hover { filter: brightness(0.85); }
-.tool-ttl      { background: #6a1b9a; color: #fff; border: none; }
-.tool-ttl:hover      { background: #4a148c; }
+.tool-ttl      { background: #2c4a6e; color: #fff; border: none; }
+.tool-ttl:hover      { background: #1e3a5f; }
 .tool-card:disabled  { opacity: 0.5; cursor: not-allowed; filter: none; }
 
 /* Bottoni azioni card */
@@ -987,7 +987,7 @@ body {
 
 /* Send button */
 .send-btn {
-  background: #0066CC; color: #fff; border: none;
+  background: #17324d; color: #fff; border: none;
   border-radius: 6px; padding: 8px 14px; font-size: 18px;
   cursor: pointer; transition: filter 0.15s;
 }
@@ -1032,7 +1032,7 @@ body {
 /* ── Fascia header dati.gov.it (blu) ──────────────────────────────────────── */
 .sidebar-header-bar {
   margin: 0 -16px 16px -16px;
-  background: #0066CC;
+  background: #17324d;
   padding: 10px 14px;
   display: flex; align-items: center; gap: 10px;
 }
@@ -1055,7 +1055,7 @@ body {
 /* ── Welcome brand ────────────────────────────────────────────────────────── */
 .welcome-brand {
   display: flex; align-items: center; gap: 16px;
-  background: #0066CC; border-radius: 10px;
+  background: #17324d; border-radius: 10px;
   padding: 14px 24px; margin-bottom: 16px;
 }
 .welcome-icon-img {
@@ -1285,7 +1285,7 @@ body {
 }
 .privacy-banner button {
   flex-shrink: 0;
-  background: #0066CC;
+  background: #17324d;
   color: #fff;
   border: none;
   border-radius: 6px;

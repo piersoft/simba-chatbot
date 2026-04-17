@@ -35,10 +35,10 @@ function emitAnalytics(type, payload = {}) {
 }
 
 const SUGGESTIONS = [
-  { text: "Cerca dataset sulla qualità dell'aria", icon: "🔍" },
-  { text: "Trova dati sui rifiuti urbani",          icon: "🔍" },
-  { text: "Dataset sulla mobilità e trasporti",     icon: "🔍" },
-  { text: "Dati sull'energia rinnovabile",           icon: "🔍" },
+  { text: "Cerca dataset sulla qualità dell'aria", icon: "" },
+  { text: "Trova dati sui rifiuti urbani",          icon: "" },
+  { text: "Dataset sulla mobilità e trasporti",     icon: "" },
+  { text: "Dati sull'energia rinnovabile",           icon: "" },
   { text: "Valida CSV da URL",                       icon: "✅", action: "validate_prompt" },
 ];
 
@@ -337,12 +337,12 @@ SELECT ?ipaCode WHERE {
     try {
       const intent = await classifyIntent(text);
 
-      if (intent === "SEARCH") setPageTitle("🔍 Ricerca Dataset — Open Data Italia");
-      else if (intent === "VALIDATE") setPageTitle("✅ Validazione CSV — Open Data Italia");
+      if (intent === "SEARCH") setPageTitle("Ricerca Dataset — Open Data Italia");
+      else if (intent === "VALIDATE") setPageTitle("Validazione CSV — Open Data Italia");
       else if (intent === "ENRICH") setPageTitle("🔄 Conversione RDF — Open Data Italia");
 
       if (intent === "OFF_TOPIC") {
-        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- 🔍 Ricerca dataset open data italiani\n- ✅ Validazione file CSV per la PA\n- 🔄 Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
+        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- Ricerca dataset open data italiani\n- Validazione file CSV per la PA\n- Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
         return;
       }
 
@@ -370,8 +370,8 @@ SELECT ?ipaCode WHERE {
         .replace(/\b(dataset|open data)\b/gi, "")
         .replace(/\s+/g, " ").trim() || text;
 
-      setPageTitle("🔍 Ricerca Dataset — Open Data Italia");
-      addMsg("assistant", `🔍 Ricerca di **"${query}"** in corso…`, { type: "searching" });
+      setPageTitle("Ricerca Dataset — Open Data Italia");
+      addMsg("assistant", `Ricerca di **"${query}"** in corso…`, { type: "searching" });
 
       const { datasets } = await doSearch(query);
 
@@ -445,7 +445,7 @@ SELECT ?ipaCode WHERE {
   // ── Valida CSV da card ────────────────────────────────────────────────────
   async function validateFromCard(url, datasetTitle, publisher = "", datasetUri = "") {
     addMsg("user",      `Valida CSV: ${url}`);
-    setPageTitle("✅ Validazione CSV — Open Data Italia");
+    setPageTitle("Validazione CSV — Open Data Italia");
     addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
@@ -716,7 +716,7 @@ SELECT ?ipaCode WHERE {
             ✅ Validatore CSV <span className="plain-tag">AgID</span>
           </a>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/ckan-opendata-assistant/" target="_blank" rel="noopener noreferrer">
-            🔍 Assistente ricerca <span className="plain-tag">AgID</span>
+            Assistente ricerca <span className="plain-tag">AgID</span>
           </a>
         </div>
 
@@ -745,7 +745,7 @@ SELECT ?ipaCode WHERE {
               <p className="welcome-acronym">Sistema Intelligente di <strong>M</strong>onitoraggio, <strong>B</strong>onifica e <strong>A</strong>rricchimento</p>
               <p>Ricerca, valida e arricchisce i dataset della PA.</p>
               <div className="welcome-chips">
-                <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>🔍 Cerca dataset</span>
+                <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>Cerca dataset</span>
                 <span className="chip" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }}>Valida CSV</span>
                 <span className="chip" onClick={() => sendMessage("Converti CSV in RDF")}>🔄 CSV → RDF</span>
               </div>
