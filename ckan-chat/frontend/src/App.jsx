@@ -741,9 +741,9 @@ SELECT ?ipaCode WHERE {
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome">
-              <h2>Assistente Open Data Italiani</h2>
-              <p>Cerca dataset, valida CSV o converti in Linked Data.<br />
-                 Basato su dati.gov.it e ontologie PA italiane.</p>
+              <h2>SIMBA</h2>
+              <p className="welcome-acronym">Sistema Intelligente di <strong>M</strong>onitoraggio, <strong>B</strong>onifica e <strong>A</strong>rricchimento</p>
+              <p>Ricerca, valida e arricchisce i dataset della PA.</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>🔍 Cerca dataset</span>
                 <span className="chip" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }}>Valida CSV</span>
