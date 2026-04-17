@@ -25,7 +25,7 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
 ## Funzionalità
 
 ### 🔍 Cerca Dataset
-Interroga direttamente l'endpoint SPARQL di **lod.dati.gov.it** (`https://lod.dati.gov.it/sparql`) dal browser, senza passare per il backend. La query SPARQL cerca per parole chiave in titolo, descrizione e keyword dei dataset DCAT-AP IT.
+Interroga direttamente l'endpoint SPARQL configurato tramite `SPARQL_ENDPOINT` (default: `https://lod.dati.gov.it/sparql`) dal browser, senza passare per il backend. La query SPARQL cerca per parole chiave in titolo, descrizione e keyword dei dataset DCAT-AP IT.
 
 Per ogni dataset trovato è possibile espandere le distribuzioni CSV, recuperate tramite una seconda query SPARQL usando la proprietà `dcat:downloadURL`.
 
@@ -90,6 +90,11 @@ CORS_ORIGIN=http://YOUR_SERVER_IP
 # Senza nginx (sviluppo):
 # VITE_BACKEND_URL=http://YOUR_SERVER_IP:3001
 # CORS_ORIGIN=http://YOUR_SERVER_IP:8080
+
+# Endpoint SPARQL (default: catalogo nazionale italiano)
+# Cambiare per usare un triplestore diverso
+# SPARQL_ENDPOINT=https://lod.dati.gov.it/sparql
+SPARQL_ENDPOINT=
 ```
 
 ### 3. Avvia i container
