@@ -316,7 +316,7 @@ export default function AnalyticsDashboard(){
               cols={[{label:"Keyword",key:"query"},{label:"Ricerche",key:"count"}]}/>}>
             {loading?<Skeleton h={220}/>:<HBar data={data?.search?.top_queries} keyY="query"/>}
           </Panel>
-          <Panel title="Top enti (rightsHolder)"
+          <Panel title="Top enti filtrati (rightsHolder)"
             action={<DownloadBtn filename={`enti-${rangeLabel}.csv`} rows={data?.search?.top_rightsholders}
               cols={[{label:"Ente",key:"rights_holder"},{label:"Ricerche",key:"count"}]}/>}>
             {loading?<Skeleton h={220}/>:<HBar data={data?.search?.top_rightsholders} keyY="rights_holder"/>}
