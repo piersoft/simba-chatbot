@@ -105,6 +105,18 @@ function topQueries(limit, from, to) {
     .map(([query, count]) => ({ query, count }));
 }
 
+function normalizeEnteName(name) {
+  if (!name) return null;
+  // Normalizza maiuscola iniziale per ogni parola, esclude preposizioni
+  const skip = new Set(['di','del','della','delle','degli','dei','da','in','e','a','su','per']);
+  return name.trim()
+    .split(/\s+/)
+    .map((w, i) => i === 0 || !skip.has(w.toLowerCase())
+      ? w.charAt(0).toUpperCase() + w.slice(1)
+      : w.toLowerCase())
+    .join(' ');
+}
+
 function topRightsHolders(limit, from, to) {
   const rows = getDb().prepare(
     `SELECT payload FROM events WHERE type='search' AND ts BETWEEN ? AND ?`
@@ -113,7 +125,9 @@ function topRightsHolders(limit, from, to) {
   for (const r of rows) {
     try {
       const w = JSON.parse(r.payload).where;
-      if (w) counts[w] = (counts[w] || 0) + 1;
+      if (!w) continue;
+      const key = normalizeEnteName(w);
+      if (key) counts[key] = (counts[key] || 0) + 1;
     } catch {}
   }
   return Object.entries(counts)
