@@ -103,7 +103,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     .filter(m => { const k = m.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
-export default function AdvancedSearch({ onResults, onLoading }) {
+export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
   const [open,    setOpen]    = useState(false);
   const [q,       setQ]       = useState("");
   const [theme,   setTheme]   = useState("");
@@ -132,6 +132,8 @@ export default function AdvancedSearch({ onResults, onLoading }) {
   async function doSearch() {
     if (!q && !theme && !hvd && !rh && !format && !license) return;
     setOpen(false);
+    const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, rh].filter(Boolean).join(" · ") || "Ricerca avanzata";
+    if (onLoadingMsg) onLoadingMsg(true, label);
     onLoading(true);
     try {
       const rows = await sparqlFetch(buildAdvQuery(q, theme, hvd, rh, format, license, sort, 0));
@@ -160,8 +162,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
         });
       }
       const datasets = [...seen.values()].slice(0, 8);
-      const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, rh].filter(Boolean).join(" · ");
-      onResults(datasets, label || "Ricerca avanzata");
+      onResults(datasets, label);
     } catch(e) {
       onResults([], `Errore: ${e.message}`);
     }

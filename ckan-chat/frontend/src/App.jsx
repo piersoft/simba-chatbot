@@ -227,11 +227,19 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
   }
 
   // ── Callback per risultati ricerca avanzata ─────────────────────────────
+  function handleAdvLoading(isLoading, label) {
+    if (isLoading && label) {
+      addMsg("assistant", `Ricerca di **"${label}"** in corso…`, { type: "searching" });
+    }
+  }
+
   function handleAdvResults(datasets, label) {
     emitAnalytics("search", {
       query: label.slice(0, 500),
       datasets_found: datasets.length,
     });
+    // Rimuovi messaggio "in corso" se presente
+    setMessages(prev => prev.filter(m => m.type !== "searching"));
     if (!datasets.length) {
       addMsg("assistant", `Nessun dataset trovato per **"${label}"**.`);
       return;
@@ -927,7 +935,7 @@ SELECT ?ipaCode WHERE {
             <p className="help-tip"><Icon name="lightbulb" size={12} /> Questo assistente risponde <strong>esclusivamente</strong> a richieste riguardanti open data della Pubblica Amministrazione italiana. Domande su altri argomenti verranno rifiutate.</p>
           </div>
         )}
-        <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} />
+        <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} onLoadingMsg={handleAdvLoading} />
         <div className="wizard-bar">
           <div className="wizard-step">
             <span className="wizard-num">1</span>
