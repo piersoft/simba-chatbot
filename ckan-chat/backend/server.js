@@ -1,5 +1,5 @@
 import express from "express";
-import { writeFileSync, unlinkSync, existsSync } from "fs";
+import { writeFileSync, unlinkSync, existsSync, readFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import cors from "cors";
@@ -56,6 +56,34 @@ function emitEvent(type, payload, req) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const app = express();
+
+// ── Blocklist dinamica ────────────────────────────────────────────────────────
+const BLOCKLIST_PATH = process.env.BLOCKLIST_PATH || "/app/data/blocklist.json";
+const DEFAULT_BLOCKLIST = [
+  "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
+  "ignore instructions","disregard","bypass",
+  "porn","porno","pornograph","xxx","nude","naked","escort","prostitut",
+  "pedofil","pedophil","child abuse","snuff","gore",
+  "cumshot","blowjob","handjob","gangbang","creampie","onlyfans","dildo","vibrat",
+  "cocain","eroina","metanfetamin","drug deal","narcotic"
+];
+
+function loadBlocklist() {
+  try {
+    if (existsSync(BLOCKLIST_PATH)) {
+      return JSON.parse(readFileSync(BLOCKLIST_PATH, "utf-8"));
+    }
+  } catch(e) { console.warn("[blocklist] Errore lettura:", e.message); }
+  return [...DEFAULT_BLOCKLIST];
+}
+
+function saveBlocklist(list) {
+  try {
+    writeFileSync(BLOCKLIST_PATH, JSON.stringify(list, null, 2), "utf-8");
+  } catch(e) { console.warn("[blocklist] Errore scrittura:", e.message); }
+}
+
+let dynamicBlocklist = loadBlocklist();
 
 app.set("trust proxy", 1);
 
@@ -701,20 +729,12 @@ function parseIntent(raw) {
   return "SEARCH"; // default sicuro
 }
 
-const SERVER_BLOCKLIST = [
-  "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
-  "porn","porno","pornograph","xxx","nude","naked","escort","prostitut",
-  "pedofil","pedophil","child abuse","snuff","gore",
-  "cumshot","blowjob","handjob","gangbang","creampie","onlyfans","milf","dildo","vibrat",
-  "cocain","eroina","metanfetamin","drug deal"
-];
-
 app.post("/api/intent", strictLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "message required" });
   if (message.length > 500) return res.status(400).json({ error: "Messaggio troppo lungo (max 500 caratteri)." });
   const msgLower = message.toLowerCase();
-  if (SERVER_BLOCKLIST.some(p => msgLower.includes(p))) return res.status(400).json({ error: "Richiesta non consentita." });
+  if (dynamicBlocklist.some(p => msgLower.includes(p.toLowerCase()))) return res.status(400).json({ error: "Richiesta non consentita." });
   const intent = await classifyIntent(message);
   console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
   res.json({ intent });
@@ -988,6 +1008,31 @@ app.get("/api/health", rateLimit({ windowMs: 60000, max: 10, message: { error: "
 });
 
 const PORT = process.env.PORT || 3001;
+// ── Admin: gestione blocklist ─────────────────────────────────────────────────
+const adminLimiter = rateLimit({ windowMs: 60000, max: 30, message: { error: "Too many requests" } });
+
+app.get("/api/admin/blocklist", adminLimiter, (req, res) => {
+  res.json({ blocklist: dynamicBlocklist });
+});
+
+app.post("/api/admin/blocklist", adminLimiter, express.json(), (req, res) => {
+  const { word } = req.body;
+  if (!word || typeof word !== "string") return res.status(400).json({ error: "word richiesta" });
+  const w = word.toLowerCase().trim();
+  if (w.length < 2 || w.length > 50) return res.status(400).json({ error: "Parola non valida (2-50 chars)" });
+  if (dynamicBlocklist.includes(w)) return res.status(409).json({ error: "Parola già presente" });
+  dynamicBlocklist.push(w);
+  saveBlocklist(dynamicBlocklist);
+  res.json({ ok: true, blocklist: dynamicBlocklist });
+});
+
+app.delete("/api/admin/blocklist/:word", adminLimiter, (req, res) => {
+  const w = decodeURIComponent(req.params.word).toLowerCase().trim();
+  dynamicBlocklist = dynamicBlocklist.filter(p => p !== w);
+  saveBlocklist(dynamicBlocklist);
+  res.json({ ok: true, blocklist: dynamicBlocklist });
+});
+
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Backend pronto su http://localhost:${PORT}`);
   console.log(`Raggiungibile su http://${process.env.SERVER_IP || "0.0.0.0"}:${PORT}`);

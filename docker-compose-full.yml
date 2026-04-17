@@ -80,6 +80,9 @@ services:
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       ANALYTICS_URL: http://analytics-service:3004
+      BLOCKLIST_PATH: /app/data/blocklist.json
+    volumes:
+      - blocklist_data:/app/data
     depends_on:
       - validatore-mcp
       - rdf-mcp

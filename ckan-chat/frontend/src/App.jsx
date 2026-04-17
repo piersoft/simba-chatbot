@@ -5,6 +5,7 @@ import ValidateReport from "./components/ValidateReport";
 import Icon from "./components/Icon";
 import AdvancedSearch from "./components/AdvancedSearch";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import AdminPanel from "./components/AdminPanel";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
 
@@ -59,6 +60,9 @@ export default function App() {
   // Route semplice: /analytics mostra la dashboard, tutto il resto il chatbot
   if (window.location.pathname.endsWith("/analytics") || window.location.pathname.endsWith("/analytics/")) {
     return <AnalyticsDashboard />;
+  }
+  if (window.location.pathname.endsWith("/admin") || window.location.pathname.endsWith("/admin/")) {
+    return <AdminPanel />;
   }
 
   const [messages,    setMessages]    = useState([]);
