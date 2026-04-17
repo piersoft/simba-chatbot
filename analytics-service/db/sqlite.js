@@ -143,9 +143,12 @@ function topValidatedDatasets(limit, from, to) {
   for (const r of rows) {
     try {
       const p = JSON.parse(r.payload);
-      if (!counts[p.dataset_id]) counts[p.dataset_id] = { dataset_id: p.dataset_id, dataset_title: p.dataset_title, total: 0, ok: 0 };
-      counts[p.dataset_id].total++;
-      if (p.validation_ok) counts[p.dataset_id].ok++;
+      // Aggrega per dataset_title (non dataset_id) per unificare stesso dataset da URL diverse
+      // Tronca a 80 char per evitare titoli lunghissimi che frammentano l'aggregazione
+      const title = (p.dataset_title || p.dataset_id || 'sconosciuto').trim().slice(0, 80);
+      if (!counts[title]) counts[title] = { dataset_title: title, total: 0, ok: 0 };
+      counts[title].total++;
+      if (p.validation_ok) counts[title].ok++;
     } catch {}
   }
   return Object.values(counts).sort((a, b) => b.total - a.total).slice(0, limit);
