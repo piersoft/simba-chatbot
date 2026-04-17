@@ -61,7 +61,7 @@ export default function App() {
   if (window.location.pathname.endsWith("/analytics") || window.location.pathname.endsWith("/analytics/")) {
     return <AnalyticsDashboard />;
   }
-  if (window.location.pathname.endsWith("/admin") || window.location.pathname.endsWith("/admin/")) {
+  if (window.location.pathname.includes("/admin") || new URLSearchParams(window.location.search).get("page") === "admin") {
     return <AdminPanel />;
   }
 
