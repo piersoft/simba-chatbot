@@ -207,7 +207,7 @@ export default function AdvancedSearch({ onResults, onLoading }) {
             </div>
 
             <div className="adv-field" style={{ position: "relative" }}>
-              <label>Titolare dati (rightsHolder)</label>
+              <label>Titolare dati</label>
               <input type="text" value={rh} onChange={e => handlePubInput(e.target.value)}
                 placeholder="es. Comune di Bari, Regione Puglia…"
                 onBlur={() => setTimeout(() => setShowAc(false), 200)}
