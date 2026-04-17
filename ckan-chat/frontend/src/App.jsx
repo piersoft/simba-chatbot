@@ -381,7 +381,7 @@ SELECT ?ipaCode WHERE {
         .replace(/\s+/g, " ").trim() || text;
 
       setPageTitle("Ricerca Dataset — Open Data Italia");
-      addMsg("assistant", `Ricerca di **"${query}"** in corso…`, { type: "searching" });
+
 
       const t0search = Date.now();
       const { datasets } = await doSearch(query);
@@ -614,6 +614,17 @@ SELECT ?ipaCode WHERE {
                 : <><i className="bi bi-chevron-down" /> Carica altri risultati</>
               }
             </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (m.type === "searching") {
+      return (
+        <div key={i} className="message assistant">
+          <div className="message-bubble loading-ttl-bubble">
+            <i className="bi bi-arrow-repeat spin" style={{fontSize:"18px",color:"#0066CC"}} />
+            <span>{m.content}</span>
           </div>
         </div>
       );
