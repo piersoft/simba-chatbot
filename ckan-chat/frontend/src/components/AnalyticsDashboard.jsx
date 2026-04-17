@@ -5,6 +5,16 @@ import {
 } from "recharts";
 
 const ANALYTICS_BASE = import.meta.env.VITE_ANALYTICS_URL || "/analytics-api";
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(window.innerWidth < 640);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 640);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
 const TOKEN = import.meta.env.VITE_ANALYTICS_TOKEN || "changeme";
 
 const RANGES = [
@@ -168,6 +178,8 @@ function ErrorTable({data=[]}){
 export default function AnalyticsDashboard(){
   const[days,setDays]=useState(7);
   const{data,loading,error,reload}=useStats(days);
+  const isMobile=useIsMobile();
+  const col2=isMobile?"1fr":"1fr 1fr";
   const[lastRefresh,setLastRefresh]=useState(new Date());
   const refresh=()=>{reload();setLastRefresh(new Date());};
   useEffect(()=>{const t=setInterval(refresh,120000);return()=>clearInterval(t);},[reload]);
@@ -195,9 +207,7 @@ export default function AnalyticsDashboard(){
         <span style={{fontSize:18}}>📊</span>
         <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>Chatbot — Analytics</span>
         <div style={{flex:1}}/>
-        <span className="header-time" style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>
-          Aggiornato {lastRefresh.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
-        </span>
+        {!isMobile&&<span style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>Aggiornato {lastRefresh.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</span>}
         <button onClick={refresh} style={{background:"rgba(255,255,255,0.12)",border:"none",
           borderRadius:6,color:"#fff",fontSize:12,fontWeight:600,padding:"5px 12px",cursor:"pointer"}}>
           ↺ Aggiorna
@@ -217,7 +227,7 @@ export default function AnalyticsDashboard(){
         </div>
       </div>
 
-      <div className="main-pad" style={{maxWidth:1260,margin:"0 auto",padding:"24px 20px 48px"}}>
+      <div style={{maxWidth:1260,margin:"0 auto",padding:isMobile?"14px 12px 32px":"24px 20px 48px"}}>
 
         {/* Range */}
         <div className="no-print" style={{display:"flex",gap:7,marginBottom:24,alignItems:"center"}}>
@@ -310,7 +320,7 @@ export default function AnalyticsDashboard(){
 
         {/* Ricerche */}
         <Section icon="🔍" title="Ricerche"/>
-        <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
           <Panel title="Top keyword cercate (COSA)"
             action={<DownloadBtn filename={`keyword-${rangeLabel}.csv`} rows={data?.search?.top_queries}
               cols={[{label:"Keyword",key:"query"},{label:"Ricerche",key:"count"}]}/>}>
@@ -342,7 +352,7 @@ export default function AnalyticsDashboard(){
 
         {/* Validazione & TTL */}
         <Section icon="✅" title="Validazione e TTL"/>
-        <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
           <Panel title="Dataset più validati"
             action={<DownloadBtn filename={`dataset-validati-${rangeLabel}.csv`}
               rows={(data?.validate?.top_datasets||[]).map(d=>({...d,label:d.dataset_title||d.dataset_id,count:d.total}))}
@@ -401,7 +411,7 @@ export default function AnalyticsDashboard(){
 
         {/* Performance & Errori */}
         <Section icon="⚙️" title="Performance ed errori"/>
-        <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
           <Panel title="Latenza media per ora (ms)"
             action={<DownloadBtn filename={`latenza-${rangeLabel}.csv`} rows={data?.perf?.latency_per_hour}
               cols={[{label:"Ora",key:"hour"},{label:"Latenza ms",key:"avg"}]}/>}>
