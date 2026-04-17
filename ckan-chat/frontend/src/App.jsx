@@ -339,7 +339,7 @@ SELECT ?ipaCode WHERE {
 
       if (intent === "SEARCH") setPageTitle("Ricerca Dataset — Open Data Italia");
       else if (intent === "VALIDATE") setPageTitle("Validazione CSV — Open Data Italia");
-      else if (intent === "ENRICH") setPageTitle("🔄 Conversione RDF — Open Data Italia");
+      else if (intent === "ENRICH") setPageTitle("Conversione RDF — SIMBA");
 
       if (intent === "OFF_TOPIC") {
         addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- Ricerca dataset open data italiani\n- Validazione file CSV per la PA\n- Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
@@ -353,7 +353,7 @@ SELECT ?ipaCode WHERE {
           setShowCsvBox(true);
           return;
         }
-        addMsg("assistant", `✅ Validazione in corso per:\n\`${url}\``, { type: "validating" });
+        addMsg("assistant", `Validazione in corso per:\n\`${url}\``, { type: "validating" });
         const report = await doValidate(url);
         addMsg("assistant", report, { type: "validate_report", url });
         return;
@@ -398,7 +398,7 @@ SELECT ?ipaCode WHERE {
   // ── Conversione CSV → RDF ────────────────────────────────────────────────────
   async function doEnrich(url, datasetTitle, ipa = "ente", fmt = "ttl") {
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${url}`);
-    setPageTitle("🔄 Conversione RDF — Open Data Italia");
+    setPageTitle("Conversione RDF — SIMBA");
     addMsg("assistant", `Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`, { type: "loading_ttl" });
     setLoading(true);
     try {
@@ -419,7 +419,7 @@ SELECT ?ipaCode WHERE {
       const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
-      replaceLastMsg("assistant", `✅ Conversione completata! ${lines.length} triple generate.`, {
+      replaceLastMsg("assistant", `Conversione completata: ${lines.length} triple generate.`, {
         type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt
       });
     } catch (e) {
@@ -446,7 +446,7 @@ SELECT ?ipaCode WHERE {
   async function validateFromCard(url, datasetTitle, publisher = "", datasetUri = "") {
     addMsg("user",      `Valida CSV: ${url}`);
     setPageTitle("Validazione CSV — Open Data Italia");
-    addMsg("assistant", `✅ Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
+    addMsg("assistant", `Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
       // Scarica il CSV dal browser (evita 403 server-side su rdf-mcp)
@@ -467,7 +467,7 @@ SELECT ?ipaCode WHERE {
     if (!csvFile) return;
     setShowCsvBox(false);
     addMsg("user", `Valida CSV: ${csvFile.name}`);
-    addMsg("assistant", `✅ Validazione CSV di **"${csvFile.name}"** in corso…`, { type: "validating" });
+    addMsg("assistant", `Validazione CSV di **"${csvFile.name}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
       const text = await csvFile.text();
@@ -487,7 +487,7 @@ SELECT ?ipaCode WHERE {
     // Conversione diretta da testo CSV (file già caricato) — niente box IPA/PA
     const title = paName || filename.replace(/\.csv$/i,"");
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
-    addMsg("assistant", `🔄 Conversione in RDF/${fmt.toUpperCase()} di **"${title}"** in corso…`);
+    addMsg("assistant", `Conversione in RDF/${fmt.toUpperCase()} di **"${title}"** in corso…`);
     setLoading(true);
     try {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
@@ -502,7 +502,7 @@ SELECT ?ipaCode WHERE {
       const ext = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle" });
       const blobUrl = URL.createObjectURL(blob);
-      addMsg("assistant", `✅ Conversione completata! ${lines.length} righe generate.`, {
+      addMsg("assistant", `Conversione completata: ${lines.length} righe generate.`, {
         type: "ttl_result", blobUrl, filename: `${filename.replace(/\.csv$/i,"")}.${ext}`, preview, fmt
       });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
@@ -544,7 +544,7 @@ SELECT ?ipaCode WHERE {
     const ext = fmt === "rdfxml" ? "rdf" : "ttl";
     const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${fname}`);
-    addMsg("assistant", `🔄 Conversione in RDF/${fmt === "rdfxml" ? "XML" : "Turtle"} di **"${pa}"** in corso…`);
+    addMsg("assistant", `Conversione in RDF/${fmt === "rdfxml" ? "XML" : "Turtle"} di **"${pa}"** in corso…`);
     setLoading(true);
     try {
       const csv_text = hasMemory ? ttlCsvText : await ttlFile.text();
@@ -613,7 +613,7 @@ SELECT ?ipaCode WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <p>✅ Conversione completata!</p>
+            <p>Conversione completata.</p>
             {m.preview && (
               <>
                 <p className="ttl-preview-label">Anteprima (prime righe) — scarica il file per il contenuto completo:</p>
@@ -690,13 +690,13 @@ SELECT ?ipaCode WHERE {
         <div className="sidebar-section">
           <div className="section-label">Strumenti integrati</div>
           <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
-            <Icon name="search" size={18} /> Cerca dataset
+            Cerca dataset
           </button>
           <button className="tool-card tool-validate" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
-            <Icon name="check2-circle" size={18} /> Valida CSV
+            Valida CSV
           </button>
           <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
-            <Icon name="diagram-3" size={18} /> Trasforma in RDF TTL/XML
+            Trasforma in RDF TTL/XML
           </button>
         </div>
 
@@ -704,16 +704,16 @@ SELECT ?ipaCode WHERE {
         <div className="sidebar-section">
           <div className="section-label">Strumenti consigliati</div>
           <a className="sidebar-plain-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
-            🔌 CKAN MCP Server <span className="plain-tag">OnData</span>
+            CKAN MCP Server <span className="plain-tag">OnData</span>
           </a>
           <a className="sidebar-plain-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
-            🔌 ISTAT MCP Server <span className="plain-tag">OnData</span>
+            ISTAT MCP Server <span className="plain-tag">OnData</span>
           </a>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/" target="_blank" rel="noopener noreferrer">
-            📄 CSV to RDF <span className="plain-tag">AgID</span>
+            CSV to RDF <span className="plain-tag">AgID</span>
           </a>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
-            ✅ Validatore CSV <span className="plain-tag">AgID</span>
+            Validatore CSV <span className="plain-tag">AgID</span>
           </a>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/ckan-opendata-assistant/" target="_blank" rel="noopener noreferrer">
             Assistente ricerca <span className="plain-tag">AgID</span>
@@ -721,7 +721,7 @@ SELECT ?ipaCode WHERE {
         </div>
 
         <button className="help-sidebar-btn" onClick={() => setShowHelp(v => !v)} aria-label="Istruzioni brevi">
-          <Icon name="question-circle" size={14} /> Istruzioni brevi
+          Istruzioni brevi
         </button>
 
         <button className="clear-btn" aria-label="Nuova conversazione" onClick={() => { resetChat(); }}>
