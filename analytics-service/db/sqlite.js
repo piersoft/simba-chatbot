@@ -137,7 +137,10 @@ function topValidatedDatasets(limit, from, to) {
   return Object.values(counts).sort((a, b) => b.total - a.total).slice(0, limit);
 }
 
+const FILE_EXT_RE = /\.(csv|aspx|xlsx|xls|json|tsv|txt|xml|zip)/i;
+
 function topTTLDatasets(limit, from, to) {
+  // Solo record il cui dataset_title è un nome file (ha estensione)
   const rows = getDb().prepare(
     `SELECT payload FROM events WHERE type='ttl_create' AND ts BETWEEN ? AND ?`
   ).all(from, to);
@@ -145,8 +148,30 @@ function topTTLDatasets(limit, from, to) {
   for (const r of rows) {
     try {
       const p = JSON.parse(r.payload);
-      if (!counts[p.dataset_id]) counts[p.dataset_id] = { dataset_id: p.dataset_id, dataset_title: p.dataset_title, count: 0 };
-      counts[p.dataset_id].count++;
+      const title = (p.dataset_title || '').trim();
+      if (!FILE_EXT_RE.test(title)) continue; // salta i nomi ente
+      if (!counts[title]) counts[title] = { dataset_title: title, count: 0 };
+      counts[title].count++;
+    } catch {}
+  }
+  return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, limit);
+}
+
+function topTTLAdmins(limit, from, to) {
+  // Solo record con pa esplicito (nome ente inserito dall'utente)
+  const rows = getDb().prepare(
+    `SELECT payload FROM events WHERE type='ttl_create' AND ts BETWEEN ? AND ?`
+  ).all(from, to);
+  const counts = {};
+  for (const r of rows) {
+    try {
+      const p = JSON.parse(r.payload);
+      // Usa pa se presente e non è un nome file
+      const pa = (p.pa || '').trim();
+      if (!pa || FILE_EXT_RE.test(pa)) continue;
+      const key = pa.charAt(0).toUpperCase() + pa.slice(1);
+      if (!counts[key]) counts[key] = { admin: key, count: 0 };
+      counts[key].count++;
     } catch {}
   }
   return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, limit);
@@ -249,7 +274,7 @@ module.exports = {
   countDistinct, countEvents,
   avgLatency, percentileLatency,
   topQueries, topRightsHolders,
-  topValidatedDatasets, topTTLDatasets,
+  topValidatedDatasets, topTTLDatasets, topTTLAdmins,
   validationSuccessRate, errorsByType,
   eventsPerDay, hourlyTraffic, errorsPerHour,
   latencyPerHour, requestsPerMinute, avgPayloadField,

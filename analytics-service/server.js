@@ -122,6 +122,7 @@ app.get('/stats/ttl', statsLimiter, authStats, (req, res) => {
   try {
     res.json({
       top_datasets: db.topTTLDatasets(20, from, to),
+      top_admins:   db.topTTLAdmins(20, from, to),
       ttl_per_day:  db.eventsPerDay('ttl_create', from, to),
     });
   } catch (e) { res.status(500).json({ error: e.message }); }

@@ -351,12 +351,12 @@ export default function AnalyticsDashboard(){
               <HBar data={(data?.validate?.top_datasets||[]).map(d=>({...d,label:d.dataset_title||d.dataset_id,count:d.total}))} keyY="label"/>
             )}
           </Panel>
-          <Panel title="Dataset con più TTL generati"
-            action={<DownloadBtn filename={`dataset-ttl-${rangeLabel}.csv`}
-              rows={(data?.ttl?.top_datasets||[]).map(d=>({...d,label:d.dataset_title||d.dataset_id}))}
-              cols={[{label:"Dataset",key:"label"},{label:"TTL",key:"count"}]}/>}>
+          <Panel title="Amministrazioni con più TTL generati"
+            action={<DownloadBtn filename={`amministrazioni-ttl-${rangeLabel}.csv`}
+              rows={(data?.ttl?.top_admins||[]).map(d=>({label:d.admin,count:d.count}))}
+              cols={[{label:"Amministrazione",key:"label"},{label:"TTL",key:"count"}]}/>}>
             {loading?<Skeleton h={220}/>:(
-              <HBar data={(data?.ttl?.top_datasets||[]).map(d=>({...d,label:d.dataset_title||d.dataset_id}))} keyY="label"/>
+              <HBar data={(data?.ttl?.top_admins||[]).map(d=>({...d,label:d.admin}))} keyY="label"/>
             )}
           </Panel>
           <Panel title="Validazioni per giorno"
@@ -372,6 +372,14 @@ export default function AnalyticsDashboard(){
                   <Bar dataKey="count" fill={C.green} radius={[4,4,0,0]}/>
                 </BarChart>
               </ResponsiveContainer>
+            )}
+          </Panel>
+          <Panel title="File con più TTL generati"
+            action={<DownloadBtn filename={`file-ttl-${rangeLabel}.csv`}
+              rows={(data?.ttl?.top_datasets||[]).map(d=>({label:d.dataset_title,count:d.count}))}
+              cols={[{label:"File",key:"label"},{label:"TTL",key:"count"}]}/>}>
+            {loading?<Skeleton h={160}/>:(
+              <HBar data={(data?.ttl?.top_datasets||[]).map(d=>({...d,label:d.dataset_title}))} keyY="label"/>
             )}
           </Panel>
           <Panel title="TTL per giorno"
