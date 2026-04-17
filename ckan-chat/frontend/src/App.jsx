@@ -813,14 +813,14 @@ SELECT ?ipaCode WHERE {
             )}
             <div className="ttl-meta-row">
               <div className="ttl-field">
-                <label className="ttl-label">Codice IPA *</label>
-                <input type="text" className="csv-url-input" placeholder="es. c_b220"
-                  value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
-              </div>
-              <div className="ttl-field">
                 <label className="ttl-label">Nome PA *</label>
                 <input type="text" className="csv-url-input" placeholder="es. Comune di Bari"
                   value={ttlPa} onChange={e => setTtlPa(e.target.value)} />
+              </div>
+              <div className="ttl-field">
+                <label className="ttl-label">Codice IPA *</label>
+                <input type="text" className="csv-url-input" placeholder="es. c_b220"
+                  value={ttlIpa} onChange={e => setTtlIpa(e.target.value)} />
               </div>
             </div>
             <div className="ttl-fmt-row">
