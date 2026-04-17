@@ -46,11 +46,10 @@ const BLOCKLIST = [
   // Prompt injection
   "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
   "ignore instructions","disregard","bypass",
-  // Contenuti illeciti/pornografici
-  "porn","porno","pornograph","sex","xxx","nude","naked","escort","prostitut",
-  "pedofil","pedophil","child abuse","snuff","gore","decapitat","torture",
-  "terror","attentato","bomba","esplosivo","armi","weapon","kill","murder",
-  "droga","cocain","eroina","metanfetamin","drug deal","narcotic"
+  // Contenuti esplicitamente illeciti/pornografici
+  "porn","porno","pornograph","xxx","nude","naked","escort","prostitut",
+  "pedofil","pedophil","child abuse","snuff","gore",
+  "cocain","eroina","metanfetamin","drug deal","narcotic"
 ];
 
 const SPARQL_EP = "https://lod.dati.gov.it/sparql";

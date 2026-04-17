@@ -703,8 +703,8 @@ function parseIntent(raw) {
 
 const SERVER_BLOCKLIST = [
   "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
-  "porn","porno","pornograph","sex","xxx","nude","naked","escort","prostitut",
-  "pedofil","pedophil","child abuse","snuff","gore","terror","bomba","esplosivo",
+  "porn","porno","pornograph","xxx","nude","naked","escort","prostitut",
+  "pedofil","pedophil","child abuse","snuff","gore",
   "cocain","eroina","metanfetamin","drug deal"
 ];
 
