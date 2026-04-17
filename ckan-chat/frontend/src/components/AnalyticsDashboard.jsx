@@ -311,7 +311,7 @@ export default function AnalyticsDashboard(){
         {/* Ricerche */}
         <Section icon="🔍" title="Ricerche"/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          <Panel title="Top keyword cercate"
+          <Panel title="Top keyword cercate (COSA)"
             action={<DownloadBtn filename={`keyword-${rangeLabel}.csv`} rows={data?.search?.top_queries}
               cols={[{label:"Keyword",key:"query"},{label:"Ricerche",key:"count"}]}/>}>
             {loading?<Skeleton h={220}/>:<HBar data={data?.search?.top_queries} keyY="query"/>}
