@@ -220,11 +220,36 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
     try {
       const csvRes = await fetch(url);
       if (csvRes.ok) {
+        // Controlla Content-Type della risposta reale (dopo redirect)
+        const ct = (csvRes.headers.get("content-type") || "").toLowerCase();
+        const isHtmlCt = ct.includes("text/html") || ct.includes("application/xhtml");
+        const isZipCt = ct.includes("application/zip") || ct.includes("application/x-zip");
+        const isPdfCt = ct.includes("application/pdf");
+
+        if (isHtmlCt || isZipCt || isPdfCt) {
+          throw new Error(
+            `La risorsa non è un file CSV — Content-Type rilevato: "${ct}". ` +
+            (isHtmlCt ? "L'URL punta a una pagina web, non al file diretto. Cerca il link "Scarica" o "Download" nel portale open data." : "") +
+            (isZipCt ? "La risorsa è un archivio ZIP. Scaricalo, estrailo e valida il CSV all'interno." : "") +
+            (isPdfCt ? "La risorsa è un PDF, non un CSV." : "")
+          );
+        }
+
         const csv_text = await csvRes.text();
         const isHtml = csv_text.trimStart().startsWith("<");
+
+        // Doppio controllo sul contenuto — anche se il Content-Type non è dichiarato
+        if (isHtml) {
+          throw new Error(
+            "L'URL restituisce una pagina HTML, non un file CSV. " +
+            "Probabilmente è il link alla scheda del dataset, non al file diretto. " +
+            "Cerca il link diretto al CSV nel portale open data."
+          );
+        }
+
         const firstLine = csv_text.trim().split("\n")[0] || "";
         const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("\t");
-        if (!isHtml && hasSep) {
+        if (hasSep) {
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
             headers: apiHeaders(),
@@ -235,10 +260,13 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         }
       }
     } catch(e) {
+      // Se l'errore è nostro (HTML/ZIP/PDF rilevato), rilancia direttamente
+      if (e.message.includes("Content-Type") || e.message.includes("pagina HTML") || e.message.includes("pagina web") || e.message.includes("ZIP") || e.message.includes("PDF")) {
+        throw e;
+      }
       console.warn("[doValidate] browser fetch fallito:", e.message);
     }
-    // 2. Il browser ha ricevuto HTML (accessURL → pagina CKAN) o CORS bloccato
-    // Passa URL e titolo al backend — che verificherà il Content-Type reale
+    // 2. CORS bloccato o browser fetch fallito — passa al backend con controllo Content-Type
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: apiHeaders(),
