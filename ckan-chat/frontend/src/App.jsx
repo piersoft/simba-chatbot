@@ -230,7 +230,6 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
   function handleAdvLoading(isLoading, label) {
     if (isLoading && label) {
       setMessages([]);  // nuova ricerca — pulisce la chat
-      addMsg("assistant", `Ricerca di **"${label}"** in corso…`, { type: "searching" });
     }
   }
 
@@ -619,17 +618,6 @@ SELECT ?ipaCode WHERE {
       );
     }
 
-    if (m.type === "searching") {
-      return (
-        <div key={i} className="message assistant">
-          <div className="message-bubble loading-ttl-bubble">
-            <i className="bi bi-arrow-repeat spin" style={{fontSize:"18px",color:"#0066CC"}} />
-            <span>{m.content}</span>
-          </div>
-        </div>
-      );
-    }
-
     if (m.type === "loading_ttl") {
       return (
         <div key={i} className="message assistant">
@@ -788,7 +776,7 @@ SELECT ?ipaCode WHERE {
 
           {loading && (
             <div className="message assistant">
-              <div className="message-bubble typing"><span /><span /><span /></div>
+              <div className="message-bubble typing"><span className="dot"/><span className="dot"/><span className="dot"/></div>
             </div>
           )}
 
