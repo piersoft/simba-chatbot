@@ -79,6 +79,14 @@ export default function App() {
   const [showPrivacy, setShowPrivacy] = useState(() => !localStorage.getItem("privacy_ok"));
   const [showHelp,    setShowHelp]    = useState(false);
   const [blocklist,   setBlocklist]   = useState(BLOCKLIST);
+
+  // Carica blocklist dinamica dal backend all'avvio
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/admin/blocklist`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.blocklist?.length) setBlocklist(data.blocklist); })
+      .catch(() => {}); // fallback alla BLOCKLIST hardcodata
+  }, []);
   const [wizardDove,  setWizardDove]  = useState("");
   const [doveAcList,  setDoveAcList]  = useState([]);
   const [showDoveAc,  setShowDoveAc]  = useState(false);
