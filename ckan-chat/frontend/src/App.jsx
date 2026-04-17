@@ -373,7 +373,14 @@ SELECT ?ipaCode WHERE {
       setPageTitle("Ricerca Dataset — Open Data Italia");
       addMsg("assistant", `Ricerca di **"${query}"** in corso…`, { type: "searching" });
 
+      const t0search = Date.now();
       const { datasets } = await doSearch(query);
+      emitAnalytics("search", {
+        query: query.slice(0, 500),
+        where: null,
+        datasets_found: datasets.length,
+        latency_ms: Date.now() - t0search,
+      });
 
       if (!datasets.length) {
         addMsg("assistant", `Nessun dataset trovato per **"${query}"**.\n\nProva con termini più generici.`);
