@@ -347,7 +347,11 @@ SELECT ?ipaCode WHERE {
   async function sendMessage(text) {
     setMessages([]);  // nuova ricerca — pulisce la chat
     if (!text.trim() || loading) return;
-    if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) { addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana."); return; }
+    if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) {
+      emitAnalytics("blocked", { query: text.slice(0, 200) });
+      addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana.");
+      return;
+    }
     if (text.length > 2000) { alert("Messaggio troppo lungo."); return; }
 
     setSidebarOpen(false);

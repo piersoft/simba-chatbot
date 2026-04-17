@@ -29,7 +29,7 @@ function authStats(req, res, next) {
 }
 
 // ── Validazione eventi ────────────────────────────────────────────────────────
-const VALID_TYPES = new Set(['search','validate','ttl_create','off_topic','session_start','error','latency']);
+const VALID_TYPES = new Set(['search','validate','ttl_create','off_topic','session_start','error','latency','blocked']);
 
 function validateEvent(body) {
   if (!body || typeof body !== 'object') return 'Payload non valido';
