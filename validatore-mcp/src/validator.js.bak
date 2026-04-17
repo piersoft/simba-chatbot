@@ -146,64 +146,11 @@ export function checksContenuto(rows, headers) {
     else push('C5', 'Date in formato ISO 8601', '', 'pass');
   } else push('C5', 'Nessuna colonna data', '', 'info');
 
-  // C4 - Coerenza tipi per colonna
-  const typeIssues = [];
-  headers.forEach((h, ci) => {
-    const vals = dataRows.map(r => (r[ci] || '').trim()).filter(v => v);
-    if (vals.length < 3) return;
-    const numCount = vals.filter(v => /^-?\d+([.,]\d+)?$/.test(v)).length;
-    const pct = numCount / vals.length;
-    if (pct > 0.5 && pct < 0.9) typeIssues.push(`"${h}" (${(pct * 100).toFixed(0)}% numerico)`);
-  });
-  if (typeIssues.length) push('C4', 'Colonne a tipo misto', `${typeIssues.join('; ')}.`, 'warn');
-  else push('C4', 'Tipi colonna omogenei', 'Nessuna colonna con valori misti rilevata.', 'pass');
-
-  // C6 - Numeri con virgola vs punto
-  const numColsIdx = headers.map((_, ci) => {
-    const vals = dataRows.map(r => (r[ci] || '').trim()).filter(v => v);
-    const pct = vals.filter(v => /^-?\d+([.,]\d+)?$/.test(v)).length / (vals.length || 1);
-    return pct > 0.7 ? ci : -1;
-  }).filter(i => i >= 0);
-  if (numColsIdx.length) {
-    const commaDecimal = numColsIdx.filter(ci => {
-      const vals = dataRows.map(r => (r[ci] || '').trim()).filter(v => v);
-      return vals.some(v => /\d,\d/.test(v));
-    });
-    if (commaDecimal.length) push('C6', 'Decimali con virgola in colonne numeriche', `Colonne: ${commaDecimal.map(i => '"' + headers[i] + '"').join(', ')}. Usare il punto come separatore decimale.`, 'warn');
-    else push('C6', 'Separatore decimale corretto', 'Colonne numeriche usano il punto come separatore.', 'pass');
-  } else push('C6', 'Nessuna colonna numerica rilevata', '', 'info');
-
-  // C7 - Valori molto distanti dalla media
-  const outRange = [];
-  numColsIdx.forEach(ci => {
-    const vals = dataRows.map(r => parseFloat((r[ci] || '').replace(',', '.'))).filter(v => !isNaN(v));
-    if (!vals.length) return;
-    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
-    const std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length);
-    const anomali = vals.filter(v => Math.abs(v - mean) > 4 * std);
-    if (anomali.length > 0) {
-      const esempi = anomali.slice(0, 2).map(v => v.toLocaleString('it-IT')).join(', ');
-      const mediaFmt = mean.toLocaleString('it-IT', { maximumFractionDigits: 1 });
-      outRange.push(`"${headers[ci]}": valore${anomali.length > 1 ? 'i' : ''} ${esempi} molto distante${anomali.length > 1 ? 'i' : ''} dalla media (${mediaFmt})`);
-    }
-  });
-  if (outRange.length) push('C7', 'Valori molto distanti dalla media', `${outRange.join('; ')}. Potrebbe essere un errore di inserimento, verificare.`, 'warn');
-  else push('C7', 'Nessun valore fuori scala rilevato', 'Tutti i valori numerici rientrano in un intervallo coerente.', 'pass');
-
-  // C8 - Lunghezza massima celle
-  const longCells = [];
-  headers.forEach((h, ci) => {
-    const max = Math.max(...dataRows.map(r => (r[ci] || '').length));
-    if (max > 500) longCells.push(`"${h}" (max ${max} car.)`);
-  });
-  if (longCells.length) push('C8', 'Celle molto lunghe', `${longCells.join(', ')} - potrebbe indicare dati non normalizzati.`, 'warn');
-  else push('C8', 'Lunghezza celle nella norma', '', 'pass');
-
   return results;
 }
 
 // ─── CHECK: Open Data ─────────────────────────────────────────────────────────
-export function checksOpendata(rows, headers, raw = '') {
+export function checksOpendata(rows, headers) {
   const results = [];
   const push = (id, title, detail, status) => results.push({ id, title, detail, status });
   const normH = headers.map(normHeader);
@@ -232,34 +179,6 @@ export function checksOpendata(rows, headers, raw = '') {
   const hasTime = normH.some(h => timeKeys.some(k => h.includes(k)));
   if (hasTime) push('O6', 'Dimensione temporale presente', '', 'pass');
   else push('O6', 'Nessuna dimensione temporale', '', 'info');
-
-  // O7 - Caratteri speciali in intestazioni
-  const specialHdr = headers.filter(h => /[^\w\s\-\u00C0-\u017E]/.test(h));
-  if (specialHdr.length) push('O7', 'Caratteri speciali in intestazioni', `${specialHdr.map(h => '"' + h + '"').join(', ')}.`, 'warn');
-  else push('O7', 'Nessun carattere speciale nelle intestazioni', '', 'pass');
-
-  // O8 - URI o URL nei dati
-  const colsWithUri = headers.filter((_, ci) => {
-    const vals = dataRows.slice(0, 20).map(r => (r[ci] || '').trim());
-    return vals.some(v => /^https?:\/\//.test(v));
-  });
-  if (colsWithUri.length) push('O8', 'URI/URL rilevati nei dati', `Colonne con URI: ${colsWithUri.map(h => '"' + h + '"').join(', ')} - ottimo per Linked Data.`, 'pass');
-  else push('O8', 'Nessun URI nei dati', 'Aggiungere URI di riferimento migliora l\'interoperabilità.', 'info');
-
-  // O9 - Valori codificati (booleani)
-  const boolCols = headers.filter((_, ci) => {
-    const vals = dataRows.slice(0, 30).map(r => (r[ci] || '').trim().toLowerCase()).filter(v => v);
-    const boolSet = new Set(['0', '1', 'true', 'false', 'si', 'no', 's', 'n', 'y', 'yes', 'vero', 'falso']);
-    return vals.length > 0 && vals.every(v => boolSet.has(v));
-  });
-  if (boolCols.length) push('O9', 'Colonne booleane rilevate', `${boolCols.map(h => '"' + h + '"').join(', ')} - usare true/false o 0/1 in modo coerente.`, 'info');
-  else push('O9', 'Nessuna colonna booleana rilevata', '', 'pass');
-
-  // O10 - Commenti o metadati in coda
-  const lastLines = raw.trim().split('\n').slice(-3);
-  const hasComment = lastLines.some(l => l.startsWith('#'));
-  if (hasComment) push('O10', 'Righe commento in fondo al file', 'Righe che iniziano con "#" in fondo - rimuoverle per massima compatibilità.', 'warn');
-  else push('O10', 'Nessuna riga commento in coda', '', 'pass');
 
   return results;
 }
@@ -309,19 +228,6 @@ export function checksLinkeddata(rows, headers) {
   if (istatCols.length) push('L3', 'Codici ISTAT rilevati', '', 'pass');
   else push('L3', 'Nessun codice ISTAT', 'I codici ISTAT migliorano il collegamento ai LOD PA.', 'info');
 
-  // L4 - CIG / CUP
-  const cigRe = /^[0-9A-Z]{10}$/;
-  const cupRe = /^[A-Z]\d{2}[A-Z]\d{11}$/;
-  const hasCIG = normH.some((h, ci) => /cig/.test(h) && dataRows.slice(0, 10).some(r => cigRe.test((r[ci] || '').trim())));
-  const hasCUP = normH.some((h, ci) => /cup/.test(h) && dataRows.slice(0, 10).some(r => cupRe.test((r[ci] || '').trim())));
-  if (hasCIG || hasCUP) push('L4', 'CIG/CUP rilevati', 'Collegamento all\'ontologia PublicContract e OpenCUP/BDAP.', 'pass');
-  else push('L4', 'Nessun CIG/CUP rilevato', '', 'info');
-
-  // L5 - URI di ontologie note nei valori
-  const linkedVals = dataRows.slice(0, 30).flat().filter(v => /^https?:\/\/(schema\.gov\.it|w3\.org|data\.europa\.eu|dati\.gov\.it)/.test((v || '').trim()));
-  if (linkedVals.length > 0) push('L5', 'URI di ontologie note nei valori', `${linkedVals.length} valori con URI schema.gov.it / w3.org / dati.gov.it.`, 'pass');
-  else push('L5', 'Nessun URI di ontologia nei valori', 'Considerare l\'uso di URI da schema.gov.it per i valori codificati.', 'info');
-
   if (matched.length >= 2 && headers.length >= 5)
     push('L6', 'Potenziale 5 stelle Open Data', 'Dataset ricco e mappabile per RDF Linked Data.', 'pass');
   else push('L6', 'Dataset da arricchire', 'Servono almeno 5 colonne ben nominate.', 'info');
@@ -349,7 +255,7 @@ export function validateCSV(raw) {
 
   const strChecks = checksStruttura(raw, rows, sep, headers);
   const contChecks = checksContenuto(rows, headers);
-  const odChecks = checksOpendata(rows, headers, raw);
+  const odChecks = checksOpendata(rows, headers);
   const ldChecks = checksLinkeddata(rows, headers);
 
   const allChecks = [...strChecks, ...contChecks, ...odChecks, ...ldChecks];

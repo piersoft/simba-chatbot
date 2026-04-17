@@ -1339,3 +1339,39 @@ body {
   border: 1px solid var(--border); border-radius: 12px;
   width: fit-content;
 }
+
+/* ── Standard di riferimento popup ──────────────────────────────────────────── */
+.standards-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid var(--border);
+  color: var(--text2); font-size: 12px; cursor: pointer;
+  padding: 4px 10px; border-radius: 4px; margin-top: 8px;
+  font-family: 'Titillium Web', sans-serif;
+  transition: all 0.15s;
+}
+.standards-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.standards-popup {
+  margin-top: 10px; padding: 14px;
+  background: #f8fafc; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px;
+}
+.standards-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.standards-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.standards-table th {
+  background: var(--gray-200); padding: 6px 8px; text-align: left;
+  border: 1px solid var(--border); font-size: 11px; font-weight: 700;
+  color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.standards-table td {
+  padding: 5px 8px; border: 1px solid var(--border);
+  color: var(--text); vertical-align: top;
+}
+.standards-table tr:nth-child(even) td { background: #f0f4f8; }
+.standards-table a { color: var(--primary); font-size: 11px; }
+.standards-table code { font-size: 11px; background: var(--gray-200); padding: 1px 4px; border-radius: 3px; }
