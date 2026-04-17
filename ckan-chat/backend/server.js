@@ -804,7 +804,17 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     const hostname = new URL(url).hostname;
     if (!(await isResolvedIpSafe(hostname))) return res.status(400).json({ error: "URL non consentito (IP risolto non sicuro)." });
   } catch { return res.status(400).json({ error: "URL non valido." }); }
-  console.log(`[validate] ${url}`);
+  // Controllo Content-Type — verifica che la risorsa sia effettivamente un CSV
+  const ctCheck = await checkCsvContentType(url);
+  if (!ctCheck.ok) {
+    return res.status(422).json({
+      error: `La risorsa non sembra un file CSV. Content-Type rilevato: "${ctCheck.contentType}". ` +
+             `Potrebbe essere una pagina HTML, un archivio ZIP o un altro formato. ` +
+             `Verifica il link diretto al file CSV nel portale open data.`
+    });
+  }
+
+  console.log(`[validate] ${url}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
   const { dataset_title: reqTitle } = req.body;
   const t0val = Date.now();
   try {
@@ -1041,6 +1051,46 @@ app.get("/api/health", rateLimit({ windowMs: 60000, max: 10, message: { error: "
 });
 
 const PORT = process.env.PORT || 3001;
+// ─── Controllo Content-Type prima della validazione ──────────────────────────
+async function checkCsvContentType(url) {
+  try {
+    const r = await fetch(url, {
+      method: "HEAD",
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: AbortSignal.timeout(8000),
+      redirect: "follow",
+    });
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
+    const cd = (r.headers.get("content-disposition") || "").toLowerCase();
+    // Tipi chiaramente non CSV
+    const nonCsv = [
+      "text/html", "application/xhtml", "application/zip",
+      "application/x-zip", "application/octet-stream",
+      "application/json", "application/xml", "application/pdf",
+      "image/", "video/", "audio/"
+    ];
+    // Se il content-type indica HTML o pagina web
+    if (nonCsv.some(t => ct.includes(t))) {
+      // Eccezione: se content-disposition dice che è un CSV
+      if (cd.includes(".csv")) return { ok: true };
+      return { ok: false, contentType: ct };
+    }
+    // Tipi CSV espliciti
+    if (ct.includes("text/csv") || ct.includes("text/plain") || ct.includes("application/csv")) {
+      return { ok: true };
+    }
+    // Google Sheets e altri exporters
+    if (url.includes("docs.google.com") || url.includes("output=csv") || url.includes("format=csv")) {
+      return { ok: true };
+    }
+    // Per altri tipi (es. application/octet-stream generico) lascia passare con warning
+    return { ok: true, warning: ct || "content-type non dichiarato" };
+  } catch (e) {
+    // Se HEAD fallisce (alcuni server non lo supportano), lascia passare
+    return { ok: true, warning: "HEAD request fallita: " + e.message };
+  }
+}
+
 // ── Admin: gestione blocklist ─────────────────────────────────────────────────
 const adminLimiter = rateLimit({ windowMs: 60000, max: 30, message: { error: "Too many requests" } });
 

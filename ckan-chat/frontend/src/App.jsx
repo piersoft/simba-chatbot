@@ -238,12 +238,16 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       console.warn("[doValidate] browser fetch fallito:", e.message);
     }
     // 2. Il browser ha ricevuto HTML (accessURL → pagina CKAN) o CORS bloccato
-    // Passa URL e titolo al backend
+    // Passa URL e titolo al backend — che verificherà il Content-Type reale
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: apiHeaders(),
       body: JSON.stringify({ url, dataset_title: title }),
     });
+    if (r.status === 422) {
+      const data = await r.json();
+      throw new Error(data.error || "Formato non CSV");
+    }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return (await r.json()).report ?? "";
   }
