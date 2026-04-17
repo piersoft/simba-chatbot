@@ -117,7 +117,7 @@ function Section({icon,title}){
 }
 function Panel({children,title,action,style={}}){
   return(
-    <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"18px 18px 14px",...style}}>
+    <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"18px 18px 14px",minWidth:0,overflow:"hidden",...style}}>
       {(title||action)&&(
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
           {title&&<div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.05em"}}>{title}</div>}
@@ -134,13 +134,13 @@ function HBar({data=[],keyX="count",keyY="query"}){
     <div style={{display:"flex",flexDirection:"column",gap:7}}>
       {data.length===0&&<p style={{color:C.muted,fontSize:13,margin:"12px 0",textAlign:"center"}}>Nessun dato</p>}
       {data.map((d,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+        <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,minWidth:0}}>
           <span style={{width:18,textAlign:"right",fontSize:10,fontWeight:700,color:C.muted,fontFamily:"monospace"}}>{i+1}</span>
           <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:C.text,fontWeight:500}}>{d[keyY]}</span>
-          <div style={{width:110,height:9,background:C.surface,borderRadius:5,overflow:"hidden"}}>
+          <div style={{width:80,height:9,background:C.surface,borderRadius:5,overflow:"hidden",flexShrink:0}}>
             <div style={{width:`${Math.round((d[keyX]/max)*100)}%`,height:"100%",background:BAR_COLORS[i%BAR_COLORS.length],borderRadius:5}}/>
           </div>
-          <span style={{width:28,textAlign:"right",fontWeight:700,color:C.blue,fontSize:12}}>{d[keyX]}</span>
+          <span style={{minWidth:24,textAlign:"right",fontWeight:700,color:C.blue,fontSize:12,flexShrink:0}}>{d[keyX]}</span>
         </div>
       ))}
     </div>
@@ -189,7 +189,7 @@ export default function AnalyticsDashboard(){
   const fmtD=s=>s?.slice(5)??"";
 
   return(
-    <div style={{minHeight:"100vh",background:C.surface,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:C.text}}>
+    <div style={{minHeight:"100vh",background:C.surface,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:C.text,overflowX:"hidden",maxWidth:"100vw"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
