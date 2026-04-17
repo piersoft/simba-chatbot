@@ -512,7 +512,7 @@ SELECT ?ipaCode WHERE {
   function openTtlBox(url, fmt = "ttl", csvText = null, pa = "", ipa = "") {
     setShowCsvBox(false);
     setTtlCsvText(csvText);
-    setTtlUrl(csvText ? "" : (url || ""));
+    setTtlUrl(url || ""); // conserva sempre l'URL originale per il nome file
     setTtlTab(csvText ? "upload" : "url");
     setTtlFmt(fmt);
     setTtlIpa(ipa);
@@ -539,7 +539,11 @@ SELECT ?ipaCode WHERE {
     setShowTtlBox(false);
     const pa = ttlPa.trim();
     const ipa = ttlIpa.trim();
-    const fname = ttlFile?.name || "CSV";
+    // Se non c'è file fisico ma c'è un URL (ttlUrl) o memoria da ValidateReport,
+    // estrai il nome file dall'URL originale invece di usare il generico "CSV"
+    // Estrai nome file dall'URL originale (anche quando il CSV è già in memoria)
+    const fnameFromUrl = ttlUrl ? ttlUrl.split("/").pop().split("?")[0] : null;
+    const fname = ttlFile?.name || fnameFromUrl || "CSV";
     const fmt = ttlFmt || "ttl";
     const ext = fmt === "rdfxml" ? "rdf" : "ttl";
     const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
