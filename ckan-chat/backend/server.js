@@ -814,8 +814,19 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
     const text = await rdfRes.text();
     if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
     // dataset_id: usa URL se disponibile, altrimenti nome PA, altrimenti ipa
+    // Titolo leggibile: se il nome file è generico (exp.aspx, export.csv, data.csv...)
+    // lo arricchiamo con il dominio per dare contesto (es. "statweb.provincia.tn.it — exp.aspx")
+    const GENERIC_NAMES = new Set(["exp.aspx","export.aspx","export.csv","data.csv","download.csv",
+      "file.csv","output.csv","result.csv","query.csv","index.csv","default.csv","report.csv"]);
     const fileFromUrl = url ? url.split("/").pop().split("?")[0] : null;
-    const enrichTitle = (filename || fileFromUrl || pa || ipa || "upload").slice(0, 200);
+    const domain = url ? (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return null; } })() : null;
+    const fileIsGeneric = fileFromUrl && GENERIC_NAMES.has(fileFromUrl.toLowerCase());
+    const fileLabel = fileFromUrl
+      ? (fileIsGeneric && domain ? `${domain} — ${fileFromUrl}` : fileFromUrl)
+      : null;
+    const rawTitle = (filename || fileLabel || pa || ipa || "upload").slice(0, 200);
+    // Normalizza maiuscola iniziale per evitare duplicati (es. "comune di mesagne" vs "Comune di Mesagne")
+    const enrichTitle = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
     const enrichId    = url ? url.split("?")[0].slice(0, 200) : enrichTitle;
     emitEvent("ttl_create", {
       dataset_id: enrichId,
