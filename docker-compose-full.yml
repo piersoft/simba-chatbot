@@ -124,5 +124,6 @@ services:
       - backend
 
 volumes:
+  blocklist_data:
   ollama_data:
   analytics_data:
