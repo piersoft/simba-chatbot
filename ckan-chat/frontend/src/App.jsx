@@ -78,6 +78,7 @@ export default function App() {
   const [showTtlBox,  setShowTtlBox]  = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(() => !localStorage.getItem("privacy_ok"));
   const [showHelp,    setShowHelp]    = useState(false);
+  const [blocklist,   setBlocklist]   = useState(DEFAULT_BLOCKLIST);
   const [wizardDove,  setWizardDove]  = useState("");
   const [doveAcList,  setDoveAcList]  = useState([]);
   const [showDoveAc,  setShowDoveAc]  = useState(false);
@@ -347,7 +348,7 @@ SELECT ?ipaCode WHERE {
   async function sendMessage(text) {
     setMessages([]);  // nuova ricerca — pulisce la chat
     if (!text.trim() || loading) return;
-    if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) {
+    if (blocklist.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
       emitAnalytics("blocked", { query: text.slice(0, 200) });
       addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana.");
       return;
