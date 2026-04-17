@@ -12,28 +12,28 @@ const LICENSE_MAP = {
 };
 
 const THEMES = [
-  { code:"AGRI", label:"🌾 Agricoltura" },
-  { code:"ECON", label:"📈 Economia" },
-  { code:"EDUC", label:"📚 Istruzione" },
-  { code:"ENER", label:"⚡ Energia" },
-  { code:"ENVI", label:"🌍 Ambiente" },
-  { code:"GOVE", label:"🏛️ Governo" },
-  { code:"HEAL", label:"❤️ Salute" },
-  { code:"INTR", label:"🌐 Relazioni int." },
-  { code:"JUST", label:"⚖️ Giustizia" },
-  { code:"REGI", label:"🗺️ Regioni" },
-  { code:"SOCI", label:"👥 Società" },
-  { code:"TECH", label:"💻 Tecnologia" },
-  { code:"TRAN", label:"🚌 Trasporti" },
+  { code:"AGRI", label:"Agricoltura" },
+  { code:"ECON", label:"Economia" },
+  { code:"EDUC", label:"Istruzione" },
+  { code:"ENER", label:"Energia" },
+  { code:"ENVI", label:"Ambiente" },
+  { code:"GOVE", label:"Governo" },
+  { code:"HEAL", label:"Salute" },
+  { code:"INTR", label:"Relazioni int." },
+  { code:"JUST", label:"Giustizia" },
+  { code:"REGI", label:"Regioni" },
+  { code:"SOCI", label:"Società" },
+  { code:"TECH", label:"Tecnologia" },
+  { code:"TRAN", label:"Trasporti" },
 ];
 
 const HVD_CATS = [
-  { code:"c_ac64a52d", label:"🗺️ Geospaziali" },
-  { code:"c_dd313021", label:"🌍 Terra e Ambiente" },
-  { code:"c_e1da4e07", label:"📊 Statistici" },
-  { code:"c_164e0bf5", label:"🌤️ Meteorologici" },
-  { code:"c_b79e35eb", label:"🚗 Mobilità" },
-  { code:"c_a9135398", label:"🏢 Imprese" },
+  { code:"c_ac64a52d", label:"Geospaziali" },
+  { code:"c_dd313021", label:"Terra e Ambiente" },
+  { code:"c_e1da4e07", label:"Statistici" },
+  { code:"c_164e0bf5", label:"Meteorologici" },
+  { code:"c_b79e35eb", label:"Mobilità" },
+  { code:"c_a9135398", label:"Imprese" },
 ];
 
 const FORMATS = ["CSV","JSON","XML","SHP","GEOJSON","RDF_XML","TURTLE","PDF","XLSX","ZIP","WMS","WFS"];
