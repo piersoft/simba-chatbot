@@ -143,9 +143,9 @@ function topValidatedDatasets(limit, from, to) {
   for (const r of rows) {
     try {
       const p = JSON.parse(r.payload);
-      // Aggrega per dataset_title (non dataset_id) per unificare stesso dataset da URL diverse
-      // Tronca a 80 char per evitare titoli lunghissimi che frammentano l'aggregazione
-      const title = (p.dataset_title || p.dataset_id || 'sconosciuto').trim().slice(0, 80);
+      // Solo dataset con titolo leggibile (no nomi file con estensione)
+      const title = (p.dataset_title || '').trim().slice(0, 80);
+      if (!title || FILE_EXT_RE.test(title)) continue; // salta file/distribuzioni dirette
       if (!counts[title]) counts[title] = { dataset_title: title, total: 0, ok: 0 };
       counts[title].total++;
       if (p.validation_ok) counts[title].ok++;
