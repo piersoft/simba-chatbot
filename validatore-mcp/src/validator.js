@@ -184,7 +184,7 @@ export function checksContenuto(rows, headers) {
     if (anomali.length > 0) {
       const esempi = anomali.slice(0, 2).map(v => v.toLocaleString('it-IT')).join(', ');
       const mediaFmt = mean.toLocaleString('it-IT', { maximumFractionDigits: 1 });
-      outRange.push(`"${headers[ci]}": valore${anomali.length > 1 ? 'i' : ''} ${esempi} molto distante${anomali.length > 1 ? 'i' : ''} dalla media (${mediaFmt})`);
+      outRange.push(`"${headers[ci]}": ${anomali.length > 1 ? 'valori' : 'valore'} ${esempi} molto ${anomali.length > 1 ? 'distanti' : 'distante'} dalla media (${mediaFmt})`);
     }
   });
   if (outRange.length) push('C7', 'Valori molto distanti dalla media', `${outRange.join('; ')}. Potrebbe essere un errore di inserimento, verificare.`, 'warn');
