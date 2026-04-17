@@ -78,8 +78,8 @@ export function checksStruttura(raw, rows, sep, headers) {
   }
 
   const kb = Buffer.byteLength(raw, 'utf8') / 1024;
-  if (kb > 5120) push('S7', 'File molto grande', `${kb.toFixed(0)} KB: considerare la suddivisione.`, 'warn');
-  else push('S7', 'Dimensione accettabile', `${kb.toFixed(1)} KB`, 'pass');
+  if (kb > 5120) push('S7', 'File grande', `${kb.toFixed(0)} KB: la suddivisione migliora le prestazioni di caricamento, ma non è un requisito formale.`, 'info');
+  else push('S7', 'Dimensione file', `${kb.toFixed(1)} KB`, 'info');
 
   const hasReplacement = raw.includes('\uFFFD');
   if (hasReplacement) push('S8', 'Caratteri illeggibili (errore di codifica)', 'Probabile Windows-1252 letto come UTF-8.', 'fail');
@@ -225,13 +225,13 @@ export function checksOpendata(rows, headers, raw = '') {
 
   const geoKeys = ['lat', 'lon', 'lng', 'latitude', 'longitude', 'comune', 'regione', 'provincia', 'codice_istat', 'indirizzo'];
   const hasGeo = normH.some(h => geoKeys.some(k => h.includes(k)));
-  if (hasGeo) push('O5', 'Riferimento geografico presente', '', 'pass');
-  else push('O5', 'Nessun riferimento geografico', 'Considerare coordinate o codici ISTAT.', 'info');
+  if (hasGeo) push('O5', 'Riferimento geografico presente', 'Buona pratica: facilita il collegamento ai LOD territoriali.', 'pass');
+  else push('O5', 'Nessun riferimento geografico', 'Buona pratica (non obbligo): valutare l\'aggiunta di coordinate o codici ISTAT.', 'info');
 
   const timeKeys = ['data', 'date', 'anno', 'year', 'mese', 'timestamp'];
   const hasTime = normH.some(h => timeKeys.some(k => h.includes(k)));
-  if (hasTime) push('O6', 'Dimensione temporale presente', '', 'pass');
-  else push('O6', 'Nessuna dimensione temporale', '', 'info');
+  if (hasTime) push('O6', 'Dimensione temporale presente', 'Buona pratica: facilita le analisi temporali.', 'pass');
+  else push('O6', 'Nessuna dimensione temporale', 'Buona pratica (non obbligo): valutare l\'aggiunta di una colonna data.', 'info');
 
   // O7 - Caratteri speciali in intestazioni
   const specialHdr = headers.filter(h => /[^\w\s\-\u00C0-\u017E]/.test(h));

@@ -3,7 +3,7 @@ import { useState } from "react";
 
 const STANDARDS_TABLE = [
   { check: "S1–S6", cosa: "Struttura CSV: separatore, intestazioni, colonne", ref: "RFC 4180", url: "https://www.rfc-editor.org/rfc/rfc4180" },
-  { check: "S7", cosa: "Dimensione file", ref: "Buona pratica (soglia 5 MB)", url: null },
+  { check: "S7", cosa: "Dimensione file", ref: "Nessuno standard formale — check informativo (soglia pratica 5 MB)", url: null },
   { check: "S8–S11", cosa: "Encoding UTF-8, BOM, caratteri corrotti, nascosti", ref: "RFC 4180 • W3C CSVW • Unicode", url: "https://www.w3.org/TR/tabular-data-primer/" },
   { check: "C1", cosa: "Righe duplicate", ref: "ISO/IEC 25012 (Unicità)", url: "https://www.iso.org/standard/35736.html" },
   { check: "C2", cosa: "Valori mancanti", ref: "ISO/IEC 25012 (Completezza)", url: "https://www.iso.org/standard/35736.html" },
