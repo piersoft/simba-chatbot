@@ -1311,3 +1311,21 @@ body {
   font-size: 13px; letter-spacing: 0.04em; color: var(--text2);
   margin-bottom: 6px; font-style: italic;
 }
+
+/* ── Status bar compatta in fondo alla sidebar ────────────────────────────── */
+.status-bar-compact {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; border-top: 1px solid var(--gray-200);
+  margin-top: auto;
+}
+.status-compact-row {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Roboto Mono', monospace; font-size: 10px;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.refresh-btn-compact {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); font-size: 13px; padding: 2px 4px;
+  transition: color 0.15s;
+}
+.refresh-btn-compact:hover { color: var(--primary); }

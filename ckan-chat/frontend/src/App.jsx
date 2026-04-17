@@ -684,8 +684,6 @@ SELECT ?ipaCode WHERE {
           </div>
         </div>
 
-        <StatusBar health={health} onRefresh={fetchHealth} />
-
         {/* Strumenti integrati — card colorate */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti integrati</div>
@@ -727,6 +725,8 @@ SELECT ?ipaCode WHERE {
         <button className="clear-btn" aria-label="Nuova conversazione" onClick={() => { resetChat(); }}>
           Nuova conversazione
         </button>
+
+        <StatusBar health={health} onRefresh={fetchHealth} compact />
 
         <div className="sidebar-github">
           <a href="https://github.com/piersoft/ckan-mcp-server-docker-ollama"
