@@ -779,7 +779,7 @@ SELECT ?ipaCode WHERE {
           {messages.length === 0 && (
             <div className="welcome">
               <h2>SIMBA</h2>
-              <p className="welcome-acronym">Sistema Intelligente di <strong>M</strong>onitoraggio, <strong>B</strong>onifica e <strong>A</strong>rricchimento</p>
+              <p className="welcome-acronym"><strong>S</strong>istema <strong>I</strong>ntelligente di <strong>M</strong>onitoraggio, <strong>B</strong>onifica e <strong>A</strong>rricchimento</p>
               <p>Ricerca, valida e arricchisce i dataset della PA.</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>Cerca dataset</span>
