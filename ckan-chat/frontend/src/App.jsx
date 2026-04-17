@@ -229,6 +229,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
   // ── Callback per risultati ricerca avanzata ─────────────────────────────
   function handleAdvLoading(isLoading, label) {
     if (isLoading && label) {
+      setMessages([]);  // nuova ricerca — pulisce la chat
       addMsg("assistant", `Ricerca di **"${label}"** in corso…`, { type: "searching" });
     }
   }
@@ -332,6 +333,7 @@ SELECT ?ipaCode WHERE {
   }
 
   async function sendMessage(text) {
+    setMessages([]);  // nuova ricerca — pulisce la chat
     if (!text.trim() || loading) return;
     if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) { alert("Input non valido."); return; }
     if (text.length > 2000) { alert("Messaggio troppo lungo."); return; }
@@ -993,6 +995,7 @@ SELECT ?ipaCode WHERE {
               }
               // COSA + DOVE → query SPARQL diretta con filtro rightsHolder
               const userMsg = `${input.trim()} · ${wizardDove}`;
+              setMessages([]);  // nuova ricerca — pulisce la chat
               addMsg("user", userMsg);
               setLoading(true);
               try {
