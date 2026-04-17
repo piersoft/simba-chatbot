@@ -78,7 +78,7 @@ export default function App() {
   const [showTtlBox,  setShowTtlBox]  = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(() => !localStorage.getItem("privacy_ok"));
   const [showHelp,    setShowHelp]    = useState(false);
-  const [blocklist,   setBlocklist]   = useState(DEFAULT_BLOCKLIST);
+  const [blocklist,   setBlocklist]   = useState(BLOCKLIST);
   const [wizardDove,  setWizardDove]  = useState("");
   const [doveAcList,  setDoveAcList]  = useState([]);
   const [showDoveAc,  setShowDoveAc]  = useState(false);
