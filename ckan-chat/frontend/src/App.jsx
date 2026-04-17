@@ -229,7 +229,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         if (isHtmlCt || isZipCt || isPdfCt) {
           throw new Error(
             `La risorsa non è un file CSV — Content-Type rilevato: "${ct}". ` +
-            (isHtmlCt ? "L'URL punta a una pagina web, non al file diretto. Cerca il link "Scarica" o "Download" nel portale open data." : "") +
+            (isHtmlCt ? "L'URL punta a una pagina web, non al file diretto. Cerca il link diretto al CSV nel portale open data." : "") +
             (isZipCt ? "La risorsa è un archivio ZIP. Scaricalo, estrailo e valida il CSV all'interno." : "") +
             (isPdfCt ? "La risorsa è un PDF, non un CSV." : "")
           );
