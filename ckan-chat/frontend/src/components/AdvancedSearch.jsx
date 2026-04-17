@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-const SPARQL_EP  = "https://lod.dati.gov.it/sparql";
+const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
 const THEME_BASE = "http://publications.europa.eu/resource/authority/data-theme/";
 const HVD_BASE   = "http://data.europa.eu/bna/";
 const FT_BASE    = "http://publications.europa.eu/resource/authority/file-type/";

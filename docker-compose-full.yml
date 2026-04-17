@@ -81,6 +81,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       ANALYTICS_URL: http://analytics-service:3004
       BLOCKLIST_PATH: /app/data/blocklist.json
+      SPARQL_ENDPOINT: ${SPARQL_ENDPOINT:-https://lod.dati.gov.it/sparql}
     volumes:
       - blocklist_data:/app/data
     depends_on:
@@ -97,6 +98,7 @@ services:
         VITE_BASE_PATH: /chatbot/
         VITE_ANALYTICS_URL: ${VITE_ANALYTICS_URL:-}
         VITE_ANALYTICS_TOKEN: ${VITE_ANALYTICS_TOKEN:-changeme}
+        VITE_SPARQL_ENDPOINT: ${SPARQL_ENDPOINT:-}
     container_name: ckan-chat-frontend
     restart: unless-stopped
     ports:

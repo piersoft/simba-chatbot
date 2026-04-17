@@ -58,6 +58,9 @@ function emitEvent(type, payload, req) {
 
 const app = express();
 
+// ─── Endpoint SPARQL configurabile ───────────────────────────────────────────
+const SPARQL_ENDPOINT = process.env.SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
+
 // ── Blocklist dinamica ────────────────────────────────────────────────────────
 const BLOCKLIST_PATH = process.env.BLOCKLIST_PATH || "/app/data/blocklist.json";
 const DEFAULT_BLOCKLIST = [
@@ -675,7 +678,7 @@ ASK {
 }`;
 
   try {
-    const url = `https://lod.dati.gov.it/sparql?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const url = `${SPARQL_ENDPOINT}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
     const r = await fetch(url, {
       headers: { Accept: "application/sparql-results+json", "User-Agent": "Mozilla/5.0" },
       signal: AbortSignal.timeout(5000),
@@ -937,7 +940,7 @@ app.post("/api/sparql", async (req, res) => {
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: "query required" });
   try {
-    const url = `https://lod.dati.gov.it/sparql?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const url = `${SPARQL_ENDPOINT}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
     const r = await fetch(url, {
       headers: {
         "Accept": "application/sparql-results+json",
