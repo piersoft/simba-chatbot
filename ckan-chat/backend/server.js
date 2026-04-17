@@ -648,7 +648,12 @@ async function sparqlAsk(text) {
     "sono","sarà","viene","voglio","vorrei","puoi","posso","devo","avere","essere",
     "tutti","tutte","della","delle","degli","dello","nella","nelle","negli",
     "questo","questa","questi","queste","anche","però","oppure","cerca","trova",
-    "mostra","dammi","elenca","dataset","dati","file","apri"]);
+    "mostra","dammi","elenca","dataset","dati","file","apri",
+    // Saluti e frasi comuni senza contenuto informativo
+    "stai","ciao","salve","buon","buona","buongiorno","buonasera","grazie",
+    "prego","scusa","scusi","aiuto","aiutami","help","hello","certo","okay",
+    "bene","male","così","tanto","molto","poco","niente","qualcosa","tutto",
+    "fatto","fare","dire","sapere","avere","stare","andare","venire"]);
   
   const words = text.toLowerCase()
     .replace(/[^a-zàèéìòù\s]/g, " ")
