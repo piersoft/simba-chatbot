@@ -42,7 +42,16 @@ const SUGGESTIONS = [
   { text: "Valida CSV da URL",                       icon: "✅", action: "validate_prompt" },
 ];
 
-const BLOCKLIST = ["ignore previous","system prompt","forget instructions","jailbreak"];
+const BLOCKLIST = [
+  // Prompt injection
+  "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
+  "ignore instructions","disregard","bypass",
+  // Contenuti illeciti/pornografici
+  "porn","porno","pornograph","sex","xxx","nude","naked","escort","prostitut",
+  "pedofil","pedophil","child abuse","snuff","gore","decapitat","torture",
+  "terror","attentato","bomba","esplosivo","armi","weapon","kill","murder",
+  "droga","cocain","eroina","metanfetamin","drug deal","narcotic"
+];
 
 const SPARQL_EP = "https://lod.dati.gov.it/sparql";
 
@@ -334,7 +343,7 @@ SELECT ?ipaCode WHERE {
   async function sendMessage(text) {
     setMessages([]);  // nuova ricerca — pulisce la chat
     if (!text.trim() || loading) return;
-    if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) { alert("Input non valido."); return; }
+    if (BLOCKLIST.some(p => text.toLowerCase().includes(p))) { addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana."); return; }
     if (text.length > 2000) { alert("Messaggio troppo lungo."); return; }
 
     setSidebarOpen(false);

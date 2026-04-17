@@ -701,10 +701,19 @@ function parseIntent(raw) {
   return "SEARCH"; // default sicuro
 }
 
+const SERVER_BLOCKLIST = [
+  "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
+  "porn","porno","pornograph","sex","xxx","nude","naked","escort","prostitut",
+  "pedofil","pedophil","child abuse","snuff","gore","terror","bomba","esplosivo",
+  "cocain","eroina","metanfetamin","drug deal"
+];
+
 app.post("/api/intent", strictLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "message required" });
   if (message.length > 500) return res.status(400).json({ error: "Messaggio troppo lungo (max 500 caratteri)." });
+  const msgLower = message.toLowerCase();
+  if (SERVER_BLOCKLIST.some(p => msgLower.includes(p))) return res.status(400).json({ error: "Richiesta non consentita." });
   const intent = await classifyIntent(message);
   console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
   res.json({ intent });
