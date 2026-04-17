@@ -7,9 +7,10 @@ import {
 const ANALYTICS_BASE = import.meta.env.VITE_ANALYTICS_URL || "/analytics-api";
 
 function useIsMobile() {
-  const [mobile, setMobile] = useState(window.innerWidth < 640);
+  const check = () => window.innerWidth < 900;
+  const [mobile, setMobile] = useState(check);
   useEffect(() => {
-    const fn = () => setMobile(window.innerWidth < 640);
+    const fn = () => setMobile(check());
     window.addEventListener('resize', fn);
     return () => window.removeEventListener('resize', fn);
   }, []);
@@ -256,7 +257,7 @@ export default function AnalyticsDashboard(){
 
         {/* KPI */}
         <Section icon="📈" title="Panoramica"/>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(auto-fit,minmax(160px,1fr))",gap:12}}>
           {loading?Array(6).fill(0).map((_,i)=><Skeleton key={i} h={90}/>):[
             {label:"Sessioni uniche",value:data?.overview?.sessions,color:C.blue},
             {label:"IP univoci",value:data?.overview?.unique_ips,color:C.blueDk},
@@ -269,7 +270,7 @@ export default function AnalyticsDashboard(){
 
         {/* Qualità */}
         <Section icon="🎯" title="Qualità e performance"/>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
           <Panel title="Tasso off-topic">
             {loading?<Skeleton h={55}/>:(()=>{
               const tot=data?.overview?.total_events||1;
