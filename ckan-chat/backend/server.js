@@ -790,7 +790,7 @@ app.get("/tmp-csv/:id", (req, res) => {
 });
 
 app.post("/api/enrich", strictLimiter, async (req, res) => {
-  const { url, csv_text, ipa, pa, fmt } = req.body;
+  const { url, csv_text, ipa, pa, fmt, filename } = req.body;
   if (!url && !csv_text) return res.status(400).json({ error: "url o csv_text richiesto" });
   if (url && isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
   if (url && url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
@@ -814,7 +814,8 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
     const text = await rdfRes.text();
     if (!rdfRes.ok) return res.status(rdfRes.status).json({ error: text });
     // dataset_id: usa URL se disponibile, altrimenti nome PA, altrimenti ipa
-    const enrichTitle = (pa || url || ipa || "upload").split("?")[0].slice(0, 200);
+    const fileFromUrl = url ? url.split("/").pop().split("?")[0] : null;
+    const enrichTitle = (filename || fileFromUrl || pa || ipa || "upload").slice(0, 200);
     const enrichId    = url ? url.split("?")[0].slice(0, 200) : enrichTitle;
     emitEvent("ttl_create", {
       dataset_id: enrichId,
