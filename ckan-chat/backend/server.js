@@ -705,6 +705,7 @@ const SERVER_BLOCKLIST = [
   "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
   "porn","porno","pornograph","xxx","nude","naked","escort","prostitut",
   "pedofil","pedophil","child abuse","snuff","gore",
+  "cumshot","blowjob","handjob","gangbang","creampie","onlyfans","milf","dildo","vibrat",
   "cocain","eroina","metanfetamin","drug deal"
 ];
 
