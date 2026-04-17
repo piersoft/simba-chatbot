@@ -190,12 +190,12 @@ export default function AnalyticsDashboard(){
       `}</style>
 
       {/* Header schermo */}
-      <div className="no-print" style={{background:C.blueDk,height:52,padding:"0 28px",display:"flex",
-        alignItems:"center",gap:12,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>
+      <div className="no-print header-inner" style={{background:C.blueDk,minHeight:52,padding:"0 16px",display:"flex",
+        alignItems:"center",gap:8,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.2)",flexWrap:"wrap"}}>
         <span style={{fontSize:18}}>📊</span>
         <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>Chatbot — Analytics</span>
         <div style={{flex:1}}/>
-        <span style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>
+        <span className="header-time" style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>
           Aggiornato {lastRefresh.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
         </span>
         <button onClick={refresh} style={{background:"rgba(255,255,255,0.12)",border:"none",
@@ -217,7 +217,7 @@ export default function AnalyticsDashboard(){
         </div>
       </div>
 
-      <div style={{maxWidth:1260,margin:"0 auto",padding:"24px 20px 48px"}}>
+      <div className="main-pad" style={{maxWidth:1260,margin:"0 auto",padding:"24px 20px 48px"}}>
 
         {/* Range */}
         <div className="no-print" style={{display:"flex",gap:7,marginBottom:24,alignItems:"center"}}>
@@ -310,7 +310,7 @@ export default function AnalyticsDashboard(){
 
         {/* Ricerche */}
         <Section icon="🔍" title="Ricerche"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           <Panel title="Top keyword cercate (COSA)"
             action={<DownloadBtn filename={`keyword-${rangeLabel}.csv`} rows={data?.search?.top_queries}
               cols={[{label:"Keyword",key:"query"},{label:"Ricerche",key:"count"}]}/>}>
@@ -342,7 +342,7 @@ export default function AnalyticsDashboard(){
 
         {/* Validazione & TTL */}
         <Section icon="✅" title="Validazione e TTL"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           <Panel title="Dataset più validati"
             action={<DownloadBtn filename={`dataset-validati-${rangeLabel}.csv`}
               rows={(data?.validate?.top_datasets||[]).map(d=>({...d,label:d.dataset_title||d.dataset_id,count:d.total}))}
@@ -401,7 +401,7 @@ export default function AnalyticsDashboard(){
 
         {/* Performance & Errori */}
         <Section icon="⚙️" title="Performance ed errori"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           <Panel title="Latenza media per ora (ms)"
             action={<DownloadBtn filename={`latenza-${rangeLabel}.csv`} rows={data?.perf?.latency_per_hour}
               cols={[{label:"Ora",key:"hour"},{label:"Latenza ms",key:"avg"}]}/>}>
