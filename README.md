@@ -329,9 +329,9 @@ Utente scrive un messaggio
 ┌─────────────────────────────────────────────────────┐
 │  2. SPARQL ASK su lod.dati.gov.it (max 5 sec)       │
 │     Il catalogo reale decide se esistono dataset    │
-│     "torta della nonna" → ASK → false → OFF_TOPIC   │
+│     "come stai"         → ASK → false → OFF_TOPIC   │
 │     "defibrillatori"    → ASK → true  → continua   │
-│     "ricette pugliesi"  → ASK → true  → continua   │
+│     Nota: il guardrail blocca topic senza dataset   │
 └─────────────────┬───────────────────────────────────┘
                   │ dataset trovati, intent ancora ambiguo
                   ▼
