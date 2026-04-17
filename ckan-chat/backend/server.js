@@ -831,6 +831,7 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
     emitEvent("ttl_create", {
       dataset_id: enrichId,
       dataset_title: enrichTitle,
+      pa: (pa || "").trim() || null,   // nome ente esplicito inserito dall'utente
       format: fmt || "ttl",
       triples_count: (text.match(/\.\s*$/gm) || []).length,
       latency_ms: Date.now() - t0enrich,

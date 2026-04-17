@@ -137,12 +137,6 @@ function topValidatedDatasets(limit, from, to) {
   return Object.values(counts).sort((a, b) => b.total - a.total).slice(0, limit);
 }
 
-// Rileva se un titolo è un nome file (ha estensione) o un nome ente
-function looksLikeFilename(title) {
-  if (!title) return false;
-  return /\.(csv|aspx|xlsx|xls|json|tsv|txt|xml|zip)(\s*—\s*.+)?$/i.test(title.trim());
-}
-
 function topTTLDatasets(limit, from, to) {
   const rows = getDb().prepare(
     `SELECT payload FROM events WHERE type='ttl_create' AND ts BETWEEN ? AND ?`
@@ -151,9 +145,7 @@ function topTTLDatasets(limit, from, to) {
   for (const r of rows) {
     try {
       const p = JSON.parse(r.payload);
-      // Solo record dove il titolo è un nome file (non un ente)
-      if (!looksLikeFilename(p.dataset_title)) continue;
-      const key = (p.dataset_title || p.dataset_id || 'upload').trim();
+      const key = (p.dataset_title || p.dataset_id || 'sconosciuto').trim();
       if (!counts[key]) counts[key] = { dataset_title: key, count: 0 };
       counts[key].count++;
     } catch {}
@@ -169,9 +161,9 @@ function topTTLAdmins(limit, from, to) {
   for (const r of rows) {
     try {
       const p = JSON.parse(r.payload);
-      // Solo record dove il titolo è un nome ente (non un file)
-      if (looksLikeFilename(p.dataset_title)) continue;
-      const key = (p.dataset_title || 'Altro').trim();
+      // pa è il campo esplicito del nome ente inserito dall'utente nel box
+      const key = (p.pa || p.dataset_title || 'Altro').trim();
+      if (!key || key === 'sconosciuto') continue;
       if (!counts[key]) counts[key] = { admin: key, count: 0 };
       counts[key].count++;
     } catch {}
