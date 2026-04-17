@@ -162,8 +162,9 @@ function topTTLAdmins(limit, from, to) {
     try {
       const p = JSON.parse(r.payload);
       // pa è il campo esplicito del nome ente inserito dall'utente nel box
-      const key = (p.pa || p.dataset_title || 'Altro').trim();
-      if (!key || key === 'sconosciuto') continue;
+      const raw = (p.pa || p.dataset_title || 'Altro').trim();
+      const key = raw.charAt(0).toUpperCase() + raw.slice(1);
+      if (!key || key === 'Sconosciuto') continue;
       if (!counts[key]) counts[key] = { admin: key, count: 0 };
       counts[key].count++;
     } catch {}
