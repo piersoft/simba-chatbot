@@ -105,6 +105,22 @@ function topQueries(limit, from, to) {
     .map(([query, count]) => ({ query, count }));
 }
 
+function topBlockedQueries(limit, from, to) {
+  const rows = getDb().prepare(
+    `SELECT payload FROM events WHERE type='blocked' AND ts BETWEEN ? AND ?`
+  ).all(from, to);
+  const counts = {};
+  for (const r of rows) {
+    try {
+      const q = (JSON.parse(r.payload).query || '').trim().toLowerCase().slice(0, 100);
+      if (q) counts[q] = (counts[q] || 0) + 1;
+    } catch {}
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1]).slice(0, limit)
+    .map(([query, count]) => ({ query, count }));
+}
+
 function normalizeEnteName(name) {
   if (!name) return null;
   // Normalizza maiuscola iniziale per ogni parola, esclude preposizioni
@@ -290,7 +306,7 @@ module.exports = {
   init, insertEvent, deleteOlderThan,
   countDistinct, countEvents,
   avgLatency, percentileLatency,
-  topQueries, topRightsHolders,
+  topQueries, topBlockedQueries, topRightsHolders,
   topValidatedDatasets, topTTLDatasets, topTTLAdmins,
   validationSuccessRate, errorsByType,
   eventsPerDay, hourlyTraffic, errorsPerHour,

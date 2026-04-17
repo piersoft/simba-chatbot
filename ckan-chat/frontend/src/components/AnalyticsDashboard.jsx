@@ -128,7 +128,7 @@ function Panel({children,title,action,style={}}){
     </div>
   );
 }
-function HBar({data=[],keyX="count",keyY="query"}){
+function HBar({data=[],keyX="count",keyY="query",color=null}){
   const max=Math.max(...data.map(d=>d[keyX]||0),1);
   return(
     <div style={{display:"flex",flexDirection:"column",gap:7}}>
@@ -138,7 +138,7 @@ function HBar({data=[],keyX="count",keyY="query"}){
           <span style={{width:18,textAlign:"right",fontSize:10,fontWeight:700,color:C.muted,fontFamily:"monospace"}}>{i+1}</span>
           <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:C.text,fontWeight:500}}>{d[keyY]}</span>
           <div style={{width:80,height:9,background:C.surface,borderRadius:5,overflow:"hidden",flexShrink:0}}>
-            <div style={{width:`${Math.round((d[keyX]/max)*100)}%`,height:"100%",background:BAR_COLORS[i%BAR_COLORS.length],borderRadius:5}}/>
+            <div style={{width:`${Math.round((d[keyX]/max)*100)}%`,height:"100%",background:color||BAR_COLORS[i%BAR_COLORS.length],borderRadius:5}}/>
           </div>
           <span style={{minWidth:24,textAlign:"right",fontWeight:700,color:C.blue,fontSize:12,flexShrink:0}}>{d[keyX]}</span>
         </div>
@@ -318,6 +318,18 @@ export default function AnalyticsDashboard(){
             </ResponsiveContainer>
           )}
         </Panel>
+
+        {/* Richieste bloccate */}
+        {(data?.search?.top_blocked?.length > 0) && (<>
+          <Section icon="🚫" title="Richieste bloccate"/>
+          <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
+            <Panel title="Termini bloccati" style={{gridColumn:"1/-1",border:"1px solid #fca5a5",background:"#fff5f5"}}
+              action={<DownloadBtn filename={`bloccati-${rangeLabel}.csv`} rows={data?.search?.top_blocked}
+                cols={[{label:"Termine",key:"query"},{label:"Tentativi",key:"count"}]}/>}>
+              {loading?<Skeleton h={120}/>:<HBar data={data?.search?.top_blocked} keyY="query" color="#ef4444"/>}
+            </Panel>
+          </div>
+        </>)}
 
         {/* Ricerche */}
         <Section icon="🔍" title="Ricerche"/>

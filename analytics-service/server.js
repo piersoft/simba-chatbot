@@ -83,6 +83,7 @@ app.get('/stats/overview', statsLimiter, authStats, (req, res) => {
       validations:   db.countEvents('validate', from, to),
       ttl_created:   db.countEvents('ttl_create', from, to),
       off_topic:     db.countEvents('off_topic', from, to),
+      blocked:       db.countEvents('blocked', from, to),
       errors:        db.countEvents('error', from, to),
       avg_latency_ms: db.avgLatency(from, to),
       top_queries:   db.topQueries(10, from, to),
@@ -97,6 +98,7 @@ app.get('/stats/search', statsLimiter, authStats, (req, res) => {
   try {
     res.json({
       top_queries:        db.topQueries(20, from, to),
+      top_blocked:        db.topBlockedQueries(20, from, to),
       top_rightsholders:  db.topRightsHolders(20, from, to),
       searches_per_day:   db.eventsPerDay('search', from, to),
       avg_datasets_found: db.avgPayloadField('search', 'datasets_found', from, to),
