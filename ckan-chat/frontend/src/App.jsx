@@ -493,7 +493,7 @@ SELECT ?ipaCode WHERE {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: apiHeaders(),
-        body: JSON.stringify({ csv_text, pa: title, ipa: "ente", fmt }),
+        body: JSON.stringify({ csv_text, pa: title, ipa: "ente", fmt, filename: filename }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
@@ -551,7 +551,7 @@ SELECT ?ipaCode WHERE {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: apiHeaders(),
-        body: JSON.stringify({ csv_text, pa, ipa, fmt }),
+        body: JSON.stringify({ csv_text, pa, ipa, fmt, filename: fname }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
