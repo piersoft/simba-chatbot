@@ -1,4 +1,5 @@
 import express from "express";
+import { promises as dns } from "dns";
 import { writeFileSync, unlinkSync, existsSync, readFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -119,6 +120,20 @@ function isPrivateOrDangerous(urlStr) {
     ];
     return blocked.some(r => r.test(host));
   } catch { return true; }
+}
+
+// Verifica che l'IP risolto dal DNS non sia privato (anti-SSRF post-redirect)
+async function isResolvedIpSafe(hostname) {
+  try {
+    const result = await dns.lookup(hostname);
+    const ip = result.address;
+    const blocked = [
+      /^127\./, /^10\./, /^192\.168\./,
+      /^172\.(1[6-9]|2\d|3[01])\./, /^::1$/, /^0\.0\.0\.0$/,
+      /^169\.254\./
+    ];
+    return !blocked.some(r => r.test(ip));
+  } catch { return false; }
 }
 
 // ─── Rate limiting globale ────────────────────────────────────────────────────
@@ -777,6 +792,10 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
   if (!url) return res.status(400).json({ error: "url required" });
   if (isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
   if (url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
+  try {
+    const hostname = new URL(url).hostname;
+    if (!(await isResolvedIpSafe(hostname))) return res.status(400).json({ error: "URL non consentito (IP risolto non sicuro)." });
+  } catch { return res.status(400).json({ error: "URL non valido." }); }
   console.log(`[validate] ${url}`);
   const { dataset_title: reqTitle } = req.body;
   const t0val = Date.now();
@@ -824,6 +843,12 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
   if (!url && !csv_text) return res.status(400).json({ error: "url o csv_text richiesto" });
   if (url && isPrivateOrDangerous(url)) return res.status(400).json({ error: "URL non consentito." });
   if (url && url.length > 2048) return res.status(400).json({ error: "URL troppo lungo." });
+  if (url) {
+    try {
+      const hostname = new URL(url).hostname;
+      if (!(await isResolvedIpSafe(hostname))) return res.status(400).json({ error: "URL non consentito (IP risolto non sicuro)." });
+    } catch { return res.status(400).json({ error: "URL non valido." }); }
+  }
   if (csv_text && csv_text.length > 10000000) return res.status(400).json({ error: "File CSV troppo grande (max 10MB)." });
   if (ipa && !/^[a-z0-9_]{1,20}$/i.test(ipa)) return res.status(400).json({ error: "Codice IPA non valido." });
   console.log(`[enrich] url=${url || "upload"} ipa=${ipa} pa=${pa}`);
