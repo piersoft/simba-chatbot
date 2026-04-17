@@ -108,8 +108,8 @@ app.use((req, res, next) => {
 function isPrivateOrDangerous(urlStr) {
   try {
     const u = new URL(urlStr);
-    // Solo HTTPS
-    if (u.protocol !== "https:") return true;
+    // Solo HTTP/HTTPS (non file://, ftp://, ecc.)
+    if (!['http:', 'https:'].includes(u.protocol)) return true;
     const host = u.hostname.toLowerCase();
     // Blocca IP privati, localhost, metadati cloud
     const blocked = [
