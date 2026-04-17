@@ -5,6 +5,17 @@ import {
 } from "recharts";
 
 const ANALYTICS_BASE = import.meta.env.VITE_ANALYTICS_URL || "/analytics-api";
+
+function useIsMobile() {
+  const check = () => window.innerWidth < 900;
+  const [mobile, setMobile] = useState(check);
+  useEffect(() => {
+    const fn = () => setMobile(check());
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
 const TOKEN = import.meta.env.VITE_ANALYTICS_TOKEN || "changeme";
 
 const RANGES = [
@@ -106,7 +117,7 @@ function Section({icon,title}){
 }
 function Panel({children,title,action,style={}}){
   return(
-    <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"18px 18px 14px",...style}}>
+    <div style={{background:"#fff",border:`1px solid ${C.border}`,borderRadius:12,padding:"18px 18px 14px",minWidth:0,overflow:"hidden",...style}}>
       {(title||action)&&(
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
           {title&&<div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.05em"}}>{title}</div>}
@@ -123,13 +134,13 @@ function HBar({data=[],keyX="count",keyY="query"}){
     <div style={{display:"flex",flexDirection:"column",gap:7}}>
       {data.length===0&&<p style={{color:C.muted,fontSize:13,margin:"12px 0",textAlign:"center"}}>Nessun dato</p>}
       {data.map((d,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}>
+        <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,minWidth:0}}>
           <span style={{width:18,textAlign:"right",fontSize:10,fontWeight:700,color:C.muted,fontFamily:"monospace"}}>{i+1}</span>
           <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:C.text,fontWeight:500}}>{d[keyY]}</span>
-          <div style={{width:110,height:9,background:C.surface,borderRadius:5,overflow:"hidden"}}>
+          <div style={{width:80,height:9,background:C.surface,borderRadius:5,overflow:"hidden",flexShrink:0}}>
             <div style={{width:`${Math.round((d[keyX]/max)*100)}%`,height:"100%",background:BAR_COLORS[i%BAR_COLORS.length],borderRadius:5}}/>
           </div>
-          <span style={{width:28,textAlign:"right",fontWeight:700,color:C.blue,fontSize:12}}>{d[keyX]}</span>
+          <span style={{minWidth:24,textAlign:"right",fontWeight:700,color:C.blue,fontSize:12,flexShrink:0}}>{d[keyX]}</span>
         </div>
       ))}
     </div>
@@ -168,6 +179,8 @@ function ErrorTable({data=[]}){
 export default function AnalyticsDashboard(){
   const[days,setDays]=useState(7);
   const{data,loading,error,reload}=useStats(days);
+  const isMobile=useIsMobile();
+  const col2=isMobile?"1fr":"1fr 1fr";
   const[lastRefresh,setLastRefresh]=useState(new Date());
   const refresh=()=>{reload();setLastRefresh(new Date());};
   useEffect(()=>{const t=setInterval(refresh,120000);return()=>clearInterval(t);},[reload]);
@@ -176,7 +189,7 @@ export default function AnalyticsDashboard(){
   const fmtD=s=>s?.slice(5)??"";
 
   return(
-    <div style={{minHeight:"100vh",background:C.surface,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:C.text}}>
+    <div style={{minHeight:"100vh",background:C.surface,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:C.text,overflowX:"hidden",maxWidth:"100vw"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
@@ -190,14 +203,12 @@ export default function AnalyticsDashboard(){
       `}</style>
 
       {/* Header schermo */}
-      <div className="no-print" style={{background:C.blueDk,height:52,padding:"0 28px",display:"flex",
-        alignItems:"center",gap:12,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>
+      <div className="no-print header-inner" style={{background:C.blueDk,minHeight:52,padding:"0 16px",display:"flex",
+        alignItems:"center",gap:8,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.2)",flexWrap:"wrap"}}>
         <span style={{fontSize:18}}>📊</span>
         <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>Chatbot — Analytics</span>
         <div style={{flex:1}}/>
-        <span style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>
-          Aggiornato {lastRefresh.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
-        </span>
+        {!isMobile&&<span style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>Aggiornato {lastRefresh.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</span>}
         <button onClick={refresh} style={{background:"rgba(255,255,255,0.12)",border:"none",
           borderRadius:6,color:"#fff",fontSize:12,fontWeight:600,padding:"5px 12px",cursor:"pointer"}}>
           ↺ Aggiorna
@@ -217,7 +228,7 @@ export default function AnalyticsDashboard(){
         </div>
       </div>
 
-      <div style={{maxWidth:1260,margin:"0 auto",padding:"24px 20px 48px"}}>
+      <div style={{maxWidth:1260,margin:"0 auto",padding:isMobile?"14px 12px 32px":"24px 20px 48px"}}>
 
         {/* Range */}
         <div className="no-print" style={{display:"flex",gap:7,marginBottom:24,alignItems:"center"}}>
@@ -246,7 +257,7 @@ export default function AnalyticsDashboard(){
 
         {/* KPI */}
         <Section icon="📈" title="Panoramica"/>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(auto-fit,minmax(160px,1fr))",gap:12}}>
           {loading?Array(6).fill(0).map((_,i)=><Skeleton key={i} h={90}/>):[
             {label:"Sessioni uniche",value:data?.overview?.sessions,color:C.blue},
             {label:"IP univoci",value:data?.overview?.unique_ips,color:C.blueDk},
@@ -259,7 +270,7 @@ export default function AnalyticsDashboard(){
 
         {/* Qualità */}
         <Section icon="🎯" title="Qualità e performance"/>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
           <Panel title="Tasso off-topic">
             {loading?<Skeleton h={55}/>:(()=>{
               const tot=data?.overview?.total_events||1;
@@ -310,13 +321,13 @@ export default function AnalyticsDashboard(){
 
         {/* Ricerche */}
         <Section icon="🔍" title="Ricerche"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          <Panel title="Top keyword cercate"
+        <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
+          <Panel title="Top keyword cercate (COSA)"
             action={<DownloadBtn filename={`keyword-${rangeLabel}.csv`} rows={data?.search?.top_queries}
               cols={[{label:"Keyword",key:"query"},{label:"Ricerche",key:"count"}]}/>}>
             {loading?<Skeleton h={220}/>:<HBar data={data?.search?.top_queries} keyY="query"/>}
           </Panel>
-          <Panel title="Top enti (rightsHolder)"
+          <Panel title="Top enti ricercati (DOVE)"
             action={<DownloadBtn filename={`enti-${rangeLabel}.csv`} rows={data?.search?.top_rightsholders}
               cols={[{label:"Ente",key:"rights_holder"},{label:"Ricerche",key:"count"}]}/>}>
             {loading?<Skeleton h={220}/>:<HBar data={data?.search?.top_rightsholders} keyY="rights_holder"/>}
@@ -342,7 +353,7 @@ export default function AnalyticsDashboard(){
 
         {/* Validazione & TTL */}
         <Section icon="✅" title="Validazione e TTL"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
           <Panel title="Dataset più validati"
             action={<DownloadBtn filename={`dataset-validati-${rangeLabel}.csv`}
               rows={(data?.validate?.top_datasets||[]).map(d=>({...d,label:d.dataset_title||d.dataset_id,count:d.total}))}
@@ -401,7 +412,7 @@ export default function AnalyticsDashboard(){
 
         {/* Performance & Errori */}
         <Section icon="⚙️" title="Performance ed errori"/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
           <Panel title="Latenza media per ora (ms)"
             action={<DownloadBtn filename={`latenza-${rangeLabel}.csv`} rows={data?.perf?.latency_per_hour}
               cols={[{label:"Ora",key:"hour"},{label:"Latenza ms",key:"avg"}]}/>}>

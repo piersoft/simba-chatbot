@@ -105,6 +105,18 @@ function topQueries(limit, from, to) {
     .map(([query, count]) => ({ query, count }));
 }
 
+function normalizeEnteName(name) {
+  if (!name) return null;
+  // Normalizza maiuscola iniziale per ogni parola, esclude preposizioni
+  const skip = new Set(['di','del','della','delle','degli','dei','da','in','e','a','su','per']);
+  return name.trim()
+    .split(/\s+/)
+    .map((w, i) => i === 0 || !skip.has(w.toLowerCase())
+      ? w.charAt(0).toUpperCase() + w.slice(1)
+      : w.toLowerCase())
+    .join(' ');
+}
+
 function topRightsHolders(limit, from, to) {
   const rows = getDb().prepare(
     `SELECT payload FROM events WHERE type='search' AND ts BETWEEN ? AND ?`
@@ -113,7 +125,9 @@ function topRightsHolders(limit, from, to) {
   for (const r of rows) {
     try {
       const w = JSON.parse(r.payload).where;
-      if (w) counts[w] = (counts[w] || 0) + 1;
+      if (!w) continue;
+      const key = normalizeEnteName(w);
+      if (key) counts[key] = (counts[key] || 0) + 1;
     } catch {}
   }
   return Object.entries(counts)
@@ -129,9 +143,12 @@ function topValidatedDatasets(limit, from, to) {
   for (const r of rows) {
     try {
       const p = JSON.parse(r.payload);
-      if (!counts[p.dataset_id]) counts[p.dataset_id] = { dataset_id: p.dataset_id, dataset_title: p.dataset_title, total: 0, ok: 0 };
-      counts[p.dataset_id].total++;
-      if (p.validation_ok) counts[p.dataset_id].ok++;
+      // Solo dataset con titolo leggibile (no nomi file con estensione)
+      const title = (p.dataset_title || '').trim().slice(0, 80);
+      if (!title || FILE_EXT_RE.test(title)) continue; // salta file/distribuzioni dirette
+      if (!counts[title]) counts[title] = { dataset_title: title, total: 0, ok: 0 };
+      counts[title].total++;
+      if (p.validation_ok) counts[title].ok++;
     } catch {}
   }
   return Object.values(counts).sort((a, b) => b.total - a.total).slice(0, limit);
