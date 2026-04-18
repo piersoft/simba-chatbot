@@ -155,7 +155,12 @@ export default function App() {
 
     const allWords = query.split(/\s+/).filter(w => w.length >= 2);
     const sigWords = allWords.filter(w => !STOPWORDS.has(w.toLowerCase()));
-    const useWords = sigWords.length > 0 ? sigWords : allWords;
+
+    // Se non ci sono parole significative dopo le stopwords → nessun dataset possibile
+    if (sigWords.length === 0) {
+      return { datasets: [], total: 0 };
+    }
+    const useWords = sigWords;
 
     // kwFilter: AND con ricerca in titolo, descrizione E keyword (come l'assistente)
     function kwFilter(words, useOr = false) {
