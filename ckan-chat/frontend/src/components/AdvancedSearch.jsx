@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
 const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 const THEME_BASE = "http://publications.europa.eu/resource/authority/data-theme/";
 const HVD_BASE   = "http://data.europa.eu/bna/";
 const FT_BASE    = "http://publications.europa.eu/resource/authority/file-type/";
@@ -40,8 +41,11 @@ const FORMATS = ["CSV","JSON","XML","SHP","GEOJSON","RDF_XML","TURTLE","PDF","XL
 const FETCH_SIZE = 32;
 
 async function sparqlFetch(query) {
-  const url = `${SPARQL_EP}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-  const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+  const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
   if (!r.ok) throw new Error(`SPARQL ${r.status}`);
   return (await r.json()).results.bindings;
 }

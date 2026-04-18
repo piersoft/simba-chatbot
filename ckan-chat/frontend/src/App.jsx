@@ -181,8 +181,10 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
 ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
-      const url = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-      const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+      const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+        method: "POST", headers: apiHeaders(),
+        body: JSON.stringify({ query: sparqlQ }),
+      });
       if (!r.ok) throw new Error(`SPARQL error ${r.status}`);
       return (await r.json()).results?.bindings ?? [];
     }
@@ -353,8 +355,10 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   ?rh foaf:name ?name .
   FILTER(CONTAINS(LCASE(STR(?name)),"${ql}"))
 } GROUP BY ?name ORDER BY DESC(?count) LIMIT 10`;
-        const url = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-        const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+        const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+          method: "POST", headers: apiHeaders(),
+          body: JSON.stringify({ query: q }),
+        });
         if (!r.ok) return;
         const data = await r.json();
         const seen = new Set();
@@ -382,8 +386,10 @@ SELECT ?ipaCode WHERE {
   <${datasetUri}> dct:rightsHolder ?rh .
   ?rh dct:identifier ?ipaCode .
 } LIMIT 1`;
-      const url = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-      const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+      const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+        method: "POST", headers: apiHeaders(),
+        body: JSON.stringify({ query: q }),
+      });
       if (!r.ok) return "";
       const data = await r.json();
       const val = data.results?.bindings?.[0]?.ipaCode?.value || "";
