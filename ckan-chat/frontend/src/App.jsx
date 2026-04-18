@@ -241,15 +241,20 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         // Controlla Content-Type della risposta reale (dopo redirect)
         const ct = (csvRes.headers.get("content-type") || "").toLowerCase();
         const isHtmlCt = ct.includes("text/html") || ct.includes("application/xhtml");
-        const isZipCt = ct.includes("application/zip") || ct.includes("application/x-zip");
-        const isPdfCt = ct.includes("application/pdf");
+        const isZipCt = ct.includes("application/zip") || ct.includes("application/x-zip")
+          || ct.includes("application/x-zip-compressed") || ct.includes("application/octet-stream")
+          || url.toLowerCase().endsWith(".zip");
+        const isPdfCt = ct.includes("application/pdf") || url.toLowerCase().endsWith(".pdf");
+        const isExcelCt = ct.includes("spreadsheetml") || ct.includes("ms-excel")
+          || url.toLowerCase().endsWith(".xlsx") || url.toLowerCase().endsWith(".xls");
 
-        if (isHtmlCt || isZipCt || isPdfCt) {
+        if (isHtmlCt || isZipCt || isPdfCt || isExcelCt) {
           throw new Error(
-            `La risorsa non è un file CSV — Content-Type rilevato: "${ct}". ` +
+            `La risorsa non è un file CSV — Content-Type rilevato: "${ct || "non dichiarato"}". ` +
             (isHtmlCt ? "L'URL punta a una pagina web, non al file diretto. Cerca il link diretto al CSV nel portale open data." : "") +
-            (isZipCt ? "La risorsa è un archivio ZIP. Scaricalo, estrailo e valida il CSV all'interno." : "") +
-            (isPdfCt ? "La risorsa è un PDF, non un CSV." : "")
+            (isZipCt && !isHtmlCt ? "La risorsa è un archivio ZIP. Scaricalo, estrailo e valida il CSV all'interno." : "") +
+            (isPdfCt ? "La risorsa è un PDF, non un CSV." : "") +
+            (isExcelCt ? "La risorsa è un file Excel. Esportalo come CSV prima di validarlo." : "")
           );
         }
 
