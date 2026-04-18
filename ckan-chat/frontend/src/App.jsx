@@ -162,10 +162,16 @@ export default function App() {
     }
     const useWords = sigWords;
 
-    // kwFilter: AND con ricerca in titolo, descrizione E keyword (come l'assistente)
+    // kwFilter: cerca in titolo e keyword; descrizione solo in OR (non AND)
+    // Questo evita falsi positivi tipo "grafico a torta" nella descrizione
     function kwFilter(words, useOr = false) {
       const parts = words.map((w, i) => {
         const wl = w.toLowerCase().replace(/"/g, "");
+        // In modalità AND: titolo + keyword (non descrizione — troppi falsi positivi)
+        // In modalità OR (fallback): aggiunge anche la descrizione
+        if (!useOr) {
+          return `(CONTAINS(LCASE(?title),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+        }
         return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
       });
       return parts.join(useOr ? " || " : " && ");
