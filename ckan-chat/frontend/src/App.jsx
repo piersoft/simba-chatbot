@@ -204,13 +204,15 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
         const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
         if (rd.ok) return (await rd.json()).results?.bindings ?? [];
       } catch {}
-      // Fallback: proxy backend
-      const r = await fetch(`${BACKEND_URL}/api/sparql`, {
-        method: "POST", headers: apiHeaders(),
-        body: JSON.stringify({ query: sparqlQ }),
-      });
-      if (!r.ok) throw new Error(`SPARQL error ${r.status}`);
-      return (await r.json()).results?.bindings ?? [];
+      // Fallback: proxy backend — se anche questo fallisce, restituisce array vuoto
+      try {
+        const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+          method: "POST", headers: apiHeaders(),
+          body: JSON.stringify({ query: sparqlQ }),
+        });
+        if (r.ok) return (await r.json()).results?.bindings ?? [];
+      } catch {}
+      return []; // Nessun risultato invece di errore
     }
 
     // Prima prova AND, se non trova nulla riprova con OR (come l'assistente)
