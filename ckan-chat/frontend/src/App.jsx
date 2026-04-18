@@ -215,6 +215,42 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       return [];
     }
 
+    // Se la query è lunga (titolo esatto?), prova prima la frase intera nel titolo
+    if (query.length > 30) {
+      const fullPhrase = query.toLowerCase().replace(/"/g, "").slice(0, 100);
+      const phraseQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:title ?title .
+  FILTER(LANG(?title)='it'||LANG(?title)='')
+  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+  FILTER(CONTAINS(LCASE(STR(?title)),"${fullPhrase}"))
+} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+      try {
+        const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(phraseQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+        if (rd.ok) {
+          const phraseBindings = (await rd.json()).results?.bindings ?? [];
+          if (phraseBindings.length > 0) {
+            const seenP = new Map();
+            for (const b of phraseBindings) {
+              const uri = b.d?.value ?? ""; if (!uri || seenP.has(uri)) continue;
+              const id = uri.split("/").pop();
+              const landingPage = b.landingPage?.value;
+              const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
+              seenP.set(uri, { uri, id, title: b.title?.value ?? "", description: b.description?.value ?? "", modified: b.modified?.value?.slice(0,10) ?? "", publisher: b.rhName?.value || "", ipaCode: "", viewUrl, csvResources: [] });
+            }
+            return { datasets: [...seenP.values()], query, offset };
+          }
+        }
+      } catch {}
+    }
+
     // Prima prova AND, se non trova nulla riprova con OR (come l'assistente)
     let bindings = await runQuery(useWords, false, offset);
     if (bindings.length === 0 && useWords.length > 1) {
