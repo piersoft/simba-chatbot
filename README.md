@@ -342,19 +342,18 @@ Utente scrive un messaggio
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │  3. OLLAMA (raramente, solo casi ambigui)           │
-│     Dataset trovati MA intent incerto:              │
-│     "voglio i linked data dei rifiuti" → ENRICH     │
-│     "converti pure quelli" → ENRICH                │
-│     Nota: nella pratica quasi tutti i messaggi      │
-│     vengono classificati ai livelli 1 o 2.          │
-│     "defibrillatori Mesagne" → livello 2 → SEARCH   │
+│     Dataset trovati MA intent non intercettato:     │
+│     es. frasi colloquiali non coperte dal           │
+│     pre-filtro e con dataset su lod.dati.gov.it     │
+│     Nella pratica quasi tutti i messaggi vengono    │
+│     classificati ai livelli 1 o 2.                  │
 └─────────────────────────────────────────────────────┘
 ```
 
 **Il 95%+ delle richieste viene gestito deterministicamente** dai livelli 1 e 2 senza chiamare Ollama.  
-- Livello 1 (pre-filtro): keyword esplicite come "valida", "rdf", "ttl" → classificazione immediata  
-- Livello 2 (SPARQL ASK): parole senza dataset su lod.dati.gov.it → OFF_TOPIC  
-- Livello 3 (Ollama): solo quando l'intent è genuinamente ambiguo dopo i primi due livelli
+- Livello 1 (pre-filtro): keyword esplicite come `valida`, `rdf`, `ttl`, `linked data`, `arricch` → classificazione immediata  
+- Livello 2 (SPARQL ASK): se non ci sono dataset sull'argomento → OFF_TOPIC  
+- Livello 3 (Ollama): reserved per casi genuinamente ambigui non coperti dai livelli precedenti
 
 Tutto il resto — esecuzione della ricerca SPARQL, validazione CSV, conversione RDF — è **completamente deterministico** e non usa AI.
 
