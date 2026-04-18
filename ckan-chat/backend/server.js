@@ -683,13 +683,15 @@ async function sparqlAsk(text) {
   // Usa le prime 2 parole significative per la ASK query
   const keyword = words.slice(0, 2).join(" ");
   
+  // Usa solo la prima parola significativa (>4 chars preferibilmente) per ridurre falsi positivi
+  const mainWord = words.find(w => w.length > 4) || words[0];
   const query = `PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
 ASK {
   ?d a dcat:Dataset .
   ?d dct:title ?t .
-  FILTER(CONTAINS(LCASE(STR(?t)), "${keyword.replace(/"/g, '')}")
-    || CONTAINS(LCASE(STR(?t)), "${words[0].replace(/"/g, '')}"))
+  FILTER(CONTAINS(LCASE(STR(?t)), "${mainWord.replace(/"/g, '')}")
+    || CONTAINS(LCASE(STR(?t)), "${keyword.replace(/"/g, '')}"))
 }`;
 
   try {
