@@ -280,7 +280,7 @@ export default function AnalyticsDashboard(){
                 <p style={{fontSize:12,color:C.muted,margin:"8px 0 0"}}>{ot} off-topic su {tot} totali</p></>;
             })()}
           </Panel>
-          <Panel title="Latenza media Ollama">
+          <Panel title="Latenza media risposta">
             {loading?<Skeleton h={55}/>:(()=>{
               const ms=data?.overview?.avg_latency_ms||0;
               return<><Gauge value={ms} max={5000} color={ms>3000?C.red:ms>1500?C.amber:C.green} fmt={v=>`${v} ms`}/>
