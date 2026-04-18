@@ -287,11 +287,13 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       if (e.message.includes("Content-Type") || e.message.includes("pagina HTML") || e.message.includes("pagina web") || e.message.includes("ZIP") || e.message.includes("PDF") || e.message.includes("Excel")) {
         throw e;
       }
-      // Errore di rete/SSL del server remoto — non è un problema nostro
-      if (e.message.includes("SSL") || e.message.includes("Failed to fetch") || e.message.includes("NetworkError")) {
-        throw new Error("Impossibile raggiungere il server che ospita il file. Il server potrebbe avere un problema SSL o essere temporaneamente non disponibile. Riprova più tardi o contatta il fornitore del dataset.");
+      // Errore di rete/SSL/CORS — il browser non riesce, passa al backend
+      if (e.message.includes("SSL") || e.message.includes("Failed to fetch") || e.message.includes("NetworkError") || e.message.includes("CORS")) {
+        console.warn("[doValidate] browser fetch fallito (SSL/CORS), provo backend:", e.message);
+        // non rilanciare — lascia cadere al fallback backend
+      } else {
+        console.warn("[doValidate] browser fetch fallito:", e.message);
       }
-      console.warn("[doValidate] browser fetch fallito:", e.message);
     }
     // 2. CORS bloccato o browser fetch fallito — passa al backend con controllo Content-Type
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
