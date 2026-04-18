@@ -676,7 +676,12 @@ async function sparqlAsk(text) {
   const words = text.toLowerCase()
     .replace(/[^a-zàèéìòù\s]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length > 3 && !stopwords.has(w));
+    .filter(w => {
+      // Whitelist sigle PA — sempre accettate anche se corte
+      const siglePa = new Set(['cup','cig','imu','iva','pec','pnrr','rup','pgt','prg','psc','vvf','asl','ats','inps','inail','agid','anas','aci','mef']);
+      if (siglePa.has(w)) return true;
+      return w.length > 3 && !stopwords.has(w);
+    });
 
   if (words.length === 0) return false;
 
