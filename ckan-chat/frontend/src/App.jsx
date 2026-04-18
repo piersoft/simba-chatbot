@@ -151,7 +151,14 @@ export default function App() {
       // Altre parole comuni non utili come keyword di dataset
       "dati","dato","file","open","data","anche","però","oppure","pure",
       "miei","tuoi","suoi","nostri","vostri","loro","controllare","verificare",
-      "analizzare","scaricare","aprire","leggere","usare","utilizzare"]);
+      "analizzare","scaricare","aprire","leggere","usare","utilizzare",
+      // Verbi italiani comuni non utili come keyword PA
+      "fare","fatto","fai","fate","fanno","facendo","faccio","facciamo",
+      "potere","potrei","potresti","potrebbe","posso","puoi","può",
+      "avere","avrei","avresti","avrebbe","aver","avendo",
+      "essere","sarei","saresti","sarebbe","siamo","siete",
+      "volere","vorresti","vorrebbe","vuoi","vuole",
+      "dovere","dovrei","dovresti","dovrebbe","devo","devi","deve"]);
 
     const allWords = query.split(/\s+/).filter(w => w.length >= 2);
     const sigWords = allWords.filter(w => !STOPWORDS.has(w.toLowerCase()));
