@@ -636,7 +636,11 @@ function preFilterIntent(text) {
 
   // VALIDATE — univoco, intercetta con certezza
   const validateKw = ["valida","valid","controlla il csv","verifica il csv",
-    "qualità csv","errori csv","controllo csv","check csv","analizza csv"];
+    "qualità csv","errori csv","controllo csv","check csv","analizza csv",
+    // Pattern "ho dei/un/il dati/file/csv da..." → l'utente possiede già i dati
+    "ho dei dati","ho un csv","ho un file","ho il csv","ho il file",
+    "ho dei csv","miei dati","mio csv","mio file","da controllare","da verificare",
+    "da validare","da analizzare","da controllare"];
   if (validateKw.some(k => t.includes(k))) return "VALIDATE";
 
   // ENRICH — univoco, intercetta con certezza
