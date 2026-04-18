@@ -1109,11 +1109,19 @@ async function checkCsvContentType(url) {
 // ── Admin: gestione blocklist ─────────────────────────────────────────────────
 const adminLimiter = rateLimit({ windowMs: 60000, max: 30, message: { error: "Too many requests" } });
 
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "changeme-admin";
+
+function requireAdminToken(req, res, next) {
+  const auth = req.headers["authorization"] || "";
+  if (auth === `Bearer ${ADMIN_TOKEN}`) return next();
+  res.status(401).json({ error: "Non autorizzato" });
+}
+
 app.get("/api/admin/blocklist", adminLimiter, (req, res) => {
   res.json({ blocklist: dynamicBlocklist });
 });
 
-app.post("/api/admin/blocklist", adminLimiter, express.json(), (req, res) => {
+app.post("/api/admin/blocklist", adminLimiter, requireAdminToken, express.json(), (req, res) => {
   const { word } = req.body;
   if (!word || typeof word !== "string") return res.status(400).json({ error: "word richiesta" });
   const w = word.toLowerCase().trim();
@@ -1124,7 +1132,7 @@ app.post("/api/admin/blocklist", adminLimiter, express.json(), (req, res) => {
   res.json({ ok: true, blocklist: dynamicBlocklist });
 });
 
-app.delete("/api/admin/blocklist/:word", adminLimiter, (req, res) => {
+app.delete("/api/admin/blocklist/:word", adminLimiter, requireAdminToken, (req, res) => {
   const w = decodeURIComponent(req.params.word).toLowerCase().trim();
   dynamicBlocklist = dynamicBlocklist.filter(p => p !== w);
   saveBlocklist(dynamicBlocklist);

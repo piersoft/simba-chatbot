@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || "changeme-admin";
+const adminHeaders = { "Content-Type": "application/json", "Authorization": `Bearer ${ADMIN_TOKEN}` };
 
 export default function AdminPanel() {
   const [blocklist, setBlocklist] = useState([]);
@@ -26,7 +28,7 @@ export default function AdminPanel() {
     try {
       const r = await fetch(`${BACKEND_URL}/api/admin/blocklist`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders,
         body: JSON.stringify({ word: newWord.trim() }),
       });
       const data = await r.json();
@@ -41,7 +43,7 @@ export default function AdminPanel() {
   async function removeWord(word) {
     setError(""); setSuccess("");
     try {
-      const r = await fetch(`${BACKEND_URL}/api/admin/blocklist/${encodeURIComponent(word)}`, { method: "DELETE" });
+      const r = await fetch(`${BACKEND_URL}/api/admin/blocklist/${encodeURIComponent(word)}`, { method: "DELETE", headers: adminHeaders });
       const data = await r.json();
       if (!r.ok) { setError(data.error); return; }
       setBlocklist(data.blocklist);

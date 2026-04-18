@@ -80,6 +80,7 @@ services:
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       ANALYTICS_URL: http://analytics-service:3004
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
       BLOCKLIST_PATH: /app/data/blocklist.json
       SPARQL_ENDPOINT: ${SPARQL_ENDPOINT:-https://lod.dati.gov.it/sparql}
     volumes:
@@ -98,6 +99,7 @@ services:
         VITE_BASE_PATH: /chatbot/
         VITE_ANALYTICS_URL: ${VITE_ANALYTICS_URL:-}
         VITE_ANALYTICS_TOKEN: ${VITE_ANALYTICS_TOKEN:-changeme}
+        VITE_ADMIN_TOKEN: ${VITE_ADMIN_TOKEN:-changeme-admin}
         VITE_SPARQL_ENDPOINT: ${SPARQL_ENDPOINT:-}
     container_name: ckan-chat-frontend
     restart: unless-stopped
