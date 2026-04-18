@@ -181,6 +181,13 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
 ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
+      // Prima prova diretta dal browser (lod.dati.gov.it supporta CORS per GET)
+      try {
+        const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+        if (rd.ok) return (await rd.json()).results?.bindings ?? [];
+      } catch {}
+      // Fallback: proxy backend
       const r = await fetch(`${BACKEND_URL}/api/sparql`, {
         method: "POST", headers: apiHeaders(),
         body: JSON.stringify({ query: sparqlQ }),

@@ -41,6 +41,13 @@ const FORMATS = ["CSV","JSON","XML","SHP","GEOJSON","RDF_XML","TURTLE","PDF","XL
 const FETCH_SIZE = 32;
 
 async function sparqlFetch(query) {
+  // Prima prova diretta dal browser
+  try {
+    const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+    if (rd.ok) return (await rd.json()).results.bindings;
+  } catch {}
+  // Fallback: proxy backend
   const r = await fetch(`${BACKEND_URL}/api/sparql`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
