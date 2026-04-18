@@ -284,8 +284,12 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       }
     } catch(e) {
       // Se l'errore è nostro (HTML/ZIP/PDF rilevato), rilancia direttamente
-      if (e.message.includes("Content-Type") || e.message.includes("pagina HTML") || e.message.includes("pagina web") || e.message.includes("ZIP") || e.message.includes("PDF")) {
+      if (e.message.includes("Content-Type") || e.message.includes("pagina HTML") || e.message.includes("pagina web") || e.message.includes("ZIP") || e.message.includes("PDF") || e.message.includes("Excel")) {
         throw e;
+      }
+      // Errore di rete/SSL del server remoto — non è un problema nostro
+      if (e.message.includes("SSL") || e.message.includes("Failed to fetch") || e.message.includes("NetworkError")) {
+        throw new Error("Impossibile raggiungere il server che ospita il file. Il server potrebbe avere un problema SSL o essere temporaneamente non disponibile. Riprova più tardi o contatta il fornitore del dataset.");
       }
       console.warn("[doValidate] browser fetch fallito:", e.message);
     }
