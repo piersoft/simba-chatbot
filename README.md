@@ -45,7 +45,7 @@ Il motore è il `worker.js` di [CSV-to-RDF](https://github.com/piersoft/CSV-to-R
 
 **Aggiornamento automatico**: il `rdf-mcp` scarica il `worker.js` aggiornato ogni notte alle 3:00, recependo nuovi corpus e ontologie senza intervento manuale.
 
-Prima della conversione è possibile specificare il **codice IPA** e il **nome della PA** per costruire URI RDF corretti.
+Per la conversione è **obbligatorio** specificare il **codice IPA** e il **nome della PA**: sono necessari per costruire URI RDF corretti e univoci.
 
 ---
 
