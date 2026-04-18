@@ -845,6 +845,9 @@ SELECT ?ipaCode WHERE {
           <a className="sidebar-plain-link" href="https://piersoft.github.io/ckan-opendata-assistant/" target="_blank" rel="noopener noreferrer">
             Assistente ricerca <span className="plain-tag">AgID</span>
           </a>
+          <a className="sidebar-plain-link" href="https://github.com/piersoft/opendata-pa-quality-audit" target="_blank" rel="noopener noreferrer">
+            Tool validazione massivo <span className="plain-tag">GitHub</span>
+          </a>
         </div>
 
         <button className="help-sidebar-btn" onClick={() => setShowHelp(v => !v)} aria-label="Istruzioni brevi">
