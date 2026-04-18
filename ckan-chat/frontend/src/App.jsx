@@ -366,12 +366,21 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   ?rh foaf:name ?name .
   FILTER(CONTAINS(LCASE(STR(?name)),"${ql}"))
 } GROUP BY ?name ORDER BY DESC(?count) LIMIT 10`;
-        const r = await fetch(`${BACKEND_URL}/api/sparql`, {
-          method: "POST", headers: apiHeaders(),
-          body: JSON.stringify({ query: q }),
-        });
-        if (!r.ok) return;
-        const data = await r.json();
+        // Prova diretta dal browser, fallback al proxy
+        let data;
+        try {
+          const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+          const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+          if (rd.ok) data = await rd.json();
+        } catch {}
+        if (!data) {
+          const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+            method: "POST", headers: apiHeaders(),
+            body: JSON.stringify({ query: q }),
+          });
+          if (!r.ok) return;
+          data = await r.json();
+        }
         const seen = new Set();
         const results = [];
         for (const b of data.results?.bindings ?? []) {
@@ -397,12 +406,20 @@ SELECT ?ipaCode WHERE {
   <${datasetUri}> dct:rightsHolder ?rh .
   ?rh dct:identifier ?ipaCode .
 } LIMIT 1`;
-      const r = await fetch(`${BACKEND_URL}/api/sparql`, {
-        method: "POST", headers: apiHeaders(),
-        body: JSON.stringify({ query: q }),
-      });
-      if (!r.ok) return "";
-      const data = await r.json();
+      let data;
+      try {
+        const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+        if (rd.ok) data = await rd.json();
+      } catch {}
+      if (!data) {
+        const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+          method: "POST", headers: apiHeaders(),
+          body: JSON.stringify({ query: q }),
+        });
+        if (!r.ok) return "";
+        data = await r.json();
+      }
       const val = data.results?.bindings?.[0]?.ipaCode?.value || "";
       // Se è una partita IVA (11 cifre numeriche) = errore nei metadati, scarta
       return /^\d{11}$/.test(val) ? "" : val;
