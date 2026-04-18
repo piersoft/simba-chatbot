@@ -55,6 +55,7 @@ const BLOCKLIST = [
 ];
 
 const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
+const LLM_PROVIDER = import.meta.env.VITE_LLM_PROVIDER || "ollama";
 
 export default function App() {
   // Route semplice: /analytics mostra la dashboard, tutto il resto il chatbot
@@ -130,9 +131,10 @@ export default function App() {
         headers: apiHeaders(),
         body: JSON.stringify({ message: text }),
       });
-      if (!r.ok) return "SEARCH";
-      return (await r.json()).intent ?? "SEARCH";
-    } catch { return "SEARCH"; }
+      if (!r.ok) return { intent: "SEARCH", aiUsed: false };
+      const data = await r.json();
+      return { intent: data.intent ?? "SEARCH", aiUsed: data.ai_used ?? false };
+    } catch { return { intent: "SEARCH", aiUsed: false }; }
   }
 
   // ── Ricerca SPARQL — chiamata diretta dal browser (come l'assistente CKAN) ──
@@ -404,7 +406,8 @@ SELECT ?ipaCode WHERE {
     setLoading(true);
 
     try {
-      const intent = await classifyIntent(text);
+      const { intent, aiUsed } = await classifyIntent(text);
+      if (aiUsed) addMsg("assistant", `🤖 *Classificazione AI attiva* — ho usato ${LLM_PROVIDER === 'ollama' ? 'Ollama' : 'Mistral'} per interpretare la tua richiesta.`, { type: "ai_note" });
 
       if (intent === "SEARCH") setPageTitle("Ricerca Dataset — Open Data Italia");
       else if (intent === "VALIDATE") setPageTitle("Validazione CSV — Open Data Italia");

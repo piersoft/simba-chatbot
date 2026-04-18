@@ -696,14 +696,14 @@ async function classifyIntent(userMessage) {
   const preFilter = preFilterIntent(userMessage);
   if (preFilter) {
     console.log(`[intent] pre-filtro → ${preFilter}`);
-    return preFilter;
+    return { intent: preFilter, aiUsed: false };
   }
   // Testo SPARQL ASK — il catalogo reale decide se esistono dataset
   console.log(`[intent] verifico su SPARQL...`);
   const hasDatasets = await sparqlAsk(userMessage);
   if (!hasDatasets) {
     console.log(`[intent] SPARQL ASK → nessun dataset → OFF_TOPIC`);
-    return "OFF_TOPIC";
+    return { intent: "OFF_TOPIC", aiUsed: false };
   }
   console.log(`[intent] SPARQL ASK → dataset trovati → chiedo ad Ollama per disambiguare`);
   // Dataset esistono MA intent ambiguo (SEARCH? VALIDATE? ENRICH?) → Ollama decide
@@ -718,10 +718,10 @@ async function classifyIntent(userMessage) {
           max_tokens: 5, temperature: 0,
         }),
       });
-      if (!response.ok) return "SEARCH";
+      if (!response.ok) return { intent: "SEARCH", aiUsed: true };
       const data = await response.json();
       const raw = data.choices?.[0]?.message?.content ?? "SEARCH";
-      return parseIntent(raw);
+      return { intent: parseIntent(raw), aiUsed: true };
     } else {
       const res = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: "POST",
@@ -733,14 +733,14 @@ async function classifyIntent(userMessage) {
           options: { temperature: 0, num_predict: 10 },
         }),
       });
-      if (!res.ok) return "SEARCH";
+      if (!res.ok) return { intent: "SEARCH", aiUsed: true };
       const data = await res.json();
       const raw = data.message?.content ?? "SEARCH";
-      return parseIntent(stripThinkTags(raw));
+      return { intent: parseIntent(stripThinkTags(raw)), aiUsed: true };
     }
   } catch (e) {
     console.error("[intent] errore:", e.message);
-    return "SEARCH";
+    return { intent: "SEARCH", aiUsed: false };
   }
 }
 
@@ -758,9 +758,9 @@ app.post("/api/intent", strictLimiter, async (req, res) => {
   if (message.length > 500) return res.status(400).json({ error: "Messaggio troppo lungo (max 500 caratteri)." });
   const msgLower = message.toLowerCase();
   if (dynamicBlocklist.some(p => msgLower.includes(p.toLowerCase()))) return res.status(400).json({ error: "Richiesta non consentita." });
-  const intent = await classifyIntent(message);
+  const { intent, aiUsed } = await classifyIntent(message);
   console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
-  res.json({ intent });
+  res.json({ intent, ai_used: aiUsed });
 });
 
 
