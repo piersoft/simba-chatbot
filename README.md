@@ -341,12 +341,12 @@ Utente scrive un messaggio
                   │ dataset trovati, intent ancora ambiguo
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  3. OLLAMA (raramente, solo casi ambigui)           │
-│     Dataset trovati MA intent non intercettato:     │
-│     es. frasi colloquiali non coperte dal           │
-│     pre-filtro e con dataset su lod.dati.gov.it     │
-│     Nella pratica quasi tutti i messaggi vengono    │
-│     classificati ai livelli 1 o 2.                  │
+│  3. OLLAMA (frasi colloquiali ambigue)              │
+│     "fammi vedere i dati dei rifiuti"               │
+│      → stopwords filtrano "fammi","vedere","dati"   │
+│      → resta "rifiuti" → SPARQL ASK → true          │
+│      → Ollama classifica → SEARCH                   │
+│      → badge 🤖 visibile in chat                    │
 └─────────────────────────────────────────────────────┘
 ```
 
