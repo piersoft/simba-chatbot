@@ -219,9 +219,15 @@ export function checksOpendata(rows, headers, raw = '') {
   if (cryptic.length) push('O3', 'Intestazioni non descrittive', `${cryptic.map(h => '"' + h + '"').join(', ')}.`, 'warn');
   else push('O3', 'Intestazioni descrittive', '', 'pass');
 
-  const notSnake = headers.filter(h => /[A-Z\s\-]/.test(h.trim()));
-  if (notSnake.length) push('O4', 'Intestazioni con spazi o maiuscole', `${notSnake.map(h => '"' + h + '"').join(', ')}.`, 'warn');
-  else push('O4', 'Intestazioni in formato corretto', 'Minuscolo con underscore.', 'pass');
+  // O4: spazi/trattini = warn (problema tecnico), maiuscole = info (raccomandazione AGID non obbligo)
+  // La PA italiana pubblica spesso MAIUSCOLO_UNDERSCORE (ANAC, ISTAT, TAR/CDS): non va penalizzato.
+  const withSpaces = headers.filter(h => /[\s\-]/.test(h.trim()));
+  const withUpper  = headers.filter(h => !/[\s\-]/.test(h.trim()) && /[A-Z]/.test(h));
+  if (withSpaces.length) push('O4', 'Intestazioni con spazi o trattini',
+    `${withSpaces.map(h => '"' + h + '"').join(', ')} — usare underscore (es. "data_apertura").`, 'warn');
+  if (withUpper.length) push('O4', 'Intestazioni con lettere maiuscole',
+    `${withUpper.map(h => '"' + h + '"').join(', ')} — le LG AGID raccomandano il minuscolo, ma molti dataset PA usano maiuscolo per convenzione. Non è un requisito normativo bloccante.`, 'info');
+  if (!withSpaces.length && !withUpper.length) push('O4', 'Intestazioni in formato ottimale', 'Minuscolo con underscore: formato raccomandato dalle LG AGID Open Data.', 'pass');
 
   const geoKeys = ['lat', 'lon', 'lng', 'latitude', 'longitude', 'comune', 'regione', 'provincia', 'codice_istat', 'indirizzo'];
   const hasGeo = normH.some(h => geoKeys.some(k => h.includes(k)));
