@@ -342,8 +342,8 @@ Utente scrive un messaggio
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │  3. OLLAMA (frasi colloquiali ambigue)              │
-│     "fammi vedere i dati dei rifiuti"               │
-│      → stopwords filtrano "fammi","vedere","dati"   │
+│     "cerca dati sui rifiuti"                        │
+│      → stopwords filtrano "cerca","dati"            │
 │      → resta "rifiuti" → SPARQL ASK → true          │
 │      → Ollama classifica → SEARCH                   │
 │      → badge 🤖 visibile in chat                    │
