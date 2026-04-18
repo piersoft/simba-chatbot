@@ -322,6 +322,8 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
   // ── Handler principale ────────────────────────────────────────────────────
   function resetChat() {
     setMessages([]);
+    setInput("");
+    setWizardDove("");
     setShowCsvBox(false);
     setShowTtlBox(false);
     setTtlCsvText(null);
