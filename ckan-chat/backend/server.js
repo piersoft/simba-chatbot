@@ -683,15 +683,24 @@ async function sparqlAsk(text) {
   // Usa le prime 2 parole significative per la ASK query
   const keyword = words.slice(0, 2).join(" ");
   
-  // Usa solo la prima parola significativa (>4 chars preferibilmente) per ridurre falsi positivi
+  // Se ci sono 2+ parole significative, richiedi che ENTRAMBE siano nel titolo (AND)
+  // Questo riduce drasticamente i falsi positivi
   const mainWord = words.find(w => w.length > 4) || words[0];
+  const secondWord = words.filter(w => w !== mainWord).find(w => w.length > 3);
+  let filterClause;
+  if (secondWord) {
+    // AND: entrambe le parole devono essere nel titolo
+    filterClause = `CONTAINS(LCASE(STR(?t)), "${mainWord.replace(/"/g, '')}") && CONTAINS(LCASE(STR(?t)), "${secondWord.replace(/"/g, '')}")`;
+  } else {
+    // Una sola parola: basta che sia nel titolo
+    filterClause = `CONTAINS(LCASE(STR(?t)), "${mainWord.replace(/"/g, '')}")`;
+  }
   const query = `PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
 ASK {
   ?d a dcat:Dataset .
   ?d dct:title ?t .
-  FILTER(CONTAINS(LCASE(STR(?t)), "${mainWord.replace(/"/g, '')}")
-    || CONTAINS(LCASE(STR(?t)), "${keyword.replace(/"/g, '')}"))
+  FILTER(${filterClause})
 }`;
 
   try {
