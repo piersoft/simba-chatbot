@@ -167,7 +167,8 @@ export default function App() {
     if (sigWords.length === 0) {
       return { datasets: [], total: 0 };
     }
-    const useWords = sigWords;
+    // Limita a max 4 parole significative — query troppo lunghe causano SPARQL 500
+    const useWords = sigWords.slice(0, 4);
 
     // kwFilter: AND con ricerca in titolo, descrizione E keyword
     function kwFilter(words, useOr = false) {
