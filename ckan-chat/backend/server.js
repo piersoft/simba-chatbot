@@ -721,6 +721,7 @@ async function classifyIntent(userMessage) {
     return { intent: "OFF_TOPIC", aiUsed: false };
   }
   console.log(`[intent] SPARQL ASK → dataset trovati → chiedo ad Ollama per disambiguare`);
+  // Nota: se Ollama risponde SEARCH, il SPARQL ASK ha già confermato che esistono dataset
   // Dataset esistono MA intent ambiguo (SEARCH? VALIDATE? ENRICH?) → Ollama decide
   try {
     if (LLM_PROVIDER === "mistral") {
@@ -736,7 +737,8 @@ async function classifyIntent(userMessage) {
       if (!response.ok) return { intent: "SEARCH", aiUsed: true };
       const data = await response.json();
       const raw = data.choices?.[0]?.message?.content ?? "SEARCH";
-      return { intent: parseIntent(raw), aiUsed: true };
+      const parsed = parseIntent(raw);
+      return { intent: parsed, aiUsed: true };
     } else {
       const res = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: "POST",
@@ -751,7 +753,10 @@ async function classifyIntent(userMessage) {
       if (!res.ok) return { intent: "SEARCH", aiUsed: true };
       const data = await res.json();
       const raw = data.message?.content ?? "SEARCH";
-      return { intent: parseIntent(stripThinkTags(raw)), aiUsed: true };
+      const parsed = parseIntent(stripThinkTags(raw));
+      // Se Ollama dice SEARCH, il SPARQL ASK iniziale ha già confermato dataset esistenti
+      // ma potrebbe essere un falso positivo — il frontend gestisce risultati vuoti
+      return { intent: parsed, aiUsed: true };
     }
   } catch (e) {
     console.error("[intent] errore:", e.message);
