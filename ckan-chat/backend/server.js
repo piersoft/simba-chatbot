@@ -833,6 +833,22 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
   const { dataset_title: reqTitle } = req.body;
   const t0val = Date.now();
   try {
+    // Scarica il CSV dal backend (più affidabile del validatore-mcp per URL difficili)
+    let csv_text = null;
+    try {
+      const csvResp = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0", "Accept": "text/csv,text/plain,*/*" },
+        signal: AbortSignal.timeout(15000),
+        redirect: "follow",
+      });
+      if (csvResp.ok) {
+        csv_text = await csvResp.text();
+        if (csv_text.trimStart().startsWith("<")) csv_text = null; // è HTML
+      }
+    } catch (e) {
+      console.warn(`[validate] download diretto fallito: ${e.message}`);
+    }
+
     // Forza reload tool se csv_validate non è ancora in mappa
     if (!toolsRouteMap["csv_validate"]) {
       toolsCache = null;
@@ -840,7 +856,9 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       await getTools();
     }
     console.log(`[validate] routeMap keys: ${Object.keys(toolsRouteMap).join(", ")}`);
-    const result = await callTool("csv_validate", { csv_url: url, summary_only: false });
+    const result = csv_text
+      ? await callTool("csv_validate", { csv_text, summary_only: false })
+      : await callTool("csv_validate", { csv_url: url, summary_only: false });
     const cleanTitle = reqTitle || url.split("/").pop().split("?")[0] || url;
     emitEvent("validate", {
       dataset_id: url,
