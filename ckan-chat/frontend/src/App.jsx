@@ -830,12 +830,6 @@ SELECT ?ipaCode WHERE {
         {/* Link strumenti — testo semplice */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti consigliati</div>
-          <a className="sidebar-plain-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
-            CKAN MCP Server <span className="plain-tag">OnData</span>
-          </a>
-          <a className="sidebar-plain-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
-            ISTAT MCP Server <span className="plain-tag">OnData</span>
-          </a>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/" target="_blank" rel="noopener noreferrer">
             CSV to RDF <span className="plain-tag">AgID</span>
           </a>
@@ -847,6 +841,12 @@ SELECT ?ipaCode WHERE {
           </a>
           <a className="sidebar-plain-link" href="https://github.com/piersoft/opendata-pa-quality-audit" target="_blank" rel="noopener noreferrer">
             Tool validazione massivo <span className="plain-tag">AgID</span>
+          </a>
+          <a className="sidebar-plain-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
+            CKAN MCP Server <span className="plain-tag">OnData</span>
+          </a>
+          <a className="sidebar-plain-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
+            ISTAT MCP Server <span className="plain-tag">OnData</span>
           </a>
         </div>
 
