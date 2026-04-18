@@ -1007,12 +1007,17 @@ app.post("/api/sparql", async (req, res) => {
     const url = `${SPARQL_ENDPOINT}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
     const r = await fetch(url, {
       headers: {
-        "Accept": "application/sparql-results+json",
-        "User-Agent": "Mozilla/5.0 (compatible; ckan-opendata-assistant/1.0)",
+        "Accept": "application/sparql-results+json, application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
+        "Referer": "https://lod.dati.gov.it/",
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
     });
-    if (!r.ok) throw new Error(`SPARQL ${r.status}`);
+    if (!r.ok) {
+      console.error(`[sparql-proxy] ${r.status} per query: ${query.slice(0, 100)}`);
+      throw new Error(`SPARQL ${r.status}`);
+    }
     const data = await r.json();
     res.json(data);
   } catch (e) {

@@ -198,13 +198,21 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
 ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 } ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${off}`;
-      // Solo fetch diretta dal browser — lod.dati.gov.it blocca le richieste server-side
+      // Prima prova dal browser, poi proxy backend come fallback
       try {
         const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(sparqlQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
         const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
         if (rd.ok) return (await rd.json()).results?.bindings ?? [];
       } catch {}
-      return []; // Se il browser non riesce, nessun risultato
+      // Fallback proxy — usa User-Agent browser realistico
+      try {
+        const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+          method: "POST", headers: apiHeaders(),
+          body: JSON.stringify({ query: sparqlQ }),
+        });
+        if (r.ok) return (await r.json()).results?.bindings ?? [];
+      } catch {}
+      return [];
     }
 
     // Prima prova AND, se non trova nulla riprova con OR (come l'assistente)
