@@ -162,11 +162,11 @@ export default function App() {
     }
     const useWords = sigWords;
 
-    // kwFilter: cerca SOLO in titolo e keyword — descrizione esclusa per evitare falsi positivi
+    // kwFilter: AND con ricerca in titolo, descrizione E keyword
     function kwFilter(words, useOr = false) {
       const parts = words.map((w, i) => {
         const wl = w.toLowerCase().replace(/"/g, "");
-        return `(CONTAINS(LCASE(?title),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+        return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
       });
       return parts.join(useOr ? " || " : " && ");
     }
