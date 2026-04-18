@@ -32,7 +32,7 @@ Per ogni dataset trovato è possibile espandere le distribuzioni CSV, recuperate
 La **Ricerca avanzata** permette di filtrare per tema DCAT, formato, licenza, dataset HVD e Titolare.
 
 ### ✅ Valida CSV
-Valida un file CSV secondo le **linee guida AgID** per la qualità dei dati aperti della PA italiana. Controlla struttura, contenuto, conformità open data e linked data.
+Valida un file CSV secondo un insieme di standard internazionali, normativa italiana e buone pratiche open data: RFC 4180, ISO/IEC 25012, ISO 8601, W3C CSVW, linee guida AGID, D.Lgs. 36/2023 e ontologie dati-semantic-assets. Controlla struttura, contenuto, conformità open data e compatibilità Linked Data.
 
 Il CSV può essere fornito tramite URL (anche Google Sheets) oppure caricando il file direttamente. Punteggio da 0 a 100. Esito: **Ottima qualità** / **Accettabile con riserva** / **Non accettabile**.
 
