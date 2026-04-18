@@ -656,7 +656,11 @@ async function sparqlAsk(text) {
     "stai","ciao","salve","buon","buona","buongiorno","buonasera","grazie",
     "prego","scusa","scusi","aiuto","aiutami","help","hello","certo","okay",
     "bene","male","così","tanto","molto","poco","niente","qualcosa","tutto",
-    "fatto","fare","dire","sapere","avere","stare","andare","venire"]);
+    "fatto","fare","dire","sapere","avere","stare","andare","venire",
+    // Verbi colloquiali di richiesta
+    "fammi","fammi","mostra","mostrami","dimmi","elenca","cerca","trova",
+    "voglio","vorrei","puoi","potrei","vedere","sapere","avere","prendere",
+    "dammi","datemi","serve","servono","vorrei","avere","trovare"]);
   
   const words = text.toLowerCase()
     .replace(/[^a-zàèéìòù\s]/g, " ")

@@ -143,7 +143,11 @@ export default function App() {
     const STOPWORDS = new Set(["il","lo","la","i","gli","le","un","una","uno",
       "di","a","da","in","con","su","per","tra","fra","e","o","ma","non","che",
       "del","dei","delle","della","degli","al","ai","alle","alla","nel","nei",
-      "sul","sui","sulla","sulle"]);
+      "sul","sui","sulla","sulle",
+      // Verbi colloquiali di richiesta — non sono keyword di dataset
+      "fammi","mostra","mostrami","dimmi","elenca","cerca","trova","voglio",
+      "vorrei","puoi","potrei","vedere","dammi","serve","servono","trovare",
+      "come","cosa","dove","quando","sono","tutti","tutte","questo","questa"]);
 
     const allWords = query.split(/\s+/).filter(w => w.length >= 2);
     const sigWords = allWords.filter(w => !STOPWORDS.has(w.toLowerCase()));
