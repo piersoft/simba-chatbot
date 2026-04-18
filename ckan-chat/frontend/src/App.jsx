@@ -55,7 +55,6 @@ const BLOCKLIST = [
 ];
 
 const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
-const LLM_PROVIDER = import.meta.env.VITE_LLM_PROVIDER || "ollama";
 
 export default function App() {
   // Route semplice: /analytics mostra la dashboard, tutto il resto il chatbot
@@ -407,7 +406,7 @@ SELECT ?ipaCode WHERE {
 
     try {
       const { intent, aiUsed } = await classifyIntent(text);
-      if (aiUsed) addMsg("assistant", `🤖 *Classificazione AI attiva* — ho usato ${LLM_PROVIDER === 'ollama' ? 'Ollama' : 'Mistral'} per interpretare la tua richiesta.`, { type: "ai_note" });
+      if (aiUsed) addMsg("assistant", "🤖 *Classificazione AI attiva* — il motore AI ha interpretato la tua richiesta per indirizzarla correttamente.", { type: "ai_note" });
 
       if (intent === "SEARCH") setPageTitle("Ricerca Dataset — Open Data Italia");
       else if (intent === "VALIDATE") setPageTitle("Validazione CSV — Open Data Italia");
