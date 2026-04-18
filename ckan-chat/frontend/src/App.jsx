@@ -147,7 +147,11 @@ export default function App() {
       // Verbi colloquiali di richiesta — non sono keyword di dataset
       "fammi","mostra","mostrami","dimmi","elenca","cerca","trova","voglio",
       "vorrei","puoi","potrei","vedere","dammi","serve","servono","trovare",
-      "come","cosa","dove","quando","sono","tutti","tutte","questo","questa"]);
+      "come","cosa","dove","quando","sono","tutti","tutte","questo","questa",
+      // Altre parole comuni non utili come keyword di dataset
+      "dati","dato","file","open","data","anche","però","oppure","pure",
+      "miei","tuoi","suoi","nostri","vostri","loro","controllare","verificare",
+      "analizzare","scaricare","aprire","leggere","usare","utilizzare"]);
 
     const allWords = query.split(/\s+/).filter(w => w.length >= 2);
     const sigWords = allWords.filter(w => !STOPWORDS.has(w.toLowerCase()));
