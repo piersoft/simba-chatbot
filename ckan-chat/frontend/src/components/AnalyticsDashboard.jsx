@@ -273,11 +273,12 @@ export default function AnalyticsDashboard(){
         <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
           <Panel title="Tasso off-topic">
             {loading?<Skeleton h={55}/>:(()=>{
-              const tot=data?.overview?.total_events||1;
-              const ot=data?.overview?.off_topic||0;
+              const searches=(data?.overview?.searches||0);
+              const ot=(data?.overview?.off_topic||0);
+              const tot=searches+ot||1;
               const pct=Math.round((ot/tot)*100);
               return<><Gauge value={pct} max={100} color={pct>20?C.red:pct>10?C.amber:C.green} fmt={v=>`${v}%`}/>
-                <p style={{fontSize:12,color:C.muted,margin:"8px 0 0"}}>{ot} off-topic su {tot} totali</p></>;
+                <p style={{fontSize:12,color:C.muted,margin:"8px 0 0"}}>{ot} off-topic su {tot} interazioni chat</p></>;
             })()}
           </Panel>
           <Panel title="Latenza media risposta">

@@ -441,7 +441,7 @@ SELECT ?ipaCode WHERE {
     setMessages([]);  // nuova ricerca — pulisce la chat
     if (!text.trim() || loading) return;
     if (blocklist.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
-      emitAnalytics("blocked", { query: text.slice(0, 200) });
+      emitAnalytics("off_topic", { query_preview: text.slice(0, 100), guardrail_layer: "blocklist" });
       addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana.");
       return;
     }
