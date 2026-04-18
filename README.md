@@ -29,7 +29,7 @@ Interroga direttamente l'endpoint SPARQL configurato tramite `SPARQL_ENDPOINT` (
 
 Per ogni dataset trovato è possibile espandere le distribuzioni CSV, recuperate tramite una seconda query SPARQL usando la proprietà `dcat:downloadURL`.
 
-La **Ricerca avanzata** permette di filtrare per tema DCAT, formato, licenza, dataset HVD e publisher.
+La **Ricerca avanzata** permette di filtrare per tema DCAT, formato, licenza, dataset HVD e Titolare.
 
 ### ✅ Valida CSV
 Valida un file CSV secondo le **linee guida AgID** per la qualità dei dati aperti della PA italiana. Controlla struttura, contenuto, conformità open data e linked data.
