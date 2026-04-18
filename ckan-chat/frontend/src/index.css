@@ -851,11 +851,8 @@ body {
   font-size: 11px; font-weight: 700; padding: 1px 5px;
   border-radius: 3px; flex-shrink: 0;
 }
-.sidebar-plain-link:nth-child(2) .plain-tag,
-.sidebar-plain-link:nth-child(3) .plain-tag { background: #e8f0fe; color: #004D99; }
-.sidebar-plain-link:nth-child(4) .plain-tag,
-.sidebar-plain-link:nth-child(5) .plain-tag,
-.sidebar-plain-link:nth-child(6) .plain-tag { background: #e8f5ee; color: #006b38; }
+.plain-tag-agid   { background: #e8f0fe; color: #004D99; }
+.plain-tag-ondata { background: #e8f5ee; color: #006b38; }
 
 /* ── Ricerca avanzata ───────────────────────────────────────────────────── */
 .adv-container { border-top: 1px solid var(--border, #ddd); background: #fff; }
