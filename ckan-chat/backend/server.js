@@ -640,7 +640,9 @@ function preFilterIntent(text) {
     // Pattern "ho dei/un/il dati/file/csv da..." → l'utente possiede già i dati
     "ho dei dati","ho un csv","ho un file","ho il csv","ho il file",
     "ho dei csv","miei dati","mio csv","mio file","da controllare","da verificare",
-    "da validare","da analizzare","da controllare"];
+    "da validare","da analizzare","da controllare",
+    "verifica i dati","verifica il file","controlla i dati","controlla il file",
+    "qualità dei dati","qualità del csv","qualità del file"];
   if (validateKw.some(k => t.includes(k))) return "VALIDATE";
 
   // ENRICH — univoco, intercetta con certezza
