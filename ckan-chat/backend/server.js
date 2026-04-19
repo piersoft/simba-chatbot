@@ -617,7 +617,8 @@ SEARCH: cerca dataset (es: defibrillatori, rifiuti Roma, bilancio comunale, CIG 
 VALIDATE: valida o controlla un CSV (es: ho dei dati, controlla questo file, ho un CSV)
 ENRICH: converti in RDF o TTL o linked data (es: converti in RDF, trasforma in TTL)
 OFF_TOPIC: tutto il resto (es: come stai, pizza, attacco hacker, ricette, saluti)
-Argomenti open data PA italiana (sempre SEARCH): bilancio, popolazione, anagrafe, elezioni, ambiente, statistica, economia, personale, demografia, cartografia, territorio, geologia, residenti, entrate, turismo, trasparenza, edifici, stranieri, scuola, urbanistica, spesa, suolo, trasporti, mobilita, pianificazione, agricoltura, imprese, sanita, lavoro, amministrazione, protocollo, municipio, rendiconto, consigliere, provvedimenti, istruzione, educazione, cultura, sport, sociale, rifiuti, acqua, energia, sicurezza, appalti, gare, contratti, permessi, licenze, delibere, determine, ordinanze.
+Argomenti open data PA italiana (→ SEARCH): bilancio, popolazione, anagrafe, elezioni, ambiente, statistica, economia, personale, demografia, cartografia, territorio, geologia, residenti, entrate, turismo, trasparenza, edifici, stranieri, scuola, urbanistica, spesa, suolo, trasporti, mobilita, pianificazione, agricoltura, imprese, sanita, lavoro, amministrazione, protocollo, municipio, rendiconto, consigliere, provvedimenti, istruzione, educazione, cultura, sport, sociale, rifiuti, acqua, energia, sicurezza, appalti, gare, contratti, permessi, licenze, delibere, determine, ordinanze.
+OFF_TOPIC se la frase riguarda: cibo, ricette, cucina (torta, pizza, pasta, ricetta), saluti, sport non PA, meteo personale, intrattenimento, domande generali non sui dati.
 Rispondi SOLO con: SEARCH, VALIDATE, ENRICH o OFF_TOPIC`;
 
 // Pre-filtro deterministico — logica whitelist
