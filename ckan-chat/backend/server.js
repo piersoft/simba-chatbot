@@ -847,7 +847,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     });
   }
 
-  console.log(`[validate] url raw: ${JSON.stringify(url)} len=${url.length}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
+  console.log(`[validate] ${url}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
   const { dataset_title: reqTitle } = req.body;
   const t0val = Date.now();
   try {
@@ -880,6 +880,12 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     console.log(`[validate] routeMap keys: ${Object.keys(toolsRouteMap).join(", ")}`);
     // Se il download diretto ha fallito, prova con csv_validate_url (scarica il validatore-mcp)
     // Se anche quello non è disponibile, errore chiaro
+    // Controllo CSV vuoto
+    if (csv_text !== null && csv_text.trim().length === 0) {
+      return res.status(422).json({
+        error: `Il file CSV scaricato è vuoto (0 bytes). Il dataset potrebbe non essere ancora pubblicato o l'URL non è valido. Verifica sul portale open data.`
+      });
+    }
     let result;
     if (csv_text) {
       result = await callTool("csv_validate", { csv_text, summary_only: false });
