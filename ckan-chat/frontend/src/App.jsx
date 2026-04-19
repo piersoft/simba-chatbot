@@ -645,6 +645,9 @@ SELECT ?ipaCode WHERE {
       }
 
       // SEARCH — estrae la query e chiama SPARQL
+      // query = versione pulita per SPARQL (senza verbi e stopword)
+      // displayQuery = testo originale per mostrarlo all'utente
+      const displayQuery = text;
       const query = text
         .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
         .replace(/\b(dataset|open data)\b/gi, "")
