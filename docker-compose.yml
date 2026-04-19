@@ -1,0 +1,90 @@
+services:
+  # ── Ollama locale (solo se usi --profile ollama-local) ──────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    profiles:
+      - ollama-local
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: 24h
+      OLLAMA_NUM_PARALLEL: 1
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+
+  # ── Ollama model puller (solo con profile ollama-local) ─────────────────────
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: ollama-pull
+    profiles:
+      - ollama-local
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:1.5b} && echo 'Modello pronto'"]
+    restart: "no"
+
+  # ── CKAN MCP Server ─────────────────────────────────────────────────────────
+  ckan-mcp-server:
+    build:
+      context: ./ckan-mcp-server
+      dockerfile: Dockerfile
+    image: ckan-mcp-server:latest
+    container_name: ckan-mcp-server
+    restart: unless-stopped
+    ports:
+      - "${MCP_PORT:-3000}:3000"
+    environment:
+      TRANSPORT: http
+      PORT: 3000
+
+  # ── Backend Node.js ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./ckan-chat/backend
+      dockerfile: Dockerfile
+    container_name: ckan-chat-backend
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      PORT: 3001
+      SERVER_IP: ${SERVER_IP:-localhost}
+      MCP_URL: http://ckan-mcp-server:3000/mcp
+      LLM_PROVIDER: ${LLM_PROVIDER:-mistral}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+    depends_on:
+      - ckan-mcp-server
+
+  # ── Frontend React ──────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./ckan-chat/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: http://31.14.139.9
+        #VITE_BACKEND_URL: http://${SERVER_IP:-localhost}:${BACKEND_PORT:-3001}
+        VITE_BASE_PATH: /chatbot/
+    container_name: ckan-chat-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+volumes:
+  ollama_data:

@@ -69,7 +69,7 @@ Per la conversione è **obbligatorio** specificare il **codice IPA** e il **nome
 ### 1. Clona la repo
 
 ```bash
-git clone https://github.com/piersoft/ckan-mcp-server-docker-ollama.git
+git clone https://github.com/piersoft/simba-chatbot.git
 cd ckan-mcp-server-docker-ollama
 ```
 

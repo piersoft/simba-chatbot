@@ -1,7 +1,7 @@
 /**
  * SIMBA — Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico
  * Realizzato da @piersoft (https://github.com/piersoft) per AgID
- * Repo: https://github.com/piersoft/ckan-mcp-server-docker-ollama
+ * Repo: https://github.com/piersoft/simba-chatbot
  * Licenza: MIT
  */
 import { useState, useRef, useEffect } from "react";
@@ -1031,7 +1031,7 @@ SELECT ?ipaCode WHERE {
         <StatusBar health={health} onRefresh={fetchHealth} compact />
 
         <div className="sidebar-github">
-          <a href="https://github.com/piersoft/ckan-mcp-server-docker-ollama"
+          <a href="https://github.com/piersoft/simba-chatbot"
              target="_blank" rel="noopener noreferrer"
              aria-label="Codice sorgente su GitHub">
             <i className="bi bi-github" /> GitHub
