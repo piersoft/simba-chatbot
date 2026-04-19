@@ -130,8 +130,15 @@ export default function App() {
   function startTour() { setTourActive(true); setTourStep(0); setShowHelp(false); }
   function nextTourStep() {
     const next = tourStep + 1;
-    if (next >= 4 && next <= 6) setSidebarOpen(true); // apri sidebar per step sidebar
-    if (next < TOUR_STEPS.length) setTourStep(next); else endTour();
+    if (next >= 4 && next <= 6) {
+      setSidebarOpen(true);
+      // Aspetta che la sidebar finisca l'animazione prima di mostrare l'highlight
+      setTimeout(() => {
+        if (next < TOUR_STEPS.length) setTourStep(next); else endTour();
+      }, 350);
+    } else {
+      if (next < TOUR_STEPS.length) setTourStep(next); else endTour();
+    }
   }
   function endTour() { setTourActive(false); setTourStep(-1); }
   function skipTourForever() { localStorage.setItem("simba_tour_done", "1"); endTour(); }
