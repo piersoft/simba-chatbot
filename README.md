@@ -27,6 +27,12 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
 ### 🔍 Cerca Dataset
 Interroga direttamente l'endpoint SPARQL configurato tramite `SPARQL_ENDPOINT` (default: `https://lod.dati.gov.it/sparql`) dal browser, senza passare per il backend. La query SPARQL cerca per parole chiave in titolo, descrizione e keyword dei dataset DCAT-AP IT.
 
+Il wizard ha due campi separati:
+- **COSA**: l'argomento da cercare (es. «statistiche demografiche», «rifiuti», «defibrillatori»)
+- **DOVE** (opzionale): la regione, il comune o l'ente titolare (es. «Puglia», «Comune di Milano»)
+
+Usare i due campi separati garantisce risultati più precisi rispetto a scrivere tutto in un'unica frase. È possibile anche incollare il titolo esatto di un dataset nel campo COSA.
+
 Per ogni dataset trovato è possibile espandere le distribuzioni CSV, recuperate tramite una seconda query SPARQL usando la proprietà `dcat:downloadURL`.
 
 La **Ricerca avanzata** permette di filtrare per tema DCAT, formato, licenza, dataset HVD e Titolare.
