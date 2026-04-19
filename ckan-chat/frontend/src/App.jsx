@@ -251,10 +251,42 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
       } catch {}
     }
 
-    // Prima prova AND, se non trova nulla riprova con OR (come l'assistente)
+    // Prima prova AND, se non trova nulla riprova con OR ma mantieni termini geografici in AND
+    const geoTerms = new Set(["puglia","sicilia","lombardia","campania","lazio","veneto","toscana","emilia","romagna","piemonte","calabria","sardegna","liguria","marche","abruzzo","friuli","trentino","umbria","basilicata","molise","valle","aosta","bolzano","trento","roma","milano","napoli","torino","palermo","genova","bologna","firenze","bari","catania","venezia","verona","messina","padova","trieste","brescia","taranto","prato","reggio","modena","parma","perugia","ravenna","livorno","cagliari","foggia","rimini","salerno","ferrara","sassari","latina","giugliano","bergamo","siracusa","pescara","monza","lecce","novara","ancona","udine","arezzo","cesena","andria","vicenza","terni","forlì","trento","piacenza","como","brindisi","massa","grosseto","ragusa","catanzaro","crotone","cosenza","vibo","reggio_calabria","matera","potenza","campobasso","isernia","aosta","nuoro","oristano","agrigento","caltanissetta","enna","siracusa","trapani"]);
+    const hasGeoTerm = useWords.some(w => geoTerms.has(w.toLowerCase()));
     let bindings = await runQuery(useWords, false, offset);
     if (bindings.length === 0 && useWords.length > 1) {
-      bindings = await runQuery(useWords, true, offset);
+      if (hasGeoTerm) {
+        // Con termini geografici: OR solo sulle parole non geografiche, geo rimane in AND
+        const geoWords = useWords.filter(w => geoTerms.has(w.toLowerCase()));
+        const nonGeoWords = useWords.filter(w => !geoTerms.has(w.toLowerCase()));
+        if (nonGeoWords.length > 0) {
+          // Costruisci query mista: geo in AND, resto in OR
+          const mixedQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:title ?title .
+  FILTER(LANG(?title)='it'||LANG(?title)='')
+  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+  FILTER(
+    ${geoWords.map((w,i) => `(CONTAINS(LCASE(?title),"${w.toLowerCase()}")||CONTAINS(LCASE(STR(?description)),"${w.toLowerCase()}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?gkw${i} . FILTER(CONTAINS(LCASE(STR(?gkw${i})),"${w.toLowerCase()}")) })`).join(" && ")}
+    && (${nonGeoWords.map((w,i) => `CONTAINS(LCASE(?title),"${w.toLowerCase()}")||CONTAINS(LCASE(STR(?description)),"${w.toLowerCase()}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?nkw${i} . FILTER(CONTAINS(LCASE(STR(?nkw${i})),"${w.toLowerCase()}")) }`).join(" || ")})
+  )
+} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+          try {
+            const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(mixedQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+            const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+            if (rd.ok) bindings = (await rd.json()).results?.bindings ?? [];
+          } catch {}
+        }
+      } else {
+        bindings = await runQuery(useWords, true, offset);
+      }
     }
 
     // Deduplicazione e costruzione risultati
