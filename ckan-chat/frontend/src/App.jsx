@@ -938,7 +938,7 @@ SELECT ?ipaCode WHERE {
             <p dangerouslySetInnerHTML={{ __html: mdToHtml(m.content) }} />
             <div className="dataset-list">
               {m.datasets.map((d, j) => (
-                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} searchTerms={m.query ? m.query.replace(/['‘’`]/g," ").split(/\s+/).filter(w=>w.length>2) : []} />
+                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} searchTerms={(m.query || "").replace(/['‘’`]/g," ").split(/\s+/).filter(w=>w.length>2)} />
               ))}
             </div>
             <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)} disabled={loadingMore} aria-label="Carica altri dataset">

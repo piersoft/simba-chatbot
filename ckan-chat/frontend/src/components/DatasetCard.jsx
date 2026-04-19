@@ -144,11 +144,13 @@ export default function DatasetCard({ dataset, onValidate, onEnrich, searchTerms
 
       {dataset.keywords && dataset.keywords.length > 0 && (
         <div className="dataset-keywords">
-          {dataset.keywords.map((k,i) => (
-            <span key={i} className={`dataset-kw-tag${searchTerms.some(t => k.toLowerCase().includes(t.toLowerCase())) ? " dataset-kw-match" : ""}`}>
-              {k}
-            </span>
-          ))}
+          {dataset.keywords.map((k,i) => {
+            const kLower = k.toLowerCase().replace(/-/g," ");
+            const isMatch = searchTerms.some(t => kLower.includes(t.toLowerCase()) || t.toLowerCase().includes(kLower));
+            return (
+              <span key={i} className={`dataset-kw-tag${isMatch ? " dataset-kw-match" : ""}`}>{k}</span>
+            );
+          })}
         </div>
       )}
       {expanded && (

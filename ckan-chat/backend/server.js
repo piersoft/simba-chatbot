@@ -771,6 +771,12 @@ async function classifyIntent(userMessage) {
       const data = await res.json();
       const raw = data.message?.content ?? "SEARCH";
       const parsed = parseIntent(stripThinkTags(raw));
+      // Se SPARQL ASK ha trovato dataset E Ollama dice OFF_TOPIC MA la query è una sola parola
+      // significativa → il catalogo è più affidabile del modello per termini singoli PA
+      if (parsed === "OFF_TOPIC" && words.length === 1) {
+        console.log(`[intent] Ollama dice OFF_TOPIC su parola singola "${words[0]}" ma SPARQL ASK ha trovato dataset → SEARCH`);
+        return { intent: "SEARCH", aiUsed: true };
+      }
       return { intent: parsed, aiUsed: true };
     }
   } catch (e) {
