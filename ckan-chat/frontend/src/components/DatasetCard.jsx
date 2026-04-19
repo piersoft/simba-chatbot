@@ -70,8 +70,9 @@ function highlight(text, terms) {
   const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const re = new RegExp(`(${escaped.join("|")})`, "gi");
   const parts = text.split(re);
+  const reTest = new RegExp(`^(${escaped.join("|")})$`, "i");
   return parts.map((part, i) =>
-    re.test(part) ? <mark key={i} style={{background:"#fff176",borderRadius:2,padding:"0 1px"}}>{part}</mark> : part
+    reTest.test(part) ? <mark key={i} style={{background:"#fff176",borderRadius:2,padding:"0 1px"}}>{part}</mark> : part
   );
 }
 
