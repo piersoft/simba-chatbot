@@ -661,6 +661,8 @@ async function sparqlAsk(text) {
     "fatto","fare","dire","sapere","avere","stare","andare","venire",
     // Verbi colloquiali di richiesta
     "fammi","fammi","mostra","mostrami","dimmi","elenca","cerca","trova",
+    "hai","sull","sulla","sullo","sugli","sulle","avete","avete",
+    "sapete","sapete","conoscete","conoscete","ditemi","ditemi",
     "voglio","vorrei","puoi","potrei","vedere","sapere","avere","prendere",
     "dammi","datemi","serve","servono","vorrei","avere","trovare"]);
   
@@ -675,6 +677,17 @@ async function sparqlAsk(text) {
     });
 
   if (words.length === 0) return false;
+
+  // Se rimane una sola parola significativa E la frase originale ha struttura interrogativa
+  // colloquiale (es. "hai sull'educazione?") → troppo ambiguo, lascia a Ollama
+  // ma segnaliamo come probabile OFF_TOPIC non passando il SPARQL ASK
+  if (words.length === 1) {
+    const colloquialStart = /^(hai|avete|sai|sapete|conosci|c'è|ce|ci sono|esiste|esistono|dimmi|ditemi|raccontami|spiegami)/i;
+    if (colloquialStart.test(text.trim())) {
+      console.log(`[sparqlAsk] frase colloquiale con 1 parola → OFF_TOPIC diretto`);
+      return false;
+    }
+  }
 
   // Usa le prime 2 parole significative per la ASK query
   const keyword = words.slice(0, 2).join(" ");
