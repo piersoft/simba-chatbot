@@ -692,19 +692,24 @@ async function sparqlAsk(text) {
   // Questo riduce drasticamente i falsi positivi
   const mainWord = words.find(w => w.length > 4) || words[0];
   const secondWord = words.filter(w => w !== mainWord).find(w => w.length > 3);
+  // Ogni parola viene cercata in titolo OR descrizione OR keyword (AND tra parole)
+  const wordFilter = (w) => {
+    const wl = w.replace(/"/g, '');
+    return `(CONTAINS(LCASE(STR(?t)),"${wl}")||CONTAINS(LCASE(STR(?desc)),"${wl}")||CONTAINS(LCASE(STR(?kw)),"${wl}"))`;
+  };
   let filterClause;
   if (secondWord) {
-    // AND: entrambe le parole devono essere nel titolo
-    filterClause = `CONTAINS(LCASE(STR(?t)), "${mainWord.replace(/"/g, '')}") && CONTAINS(LCASE(STR(?t)), "${secondWord.replace(/"/g, '')}")`;
+    filterClause = `${wordFilter(mainWord)} && ${wordFilter(secondWord)}`;
   } else {
-    // Una sola parola: basta che sia nel titolo
-    filterClause = `CONTAINS(LCASE(STR(?t)), "${mainWord.replace(/"/g, '')}")`;
+    filterClause = wordFilter(mainWord);
   }
   const query = `PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
 ASK {
   ?d a dcat:Dataset .
   ?d dct:title ?t .
+  OPTIONAL { ?d dct:description ?desc }
+  OPTIONAL { ?d dcat:keyword ?kw }
   FILTER(${filterClause})
 }`;
 
