@@ -1199,7 +1199,13 @@ SELECT ?ipaCode WHERE {
               }} />
             )}
             <div className="tour-bubble" style={(() => {
+              const isMobile = window.innerWidth < 600;
               if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%,-50%)" };
+              // Su mobile: bubble sempre centrata in basso (fixed bottom)
+              if (isMobile) return {
+                bottom: 16, left: "50%", transform: "translateX(-50%)",
+                width: "calc(100vw - 32px)", maxWidth: 360,
+              };
               const pos = step.pos || "below";
               if (pos === "above") return {
                 bottom: window.innerHeight - rect.top + 16,
@@ -1209,7 +1215,6 @@ SELECT ?ipaCode WHERE {
                 top: Math.max(rect.top, 12),
                 left: rect.right + 16,
               };
-              // below (default)
               return {
                 top: rect.bottom + 16,
                 left: Math.min(Math.max(rect.left, 12), window.innerWidth - 320),

@@ -1380,20 +1380,21 @@ body {
 /* ── Tour guidato ──────────────────────────────────────────────────────────── */
 .tour-overlay {
   position: fixed; inset: 0; z-index: 9000;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.45);
   backdrop-filter: blur(1px);
 }
 .tour-highlight {
   position: fixed; z-index: 9001;
   border: 3px solid #0066cc;
   border-radius: 8px;
-  box-shadow: 0 0 0 4000px rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
   pointer-events: none;
   animation: tour-pulse 1.5s ease-in-out infinite;
+  min-width: 60px; min-height: 32px;
 }
 @keyframes tour-pulse {
-  0%,100% { border-color: #0066cc; }
-  50% { border-color: #4da3ff; }
+  0%,100% { border-color: #0066cc; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45); }
+  50% { border-color: #4da3ff; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45), 0 0 12px 4px rgba(77,163,255,0.5); }
 }
 .tour-bubble {
   position: fixed; z-index: 9002;
