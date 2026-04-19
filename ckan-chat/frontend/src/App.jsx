@@ -75,12 +75,12 @@ const TOUR_STEPS = [
   {
     title: "Valida CSV",
     text: "Clicca qui per verificare la qualità di un file CSV secondo gli standard PA italiani (RFC 4180, ISO 25012, linee guida AGID). Punteggio da 0 a 100.",
-    target: "tool-validate",
+    target: "tour-validate",
   },
   {
     title: "Converti in RDF",
     text: "Trasforma un CSV in RDF Linked Data conforme alle ontologie ufficiali dati-semantic-assets. Richiede il Codice IPA dell'ente.",
-    target: "tool-enrich",
+    target: "tour-enrich",
   },
   {
     title: "Strumenti nella sidebar",
@@ -123,7 +123,11 @@ export default function App() {
   }, []);
 
   function startTour() { setTourActive(true); setTourStep(0); setShowHelp(false); }
-  function nextTourStep() { if (tourStep < TOUR_STEPS.length - 1) setTourStep(s => s + 1); else endTour(); }
+  function nextTourStep() {
+    const next = tourStep + 1;
+    if (next >= 3 && next <= 5) setSidebarOpen(true); // apri sidebar per step sidebar
+    if (next < TOUR_STEPS.length) setTourStep(next); else endTour();
+  }
   function endTour() { setTourActive(false); setTourStep(-1); }
   function skipTourForever() { localStorage.setItem("simba_tour_done", "1"); endTour(); }
 
@@ -951,10 +955,10 @@ SELECT ?ipaCode WHERE {
           <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
             Cerca dataset
           </button>
-          <button className="tool-card tool-validate" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
+          <button id="tour-validate" className="tool-card tool-validate" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
             Valida CSV
           </button>
-          <button className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
+          <button id="tour-enrich" className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
             Trasforma in RDF TTL/XML
           </button>
         </div>
