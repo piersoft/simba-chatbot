@@ -648,6 +648,7 @@ SELECT ?ipaCode WHERE {
       // query = versione pulita per SPARQL (senza verbi e stopword)
       // displayQuery = testo originale per mostrarlo all'utente
       const displayQuery = text;
+      console.log('[sendMessage] text=', JSON.stringify(text), 'displayQuery=', JSON.stringify(displayQuery));
       const query = text
         .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
         .replace(/\b(dataset|open data)\b/gi, "")
