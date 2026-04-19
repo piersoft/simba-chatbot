@@ -677,18 +677,8 @@ async function sparqlAsk(text) {
     });
 
   if (words.length === 0) return false;
-  console.log(`[sparqlAsk] parole estratte: ${JSON.stringify(words)}`);
-
-  // Se rimane una sola parola significativa E la frase originale ha struttura interrogativa
-  // colloquiale (es. "hai sull'educazione?") → troppo ambiguo, lascia a Ollama
-  // ma segnaliamo come probabile OFF_TOPIC non passando il SPARQL ASK
-  if (words.length === 1) {
-    const colloquialStart = /^(hai|avete|sai|sapete|conosci|c'è|ce|ci sono|esiste|esistono|dimmi|ditemi|raccontami|spiegami)/i;
-    if (colloquialStart.test(text.trim())) {
-      console.log(`[sparqlAsk] frase colloquiale con 1 parola → OFF_TOPIC diretto`);
-      return false;
-    }
-  }
+  // Rimosso: il blocco "frase colloquiale" era troppo aggressivo
+  // "hai dataset sull'educazione?" → "educazione" → SPARQL ASK decide correttamente
 
   // Usa le prime 2 parole significative per la ASK query
   const keyword = words.slice(0, 2).join(" ");
