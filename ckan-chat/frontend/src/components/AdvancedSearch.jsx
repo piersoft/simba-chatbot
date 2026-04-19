@@ -363,7 +363,7 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
           </div>
 
           <div className="adv-actions">
-            <button className="adv-btn-primary" onClick={doSearch}>🔍 Cerca</button>
+            <button className="adv-btn-primary" onClick={() => doSearch(0)}>🔍 Cerca</button>
             <button className="adv-btn-secondary" onClick={reset}>✕ Reset</button>
           </div>
         </div>
