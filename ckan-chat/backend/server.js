@@ -861,7 +861,11 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       });
       if (csvResp.ok) {
         csv_text = await csvResp.text();
-        if (csv_text.trimStart().startsWith("<")) csv_text = null; // è HTML
+        console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/\n/g,' ')}`);
+        if (csv_text.trimStart().startsWith("<")) { console.warn(`[validate] risposta HTML, scarto`); csv_text = null; }
+        if (csv_text && csv_text.length < 10) { console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`); csv_text = null; }
+      } else {
+        console.warn(`[validate] download fallito: HTTP ${csvResp.status}`);
       }
     } catch (e) {
       console.warn(`[validate] download diretto fallito: ${e.message}`);
