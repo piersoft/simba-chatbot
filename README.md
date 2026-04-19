@@ -166,16 +166,20 @@ nginx -t && systemctl restart nginx
 
 Il chatbot sarà disponibile su `http://YOUR_SERVER_IP/chatbot`.
 
-Per proteggere la dashboard analytics con login HTTP Basic:
+Per proteggere la dashboard analytics e il pannello admin con login HTTP Basic:
 
 ```bash
 apt install -y apache2-utils
+# Password per analytics
+htpasswd -c /etc/nginx/.htpasswd-analytics admin
+# Password per pannello admin blocklist
 htpasswd -c /etc/nginx/.htpasswd admin
-# inserisci la password quando richiesto
+# inserisci la password quando richiesto per ciascuno
 nginx -t && systemctl reload nginx
 ```
 
 La dashboard analytics sarà disponibile su `http://YOUR_SERVER_IP/chatbot/analytics`.
+Il pannello admin blocklist sarà disponibile su `http://YOUR_SERVER_IP/chatbot/admin`.
 
 ---
 
@@ -249,6 +253,7 @@ Il sistema include un servizio di analytics (`analytics-service :3004`) che racc
 | `validate` | Nome dataset/file, esito validazione, numero errori |
 | `ttl_create` | Nome dataset, formato (ttl/rdf), numero triple |
 | `off_topic` | Prime 100 caratteri del messaggio bloccato |
+| `blocked` | Termine bloccato dalla blocklist, IP anonimizzato |
 | `error` | Tipo errore, endpoint coinvolto |
 
 ### Privacy e GDPR
@@ -294,8 +299,8 @@ Il backend applica i seguenti controlli su tutti gli endpoint:
 
 - **Rate limiting globale**: max 60 richieste/minuto per IP su `/api/`
 - **Rate limiting strict**: max 20 richieste/minuto su validate, enrich, intent
-- **Blocco SSRF**: gli endpoint che accettano URL esterni rifiutano indirizzi IP privati, localhost e link non HTTPS
-- **Limite payload**: body JSON max 2 MB, CSV max 2 MB
+- **Blocco SSRF**: gli endpoint che accettano URL esterni rifiutano indirizzi IP privati, localhost e protocolli non HTTP/HTTPS; l'IP risolto via DNS viene verificato post-redirect per bloccare attacchi SSRF
+- **Limite payload**: body JSON max 10 MB, CSV max 10 MB
 - **Validazione input**: lunghezza massima messaggi (500 caratteri), codice IPA solo alfanumerico
 - **Header di sicurezza**: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`
 
@@ -312,6 +317,10 @@ Il backend applica i seguenti controlli su tutti gli endpoint:
 **Ollama lento** → Normale su CPU senza GPU (5-15s). Considera un modello più piccolo o hardware con GPU.
 
 **Orphan containers** → `docker compose -f docker-compose-full.yml up -d --remove-orphans`
+
+**Blocklist non persistente** → Verifica che il volume `blocklist_data` sia montato: `docker exec ckan-chat-backend ls /app/data/`. Se la directory è vuota, forza il rebuild del backend.
+
+**Parola aggiunta in /admin non applicata** → Gli utenti già connessi devono ricaricare la pagina (F5) — la blocklist viene caricata dal frontend all'avvio della sessione browser.
 
 ---
 
