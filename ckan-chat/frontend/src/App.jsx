@@ -950,7 +950,7 @@ SELECT ?ipaCode WHERE {
         </div>
 
         {/* Strumenti integrati — card colorate */}
-        <div id="sidebar-tools" className="sidebar-section">
+        <div className="sidebar-section">
           <div className="section-label">Strumenti integrati</div>
           <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
             Cerca dataset
@@ -964,7 +964,7 @@ SELECT ?ipaCode WHERE {
         </div>
 
         {/* Link strumenti — testo semplice */}
-        <div className="sidebar-section">
+        <div id="sidebar-tools" className="sidebar-section">
           <div className="section-label">Strumenti consigliati</div>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/" target="_blank" rel="noopener noreferrer">
             CSV to RDF <span className="plain-tag plain-tag-agid">AgID</span>
