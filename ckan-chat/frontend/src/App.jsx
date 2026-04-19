@@ -422,13 +422,19 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
       const id = uri.split("/").pop();
       const landingPage = b.landingPage?.value;
       const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
+      const modRaw = b.modified?.value?.slice(0,10) ?? "";
+      const modYear = modRaw ? parseInt(modRaw.slice(0,4)) : 0;
+      const modInvalid = modYear > new Date().getFullYear()+1 || (modYear < 1990 && modYear > 0);
       seen.set(uri, {
         uri, id,
         title:       b.title?.value ?? "",
         description: b.description?.value ?? "",
-        modified:    b.modified?.value?.slice(0,10) ?? "",
+        modified:    modInvalid ? "" : modRaw,
+        modifiedRaw: modRaw,
+        modInvalid,
         publisher:   b.rhName?.value || (dove || ""),
         ipaCode:     "",
+        keywords:    b.keywords?.value ? b.keywords.value.split(",").map(k=>k.trim()).filter(k=>k && k!=="N_A" && k.length > 2).slice(0,8) : [],
         viewUrl,
         csvResources: [],
       });
@@ -931,7 +937,7 @@ SELECT ?ipaCode WHERE {
             <p dangerouslySetInnerHTML={{ __html: mdToHtml(m.content) }} />
             <div className="dataset-list">
               {m.datasets.map((d, j) => (
-                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} />
+                <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} searchTerms={m.query ? m.query.replace(/['‘’`]/g," ").split(/\s+/).filter(w=>w.length>2) : []} />
               ))}
             </div>
             <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)} disabled={loadingMore} aria-label="Carica altri dataset">
