@@ -1103,14 +1103,12 @@ SELECT ?ipaCode WHERE {
             </button>
 
             <h4><Icon name="search" size={14} /> Cerca dataset</h4>
-            <p>Scrivi l'argomento che ti interessa — con o senza verbi. Puoi usare anche il titolo esatto di un dataset. Esempi:</p>
+            <p>Usa i due campi separati per risultati più precisi:</p>
             <ul>
-              <li><em>«defibrillatori»</em></li>
-              <li><em>«rifiuti Milano»</em></li>
-              <li><em>«statistiche demografiche Puglia»</em></li>
-              <li><em>«cerca dati sulla qualità dell'aria»</em></li>
-              <li><em>«Mappa armadi Banda Ultra Larga Lepida»</em></li>
+              <li><strong>COSA</strong>: l'argomento che ti interessa — es. <em>«statistiche demografiche»</em>, <em>«rifiuti»</em>, <em>«defibrillatori»</em></li>
+              <li><strong>DOVE</strong> (opzionale): la regione, il comune o l'ente — es. <em>«Puglia»</em>, <em>«Comune di Milano»</em></li>
             </ul>
+            <p>Puoi anche incollare direttamente il titolo esatto di un dataset nel campo COSA.</p>
             <p className="help-warn"><Icon name="exclamation-triangle" size={12} /> Il sistema risponde solo a domande sugli open data PA italiani. Saluti, domande generiche e argomenti non pertinenti vengono ignorati.</p>
 
             <h4><Icon name="check2-circle" size={14} /> Valida CSV</h4>
