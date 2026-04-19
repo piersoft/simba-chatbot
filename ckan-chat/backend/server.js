@@ -269,8 +269,7 @@ async function callTool(name, args) {
     console.log(`[callTool] ${name} risposta ricevuta, error=${JSON.stringify(res.error)}`);
     if (res.error) throw new Error(`MCP error ${res.error.code}: ${res.error.message}`);
     const content = res.result?.content ?? [];
-    const text = content.map((c) => c.text ?? JSON.stringify(c)).join("
-");
+    const text = content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
     console.log(`[callTool] ${name} ok, ${text.length} chars`);
     return text;
   } catch (e) {
@@ -448,8 +447,7 @@ async function isQuestionOnTopic(userMessage) {
       const hasNo  = /NO/.test(stripped);
       const hasSi  = /SI/.test(stripped) || stripped.includes("YES");
       const answer = stripped.slice(0, 10); // per il log
-      console.log(`[guardrail] raw="${raw.slice(0,60).replace(/
-/g," ")}" → stripped="${answer}"`);
+      console.log(`[guardrail] raw="${raw.slice(0,60).replace(/\n/g," ")}" → stripped="${answer}"`);
       if (!stripped) return true; // fallback permissivo se vuoto
       if (hasNo && !hasSi) return false;
       return true;
@@ -547,8 +545,7 @@ async function chatWithTools(messages, model) {
       if (finishReason === "stop" || finishReason === "end_turn" || !msg.tool_calls?.length) {
         const reply = typeof msg.content === "string"
           ? msg.content
-          : msg.content?.filter(b => b.type === "text").map(b => b.text).join("
-") ?? "";
+          : msg.content?.filter(b => b.type === "text").map(b => b.text).join("\n") ?? "";
         return { reply, toolCalls: toolCallsLog };
       }
       for (const tc of msg.tool_calls) {
@@ -879,8 +876,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       });
       if (csvResp.ok) {
         csv_text = await csvResp.text();
-        console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/
-/g,' ')}`);
+        console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/\n/g,' ')}`);
         if (csv_text.trimStart().startsWith("<")) { console.warn(`[validate] risposta HTML, scarto`); csv_text = null; }
         if (csv_text && csv_text.length < 10) { console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`); csv_text = null; }
       } else {
