@@ -68,11 +68,26 @@ async function sparqlFetch(query) {
 function val(b, k) { return b[k]?.value || ""; }
 
 function kwFilter(words) {
-  // Cerca in titolo OR keyword — esclude descrizione (fonte principale di falsi positivi)
+  // Cerca in titolo + descrizione + keyword (massima copertura)
   return words.map((w, i) => {
     const wl = sanitizeSparql(w.toLowerCase());
-    return `(CONTAINS(LCASE(?title),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+    return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
   }).join(" && ");
+}
+
+// Post-filter: mantieni solo dataset dove tutti i termini appaiono in titolo, desc o keyword
+function postFilterAdv(datasets, q) {
+  if (!q || !q.trim()) return datasets;
+  const words = q.trim().toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  if (words.length === 0) return datasets;
+  return datasets.filter(d => {
+    const haystack = [
+      (d.title || ""),
+      (d.description || ""),
+      ...((d.keywords || []))
+    ].join(" ").toLowerCase();
+    return words.every(w => haystack.includes(w));
+  });
 }
 
 function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
@@ -269,7 +284,9 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
           csvResources: [],
         });
       }
-      const datasets = [...seen.values()].slice(0, 8);
+      let datasets = [...seen.values()];
+      datasets = postFilterAdv(datasets, effectiveQ);
+      datasets = datasets.slice(0, 8);
       onResults(datasets, label);
     } catch(e) {
       onResults([], `Errore: ${e.message}`);
