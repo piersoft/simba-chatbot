@@ -115,7 +115,17 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
             <i className="bi bi-pin-map-fill" style={{fontSize:"11px"}}/> {dataset.publisher}
           </span>
         )}
-        {dataset.modified  && <span className="dataset-tag">{dataset.modified}</span>}
+        {dataset.catalogLabel && (
+          <span className="dataset-catalog-tag" title={dataset.catalogUri}>
+            <i className="bi bi-collection" style={{fontSize:"11px"}}/> {dataset.catalogLabel}
+          </span>
+        )}
+        {dataset.modified && <span className="dataset-tag">{dataset.modified}</span>}
+        {dataset.modInvalid && (
+          <span className="dataset-tag-warn" title={`Data anomala nel catalogo: ${dataset.modifiedRaw}`}>
+            ⚠️ data non affidabile
+          </span>
+        )}
       </div>
 
       {desc && <p className="dataset-card-desc">{desc}</p>}

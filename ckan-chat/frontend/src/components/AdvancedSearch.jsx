@@ -232,19 +232,27 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
         const id = uri.split("/").pop();
         const landingPage = val(b, "landingPage");
         const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
+        const modRaw = val(b, "modified").slice(0, 10);
+        // Rileva date anomale (anno > anno corrente + 1)
+        const modYear = modRaw ? parseInt(modRaw.slice(0,4)) : 0;
+        const modInvalid = modYear > new Date().getFullYear() + 1 || modYear < 1990;
         seen.set(uri, {
           uri, id,
-          title:       val(b, "title"),
-          description: val(b, "description"),
-          modified:    val(b, "modified").slice(0, 10),
+          title:        val(b, "title"),
+          description:  val(b, "description"),
+          modified:     modInvalid ? "" : modRaw,
+          modifiedRaw:  modRaw,
+          modInvalid,
           rightsHolder: val(b, "rhName") || (rh || ""),
           publisher:    val(b, "rhName") || (rh || ""),
           ipaCode:      (() => {
             const v = val(b, "ipaCode");
-            if (/^\d{11}$/.test(v)) return ""; // partita IVA, scarta
+            if (/^\d{11}$/.test(v)) return "";
             if (v.length > 30) return "";
             return v;
           })(),
+          catalogUri:   catalog || "",
+          catalogLabel: catalog ? catInput.split(" (")[0] : "",
           viewUrl,
           csvResources: [],
         });
