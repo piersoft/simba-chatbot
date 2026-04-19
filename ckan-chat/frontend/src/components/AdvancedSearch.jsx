@@ -188,7 +188,7 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
 
   return (
     <div className="adv-container">
-      <button className="adv-toggle-btn" onClick={() => setOpen(v => !v)}>
+      <button id="tour-advanced" className="adv-toggle-btn" onClick={() => setOpen(v => !v)}>
         ⚙️ Ricerca avanzata {open ? "▲" : "▼"}
       </button>
 

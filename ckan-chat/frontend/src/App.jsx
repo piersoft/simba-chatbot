@@ -73,6 +73,11 @@ const TOUR_STEPS = [
     target: "wizard-dove",
   },
   {
+    title: "Ricerca avanzata",
+    text: "Clicca qui per filtrare per tema DCAT, formato, licenza, dataset HVD e Titolare. Utile per ricerche mirate su categorie specifiche della PA italiana.",
+    target: "tour-advanced",
+  },
+  {
     title: "Valida CSV",
     text: "Clicca qui per verificare la qualità di un file CSV secondo gli standard PA italiani (RFC 4180, ISO 25012, linee guida AGID). Punteggio da 0 a 100.",
     target: "tour-validate",
@@ -125,7 +130,7 @@ export default function App() {
   function startTour() { setTourActive(true); setTourStep(0); setShowHelp(false); }
   function nextTourStep() {
     const next = tourStep + 1;
-    if (next >= 3 && next <= 5) setSidebarOpen(true); // apri sidebar per step sidebar
+    if (next >= 4 && next <= 6) setSidebarOpen(true); // apri sidebar per step sidebar
     if (next < TOUR_STEPS.length) setTourStep(next); else endTour();
   }
   function endTour() { setTourActive(false); setTourStep(-1); }
