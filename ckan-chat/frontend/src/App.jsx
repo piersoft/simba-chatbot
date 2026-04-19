@@ -60,22 +60,22 @@ const TOUR_STEPS = [
   {
     title: "Benvenuto in SIMBA 🦁",
     text: "Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico. Ti guido nelle funzionalità principali.",
-    target: null, // overlay centrato
+    target: null, pos: "center",
   },
   {
     title: "Campo COSA",
     text: "Scrivi qui l'argomento che cerchi: «defibrillatori», «rifiuti», «bilancio comunale». Puoi anche incollare il titolo esatto di un dataset.",
-    target: "wizard-cosa",
+    target: "wizard-cosa", pos: "above",
   },
   {
     title: "Campo DOVE (opzionale)",
     text: "Filtra per territorio: «Puglia», «Comune di Milano», «Regione Toscana». Inizia a digitare e scegli dall'autocompletamento.",
-    target: "wizard-dove",
+    target: "wizard-dove", pos: "above",
   },
   {
     title: "Ricerca avanzata",
     text: "Clicca qui per filtrare per tema DCAT, formato, licenza, dataset HVD e Titolare. Utile per ricerche mirate su categorie specifiche della PA italiana.",
-    target: "tour-advanced",
+    target: "tour-advanced", pos: "above",
   },
   {
     title: "Valida CSV",
@@ -1195,12 +1195,23 @@ SELECT ?ipaCode WHERE {
                 width: rect.width + 16, height: rect.height + 16,
               }} />
             )}
-            <div className="tour-bubble" style={rect ? {
-              top: rect.bottom + 16 < window.innerHeight - 160
-                ? rect.bottom + 16
-                : rect.top - 160,
-              left: Math.min(Math.max(rect.left, 12), window.innerWidth - 320),
-            } : { top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+            <div className="tour-bubble" style={(() => {
+              if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%,-50%)" };
+              const pos = step.pos || "below";
+              if (pos === "above") return {
+                bottom: window.innerHeight - rect.top + 16,
+                left: Math.min(Math.max(rect.left, 12), window.innerWidth - 320),
+              };
+              if (pos === "right") return {
+                top: Math.max(rect.top, 12),
+                left: rect.right + 16,
+              };
+              // below (default)
+              return {
+                top: rect.bottom + 16,
+                left: Math.min(Math.max(rect.left, 12), window.innerWidth - 320),
+              };
+            })()}>
               <div className="tour-step-counter">{tourStep + 1} / {TOUR_STEPS.length}</div>
               <h4 className="tour-title">{step.title}</h4>
               <p className="tour-text">{step.text}</p>
