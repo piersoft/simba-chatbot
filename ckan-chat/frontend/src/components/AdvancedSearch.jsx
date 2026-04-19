@@ -215,15 +215,16 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
 
   async function doSearch(offset = 0) {
     if (!q && !theme && !hvd && !rh && !format && !license && !catalog) return;
+    const effectiveQ = (q === "*" || q === "") ? "" : q; // * = tutti i dataset
     setOpen(false);
-    const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, rh, catalog && catInput.split(" (")[0]].filter(Boolean).join(" · ") || "Ricerca avanzata";
+    const label = [effectiveQ||"*", theme && THEMES.find(t=>t.code===theme)?.label, rh, catalog && catInput.split(" (")[0]].filter(Boolean).join(" · ") || "Ricerca avanzata";
     if (onLoadingMsg) onLoadingMsg(true, label);
     onLoading(true);
     try {
       const rows = await sparqlFetch(
         catalog
-          ? buildCatalogQuery(catalog, q, offset)
-          : buildAdvQuery(q, theme, hvd, rh, format, license, sort, offset)
+          ? buildCatalogQuery(catalog, effectiveQ, offset)
+          : buildAdvQuery(effectiveQ, theme, hvd, rh, format, license, sort, offset)
       );
       const seen = new Map();
       for (const b of rows) {
