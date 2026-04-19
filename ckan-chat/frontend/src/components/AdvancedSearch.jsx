@@ -214,8 +214,7 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
   }
 
   async function doSearch(offset = 0) {
-    if (!q && !theme && !hvd && !rh && !format && !license && !catalog) return;
-    const effectiveQ = (q === "*" || q === "") ? "" : q; // * = tutti i dataset
+    const effectiveQ = (q === "*") ? "" : q; // * equivale a nessun filtro keyword
     setOpen(false);
     const label = [effectiveQ||"*", theme && THEMES.find(t=>t.code===theme)?.label, rh, catalog && catInput.split(" (")[0]].filter(Boolean).join(" · ") || "Ricerca avanzata";
     if (onLoadingMsg) onLoadingMsg(true, label);
