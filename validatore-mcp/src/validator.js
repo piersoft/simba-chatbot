@@ -1,9 +1,3 @@
-/**
- * SIMBA — Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico
- * Realizzato da @piersoft (https://github.com/piersoft) per AgID
- * Repo: https://github.com/piersoft/ckan-mcp-server-docker-ollama
- * Licenza: MIT
- */
 // validator.js — logica estratta da validatore-csv-pa.html (v2026.04.14.08)
 // Portata in ES module Node.js: zero dipendenze esterne.
 
