@@ -677,6 +677,7 @@ async function sparqlAsk(text) {
     });
 
   if (words.length === 0) return false;
+  console.log(`[sparqlAsk] parole estratte: ${JSON.stringify(words)}`);
 
   // Se rimane una sola parola significativa E la frase originale ha struttura interrogativa
   // colloquiale (es. "hai sull'educazione?") → troppo ambiguo, lascia a Ollama
