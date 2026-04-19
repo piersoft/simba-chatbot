@@ -237,7 +237,7 @@ export default function App() {
       "volere","vorresti","vorrebbe","vuoi","vuole",
       "dovere","dovrei","dovresti","dovrebbe","devo","devi","deve"]);
 
-    const allWords = query.split(/\s+/).filter(w => w.length >= 2);
+    const allWords = query.replace(/[''`]/g, " ").split(/\s+/).filter(w => w.length >= 2);
     const sigWords = allWords.filter(w => !STOPWORDS.has(w.toLowerCase()));
 
     // Se non ci sono parole significative dopo le stopwords → nessun dataset possibile
@@ -354,7 +354,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
       const rt = await fetch(titleUrl, { headers: { Accept: "application/sparql-results+json" } });
       if (rt.ok) {
         const titleBindings = (await rt.json()).results?.bindings ?? [];
-        if (titleBindings.length >= 3) {
+        if (titleBindings.length >= 1) {
           // Abbastanza risultati solo dal titolo — usa quelli (più precisi)
           const seenT = new Map();
           for (const b of titleBindings) {
