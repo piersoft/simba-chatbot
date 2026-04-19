@@ -56,6 +56,39 @@ const BLOCKLIST = [
 
 const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
 
+const TOUR_STEPS = [
+  {
+    title: "Benvenuto in SIMBA 🦁",
+    text: "Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico. Ti guido nelle funzionalità principali.",
+    target: null, // overlay centrato
+  },
+  {
+    title: "Campo COSA",
+    text: "Scrivi qui l'argomento che cerchi: «defibrillatori», «rifiuti», «bilancio comunale». Puoi anche incollare il titolo esatto di un dataset.",
+    target: "wizard-cosa",
+  },
+  {
+    title: "Campo DOVE (opzionale)",
+    text: "Filtra per territorio: «Puglia», «Comune di Milano», «Regione Toscana». Inizia a digitare e scegli dall'autocompletamento.",
+    target: "wizard-dove",
+  },
+  {
+    title: "Valida CSV",
+    text: "Clicca qui per verificare la qualità di un file CSV secondo gli standard PA italiani (RFC 4180, ISO 25012, linee guida AGID). Punteggio da 0 a 100.",
+    target: "tool-validate",
+  },
+  {
+    title: "Converti in RDF",
+    text: "Trasforma un CSV in RDF Linked Data conforme alle ontologie ufficiali dati-semantic-assets. Richiede il Codice IPA dell'ente.",
+    target: "tool-enrich",
+  },
+  {
+    title: "Strumenti nella sidebar",
+    text: "Qui trovi i link ai tool AgID collegati: validatore CSV standalone, tool CSV-to-RDF, assistente ricerca e il tool di validazione massiva dei cataloghi CKAN.",
+    target: "sidebar-tools",
+  },
+];
+
 export default function App() {
   // Route semplice: /analytics mostra la dashboard, tutto il resto il chatbot
   if (window.location.pathname.endsWith("/analytics") || window.location.pathname.endsWith("/analytics/")) {
@@ -78,7 +111,21 @@ export default function App() {
   const [showTtlBox,  setShowTtlBox]  = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(() => !localStorage.getItem("privacy_ok"));
   const [showHelp,    setShowHelp]    = useState(false);
+  const [tourStep,    setTourStep]    = useState(-1); // -1 = tour non attivo
+  const [tourActive,  setTourActive]  = useState(false);
   const [blocklist,   setBlocklist]   = useState(BLOCKLIST);
+
+  // Tour guidato — mostra al primo avvio se non già visto
+  useEffect(() => {
+    if (!localStorage.getItem("simba_tour_done")) {
+      setTimeout(() => { setTourActive(true); setTourStep(0); }, 800);
+    }
+  }, []);
+
+  function startTour() { setTourActive(true); setTourStep(0); setShowHelp(false); }
+  function nextTourStep() { if (tourStep < TOUR_STEPS.length - 1) setTourStep(s => s + 1); else endTour(); }
+  function endTour() { setTourActive(false); setTourStep(-1); }
+  function skipTourForever() { localStorage.setItem("simba_tour_done", "1"); endTour(); }
 
   // Carica blocklist dinamica dal backend all'avvio
   useEffect(() => {
@@ -899,7 +946,7 @@ SELECT ?ipaCode WHERE {
         </div>
 
         {/* Strumenti integrati — card colorate */}
-        <div className="sidebar-section">
+        <div id="sidebar-tools" className="sidebar-section">
           <div className="section-label">Strumenti integrati</div>
           <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
             Cerca dataset
@@ -935,8 +982,8 @@ SELECT ?ipaCode WHERE {
           </a>
         </div>
 
-        <button className="help-sidebar-btn" onClick={() => setShowHelp(v => !v)} aria-label="Istruzioni brevi">
-          Istruzioni brevi
+        <button className="help-sidebar-btn" onClick={startTour} aria-label="Tour funzionalità">
+          <Icon name="map" size={13} /> Tour funzionalità
         </button>
 
         <button className="clear-btn" aria-label="Nuova conversazione" onClick={() => { resetChat(); }}>
@@ -1132,13 +1179,50 @@ SELECT ?ipaCode WHERE {
             <p className="help-tip"><Icon name="lightbulb" size={12} /> Questo assistente risponde <strong>esclusivamente</strong> a richieste riguardanti open data della Pubblica Amministrazione italiana. Domande su altri argomenti verranno rifiutate.</p>
           </div>
         )}
-        <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} onLoadingMsg={handleAdvLoading} />
+        {/* ── Tour guidato ────────────────────────────────────────────── */}
+      {tourActive && tourStep >= 0 && tourStep < TOUR_STEPS.length && (() => {
+        const step = TOUR_STEPS[tourStep];
+        const el = step.target ? document.getElementById(step.target) : null;
+        const rect = el ? el.getBoundingClientRect() : null;
+        return (
+          <div className="tour-overlay" onClick={e => e.target === e.currentTarget && endTour()}>
+            {rect && (
+              <div className="tour-highlight" style={{
+                top: rect.top - 8, left: rect.left - 8,
+                width: rect.width + 16, height: rect.height + 16,
+              }} />
+            )}
+            <div className="tour-bubble" style={rect ? {
+              top: rect.bottom + 16 < window.innerHeight - 160
+                ? rect.bottom + 16
+                : rect.top - 160,
+              left: Math.min(Math.max(rect.left, 12), window.innerWidth - 320),
+            } : { top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+              <div className="tour-step-counter">{tourStep + 1} / {TOUR_STEPS.length}</div>
+              <h4 className="tour-title">{step.title}</h4>
+              <p className="tour-text">{step.text}</p>
+              <div className="tour-actions">
+                <button className="tour-btn-skip" onClick={skipTourForever}>Non mostrare più</button>
+                <div style={{display:"flex",gap:8}}>
+                  <button className="tour-btn-close" onClick={endTour}>Salta</button>
+                  <button className="tour-btn-next" onClick={nextTourStep}>
+                    {tourStep < TOUR_STEPS.length - 1 ? "Avanti →" : "Fine ✓"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <AdvancedSearch onResults={handleAdvResults} onLoading={setLoading} onLoadingMsg={handleAdvLoading} />
         <div className="wizard-bar">
           <div className="wizard-step">
             <span className="wizard-num">1</span>
             <span className="wizard-label">Cosa</span>
             <textarea
               ref={inputRef}
+              id="wizard-cosa"
               className="wizard-input"
               aria-label="Cosa vuoi cercare"
               value={input}
@@ -1153,7 +1237,7 @@ SELECT ?ipaCode WHERE {
               disabled={loading}
             />
           </div>
-          <div className="wizard-step" style={{position:"relative"}}>
+          <div id="wizard-dove" className="wizard-step" style={{position:"relative"}}>
             <span className="wizard-num">2</span>
             <span className="wizard-label">Dove</span>
             <input
