@@ -1139,6 +1139,10 @@ async function checkCsvContentType(url) {
     if (url.includes("docs.google.com") || url.includes("output=csv") || url.includes("format=csv")) {
       return { ok: true };
     }
+    // API di download PA italiane (es. smartdatanet, CKAN, portali regionali)
+    if (url.includes("/download/") || url.includes("/api/") || url.includes("/resource/") || url.includes("/datastore/")) {
+      return { ok: true };
+    }
     // Per altri tipi (es. application/octet-stream generico) lascia passare con warning
     return { ok: true, warning: ct || "content-type non dichiarato" };
   } catch (e) {
