@@ -878,9 +878,21 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       await getTools();
     }
     console.log(`[validate] routeMap keys: ${Object.keys(toolsRouteMap).join(", ")}`);
-    const result = csv_text
-      ? await callTool("csv_validate", { csv_text, summary_only: false })
-      : await callTool("csv_validate", { csv_url: url, summary_only: false });
+    // Se il download diretto ha fallito, prova con csv_validate_url (scarica il validatore-mcp)
+    // Se anche quello non è disponibile, errore chiaro
+    let result;
+    if (csv_text) {
+      result = await callTool("csv_validate", { csv_text, summary_only: false });
+    } else if (toolsRouteMap["csv_validate_url"]) {
+      console.log(`[validate] download backend fallito, provo csv_validate_url`);
+      result = await callTool("csv_validate_url", { url, summary_only: false });
+    } else {
+      console.warn(`[validate] impossibile scaricare il file da ${url}`);
+      return res.status(422).json({
+        error: `Impossibile scaricare il file da questo URL. Il server potrebbe bloccare le richieste automatiche. ` +
+               `Prova a scaricare il CSV manualmente e caricarlo con l'opzione "Carica file".`
+      });
+    }
     const cleanTitle = reqTitle || url.split("/").pop().split("?")[0] || url;
     emitEvent("validate", {
       dataset_id: url,
