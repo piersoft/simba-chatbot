@@ -111,12 +111,11 @@ function buildAdvQuery(q, theme, hvd, pub, format, license, sort, offset) {
   return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT ?d ?title ?description ?modified ?rhName ?ipaCode ?landingPage (GROUP_CONCAT(DISTINCT STR(?kw);separator=",") AS ?keywords) WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?ipaCode ?landingPage WHERE {
 ${triples}${rhOptional}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
-  OPTIONAL { ?d dcat:keyword ?kw FILTER(LANG(?kw)='it'||LANG(?kw)='') }
-${filters}} GROUP BY ?d ?title ?description ?modified ?rhName ?ipaCode ?landingPage ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
 
 // Carica lista cataloghi (una sola volta) ordinati per numero dataset
