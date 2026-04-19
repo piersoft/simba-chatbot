@@ -204,8 +204,7 @@ async function mcpCallTo(url, method, params = {}) {
     body: JSON.stringify({ jsonrpc: "2.0", method, params, id: Date.now() }),
   });
   const raw = await res.text();
-  for (const line of raw.split("
-")) {
+  for (const line of raw.split("\n")) {
     const t = line.trim();
     if (t.startsWith("data:")) {
       try { return JSON.parse(t.slice(5).trim()); } catch {}
