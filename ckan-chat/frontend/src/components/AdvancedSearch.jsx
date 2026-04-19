@@ -108,7 +108,7 @@ async function loadCatalogs() {
   })).filter(c => c.uri);
 }
 
-// Query dataset per catalogo specifico (usa dcat:dataset direttamente)
+// Query dataset per catalogo specifico — usa EXISTS per evitare timeout
 function buildCatalogQuery(catalogUri, q, offset) {
   const kwF = q?.trim()
     ? `  FILTER(${q.trim().split(/\s+/).map((w,i) => {
@@ -121,9 +121,10 @@ function buildCatalogQuery(catalogUri, q, offset) {
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
-  <${catalogUri}> dcat:dataset ?d .
+  ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
+  FILTER(EXISTS { <${catalogUri}> dcat:dataset ?d })
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d dcat:landingPage ?landingPage }
