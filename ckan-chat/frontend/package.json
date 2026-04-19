@@ -17,14 +17,6 @@
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.8"
   },
-  "author": "piersoft <https://github.com/piersoft>",
-  "contributors": [
-    {
-      "name": "piersoft",
-      "url": "https://github.com/piersoft",
-      "note": "Realizzato per AgID"
-    }
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/piersoft/ckan-mcp-server-docker-ollama"
