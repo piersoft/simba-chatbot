@@ -1071,14 +1071,15 @@ SELECT ?ipaCode WHERE {
             </button>
 
             <h4><Icon name="search" size={14} /> Cerca dataset</h4>
-            <p>Usa verbi di ricerca seguiti dall'argomento. Esempi corretti:</p>
+            <p>Scrivi l'argomento che ti interessa — con o senza verbi. Puoi usare anche il titolo esatto di un dataset. Esempi:</p>
             <ul>
+              <li><em>«defibrillatori»</em></li>
+              <li><em>«rifiuti Milano»</em></li>
+              <li><em>«statistiche demografiche Puglia»</em></li>
               <li><em>«cerca dati sulla qualità dell'aria»</em></li>
-              <li><em>«trovami dataset sui rifiuti a Milano»</em></li>
-              <li><em>«mostrami statistiche demografiche Puglia»</em></li>
-              <li><em>«dati defibrillatori Mesagne»</em></li>
+              <li><em>«Mappa armadi Banda Ultra Larga Lepida»</em></li>
             </ul>
-            <p className="help-warn"><Icon name="exclamation-triangle" size={12} /> Verranno scartate frasi troppo brevi, domande generiche o senza riferimento a dati aperti. Esempi <strong>non validi</strong>: <em>«cosa sono i dataset?»</em>, <em>«ciao»</em>, <em>«aiuto»</em>, <em>«i dati sono opendata?»</em></p>
+            <p className="help-warn"><Icon name="exclamation-triangle" size={12} /> Il sistema risponde solo a domande sugli open data PA italiani. Saluti, domande generiche e argomenti non pertinenti vengono ignorati.</p>
 
             <h4><Icon name="check2-circle" size={14} /> Valida CSV</h4>
             <p>Clicca <strong>Valida CSV</strong> nella sidebar, poi scegli:</p>
