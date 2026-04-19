@@ -972,16 +972,10 @@ SELECT ?ipaCode WHERE {
         <div id="sidebar-tools" className="sidebar-section">
           <div className="section-label">Strumenti consigliati</div>
           <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/" target="_blank" rel="noopener noreferrer">
-            CSV to RDF <span className="plain-tag plain-tag-agid">AgID</span>
-          </a>
-          <a className="sidebar-plain-link" href="https://piersoft.github.io/CSV-to-RDF/validatore-csv-pa.html" target="_blank" rel="noopener noreferrer">
-            Tool validazione CSV <span className="plain-tag plain-tag-agid">AgID</span>
+            CSV to RDF completo <span className="plain-tag plain-tag-agid">AgID</span>
           </a>
           <a className="sidebar-plain-link" href="https://github.com/piersoft/opendata-pa-quality-audit" target="_blank" rel="noopener noreferrer">
             Tool validazione CSV massivo <span className="plain-tag plain-tag-agid">AgID</span>
-          </a>
-          <a className="sidebar-plain-link" href="https://piersoft.github.io/ckan-opendata-assistant/" target="_blank" rel="noopener noreferrer">
-            Assistente ricerca <span className="plain-tag plain-tag-agid">AgID</span>
           </a>
           <a className="sidebar-plain-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
             CKAN MCP Server <span className="plain-tag plain-tag-ondata">OnData</span>
