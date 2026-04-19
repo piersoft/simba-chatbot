@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 
 const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
+
+// Sanitizza input utente per SPARQL — rimuove caratteri pericolosi
+function sanitizeSparql(s) {
+  return (s || "")
+    .replace(/["{}<>\\|^`]/g, "")  // rimuove caratteri SPARQL pericolosi
+    .slice(0, 200);                   // limite lunghezza
+}
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 const THEME_BASE = "http://publications.europa.eu/resource/authority/data-theme/";
 const HVD_BASE   = "http://data.europa.eu/bna/";
@@ -61,7 +69,7 @@ function val(b, k) { return b[k]?.value || ""; }
 
 function kwFilter(words) {
   return words.map((w, i) => {
-    const wl = w.toLowerCase().replace(/"/g, "");
+    const wl = sanitizeSparql(w.toLowerCase());
     return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
   }).join(" && ");
 }
@@ -134,7 +142,7 @@ ${kwF}} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 
 // Autocomplete rightsHolder — query SPARQL live con CONTAINS (come sidebar originale)
 async function searchRightsHolder(q) {
-  const ql = q.toLowerCase().replace(/"/g, "");
+  const ql = sanitizeSparql(q.toLowerCase());
   const rows = await sparqlFetch(
     `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>

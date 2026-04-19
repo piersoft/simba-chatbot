@@ -93,15 +93,15 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
   const otherDists = (distributions || []).filter(d => !CSV_FMTS.has(d.format));
 
   return (
-    <div className="dataset-card">
-      <div className="dataset-card-header" onClick={toggleExpand}>
+    <article className="dataset-card" aria-label={dataset.title}>
+      <div className="dataset-card-header" onClick={toggleExpand} role="button" tabIndex={0} aria-expanded={expanded} aria-label={`${expanded ? "Nascondi" : "Espandi"} risorse: ${dataset.title}`} onKeyDown={e => e.key === "Enter" && toggleExpand()}>
         <div className="dataset-card-title">
-          <a href={dataset.viewUrl} target="_blank" rel="noopener noreferrer"
+          <a href={dataset.viewUrl} target="_blank" rel="noopener noreferrer" aria-label={`Apri dataset: ${dataset.title}`}
              onClick={e => e.stopPropagation()}>
             {dataset.title}
           </a>
         </div>
-        <span className="dataset-card-toggle">
+        <span className="dataset-card-toggle" aria-hidden="true">
           {expanded
             ? <><i className="bi bi-chevron-up"/> Nascondi risorse</>
             : <><i className="bi bi-chevron-down"/> Vedi risorse</>
@@ -184,6 +184,6 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
           <Icon name="box-arrow-up-right" size={13} /> Apri dataset
         </a>
       </div>
-    </div>
+    </article>
   );
 }

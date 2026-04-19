@@ -56,6 +56,14 @@ const BLOCKLIST = [
 
 const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
 
+// Sanitizza input utente per SPARQL — rimuove caratteri pericolosi
+function sanitizeSparql(s) {
+  return (s || "")
+    .replace(/["{}<>\\|^`]/g, "")  // rimuove caratteri SPARQL pericolosi
+    .slice(0, 200);                   // limite lunghezza
+}
+
+
 const TOUR_STEPS = [
   {
     title: "Benvenuto in SIMBA 🦁",
@@ -236,7 +244,7 @@ export default function App() {
     // kwFilter: AND con ricerca in titolo, descrizione E keyword
     function kwFilter(words, useOr = false) {
       const parts = words.map((w, i) => {
-        const wl = w.toLowerCase().replace(/"/g, "");
+        const wl = sanitizeSparql(w.toLowerCase());
         return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
       });
       return parts.join(useOr ? " || " : " && ");
@@ -245,7 +253,7 @@ export default function App() {
     async function runQuery(words, useOr, off) {
       const doveFilter = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
-  FILTER(CONTAINS(LCASE(STR(?rhName)),"${dove.toLowerCase().replace(/"/g,'')}"))
+  FILTER(CONTAINS(LCASE(STR(?rhName)),"${sanitizeSparql(dove.toLowerCase())}"))
 `
         : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
 `;
@@ -280,7 +288,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
 
     // Se la query è lunga (titolo esatto?), prova prima la frase intera nel titolo
     if (query.length > 30) {
-      const fullPhrase = query.toLowerCase().replace(/"/g, "").slice(0, 100);
+      const fullPhrase = sanitizeSparql(query.toLowerCase()).slice(0, 100);
       const phraseQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -864,7 +872,7 @@ SELECT ?ipaCode WHERE {
                 <DatasetCard key={j} dataset={d} onValidate={validateFromCard} onEnrich={doEnrich} />
               ))}
             </div>
-            <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)} disabled={loadingMore}>
+            <button className="load-more-btn" onClick={() => loadMore(m.query, m.offset)} disabled={loadingMore} aria-label="Carica altri dataset">
               {loadingMore
                 ? <><i className="bi bi-arrow-repeat spin" /> Caricamento…</>
                 : <><i className="bi bi-chevron-down" /> Carica altri risultati</>
@@ -928,12 +936,23 @@ SELECT ?ipaCode WHERE {
     );
   }
 
+  function escapeHtml(s) {
+    return (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
   function mdToHtml(text) {
-    return (text || "")
+    return escapeHtml(text)
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.+?)\*/g,   "<em>$1</em>")
       .replace(/`(.+?)`/g,     "<code>$1</code>")
-      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      .replace(/(https?:\/\/[^\s&]+)/g, (url) => {
+        const safeUrl = url.replace(/&amp;/g, "&");
+        return `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      });
   }
 
   return (
@@ -949,7 +968,7 @@ SELECT ?ipaCode WHERE {
           </button>
         </div>
       )}
-      <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+      <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Apri menu strumenti">☰</button>
       <div className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
@@ -964,13 +983,13 @@ SELECT ?ipaCode WHERE {
         {/* Strumenti integrati — card colorate */}
         <div className="sidebar-section">
           <div className="section-label">Strumenti integrati</div>
-          <button className="tool-card tool-search" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
+          <button className="tool-card tool-search" aria-label="Cerca dataset open data" onClick={() => { resetChat(); setSidebarOpen(false); inputRef.current?.focus(); }} disabled={loading}>
             Cerca dataset
           </button>
-          <button id="tour-validate" className="tool-card tool-validate" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
+          <button id="tour-validate" className="tool-card tool-validate" aria-label="Valida un file CSV" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
             Valida CSV
           </button>
-          <button id="tour-enrich" className="tool-card tool-ttl" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
+          <button id="tour-enrich" className="tool-card tool-ttl" aria-label="Converti CSV in RDF" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
             Trasforma in RDF TTL/XML
           </button>
         </div>

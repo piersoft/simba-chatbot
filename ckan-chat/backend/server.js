@@ -101,10 +101,10 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 
 app.use((req, res, next) => {
-  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN"); // Drupal iframe supportato
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Strict-Transport-Security", "max-age=31536000");
-  res.setHeader("Content-Security-Policy", "default-src 'self'");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; frame-ancestors 'self' *;");
   next();
 });
 
