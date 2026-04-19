@@ -847,7 +847,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     });
   }
 
-  console.log(`[validate] ${url}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
+  console.log(`[validate] url raw: ${JSON.stringify(url)} len=${url.length}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
   const { dataset_title: reqTitle } = req.body;
   const t0val = Date.now();
   try {
