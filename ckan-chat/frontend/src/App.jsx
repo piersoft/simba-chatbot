@@ -266,7 +266,7 @@ export default function App() {
       const sparqlQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTINCT STR(?kw);separator=",") AS ?keywords) WHERE {
+SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTINCT STR(?kw);separator=",") AS ?keywords) WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
