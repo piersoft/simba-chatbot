@@ -1344,13 +1344,13 @@ body {
 /* ── Standard di riferimento popup ──────────────────────────────────────────── */
 .standards-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  background: none; border: 1px solid var(--border);
-  color: var(--text2); font-size: 12px; cursor: pointer;
-  padding: 4px 10px; border-radius: 4px; margin-top: 8px;
+  background: #e8f0fe; border: 1.5px solid var(--primary);
+  color: var(--primary); font-size: 12px; font-weight: 700; cursor: pointer;
+  padding: 5px 12px; border-radius: 4px; margin-top: 10px;
   font-family: 'Titillium Web', sans-serif;
   transition: all 0.15s;
 }
-.standards-btn:hover { border-color: var(--primary); color: var(--primary); }
+.standards-btn:hover { background: #d0e3fc; }
 
 .standards-popup {
   margin-top: 10px; padding: 14px;
