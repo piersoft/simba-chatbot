@@ -745,7 +745,12 @@ SELECT ?ipaCode WHERE {
       const report = await doValidate(url, datasetTitle);
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
-    } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
+    } catch (e) {
+      const msg = e.message.includes("Content-Type") || e.message.includes("non sembra un file CSV")
+        ? `❌ **Formato non supportato**\n\nL'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).\n\n**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`
+        : `❌ Errore: ${e.message}`;
+      addMsg("assistant", msg);
+    }
     finally { setLoading(false); }
   }
 
