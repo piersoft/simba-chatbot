@@ -94,6 +94,43 @@ ${triples}${rhOptional}  OPTIONAL { ?d dct:description ?description FILTER(LANG(
 ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
 
+// Carica lista cataloghi (una sola volta) ordinati per numero dataset
+async function loadCatalogs() {
+  const rows = await sparqlFetch(
+    `SELECT ?catalog (COUNT(?s) AS ?count) WHERE {
+  ?catalog <http://www.w3.org/ns/dcat#dataset> ?s .
+} GROUP BY ?catalog ORDER BY DESC(?count) LIMIT 400`
+  );
+  return rows.map(r => ({
+    uri:   r.catalog?.value || "",
+    label: (r.catalog?.value || "").replace(/https?:\/\//, "").replace(/\/$/, ""),
+    count: parseInt(r.count?.value || "0"),
+  })).filter(c => c.uri);
+}
+
+// Query dataset per catalogo specifico (usa dcat:dataset direttamente)
+function buildCatalogQuery(catalogUri, q, offset) {
+  const kwF = q?.trim()
+    ? `  FILTER(${q.trim().split(/\s+/).map((w,i) => {
+        const wl = w.toLowerCase().replace(/"/g,"");
+        return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+      }).join(" && ")})
+`
+    : "";
+  return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+  <${catalogUri}> dcat:dataset ?d .
+  ?d dct:title ?title .
+  FILTER(LANG(?title)='it'||LANG(?title)='')
+  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d dcat:landingPage ?landingPage }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+${kwF}} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+}
+
 // Autocomplete rightsHolder — query SPARQL live con CONTAINS (come sidebar originale)
 async function searchRightsHolder(q) {
   const ql = q.toLowerCase().replace(/"/g, "");
@@ -125,7 +162,42 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
   const [sort,    setSort]    = useState("modified");
   const [acList,  setAcList]  = useState([]);
   const [showAc,  setShowAc]  = useState(false);
+  const [catalog,    setCatalog]    = useState("");       // URI catalogo selezionato
+  const [catInput,   setCatInput]   = useState("");       // testo nel campo catalogo
+  const [catList,    setCatList]    = useState([]);       // lista completa cataloghi
+  const [catLoading, setCatLoading] = useState(false);   // caricamento lista
+  const [showCat,    setShowCat]    = useState(false);   // dropdown catalogo aperto
+  const [catLoaded,  setCatLoaded]  = useState(false);   // già caricata
   const acTimer = useRef(null);
+
+  async function handleCatFocus() {
+    if (catLoaded) { setShowCat(true); return; }
+    setCatLoading(true);
+    try {
+      const cats = await loadCatalogs();
+      setCatList(cats);
+      setCatLoaded(true);
+      setShowCat(true);
+    } catch {}
+    setCatLoading(false);
+  }
+
+  function handleCatInput(v) {
+    setCatInput(v);
+    setCatalog(""); // deseleziona se si modifica
+    if (!catLoaded) return;
+    setShowCat(true);
+  }
+
+  function selectCatalog(cat) {
+    setCatalog(cat.uri);
+    setCatInput(`${cat.label} (${cat.count.toLocaleString("it")} ds)`);
+    setShowCat(false);
+  }
+
+  const filteredCats = catList.filter(c =>
+    !catInput || catalog || c.label.toLowerCase().includes(catInput.toLowerCase())
+  ).slice(0, 15);
 
   async function handlePubInput(v) {
     setRh(v);
@@ -140,14 +212,18 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
     }, 350);
   }
 
-  async function doSearch() {
-    if (!q && !theme && !hvd && !rh && !format && !license) return;
+  async function doSearch(offset = 0) {
+    if (!q && !theme && !hvd && !rh && !format && !license && !catalog) return;
     setOpen(false);
-    const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, rh].filter(Boolean).join(" · ") || "Ricerca avanzata";
+    const label = [q, theme && THEMES.find(t=>t.code===theme)?.label, rh, catalog && catInput.split(" (")[0]].filter(Boolean).join(" · ") || "Ricerca avanzata";
     if (onLoadingMsg) onLoadingMsg(true, label);
     onLoading(true);
     try {
-      const rows = await sparqlFetch(buildAdvQuery(q, theme, hvd, rh, format, license, sort, 0));
+      const rows = await sparqlFetch(
+        catalog
+          ? buildCatalogQuery(catalog, q, offset)
+          : buildAdvQuery(q, theme, hvd, rh, format, license, sort, offset)
+      );
       const seen = new Map();
       for (const b of rows) {
         const uri = val(b, "d");
@@ -184,6 +260,7 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
     setQ(""); setTheme(""); setHvd(""); setRh("");
     setFormat(""); setLicense(""); setSort("modified");
     setAcList([]); setShowAc(false);
+    setCatalog(""); setCatInput(""); setShowCat(false);
   }
 
   return (
@@ -230,6 +307,26 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
                     <div key={i} className="ac-item" onMouseDown={() => { setRh(m.name); setShowAc(false); }}>
                       <span>{m.name}</span>
                       <span className="ac-count">{m.count.toLocaleString("it")} ds</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="adv-field" style={{ position: "relative" }}>
+              <label>Catalogo sorgente</label>
+              <input type="text" value={catInput}
+                onChange={e => handleCatInput(e.target.value)}
+                onFocus={handleCatFocus}
+                onBlur={() => setTimeout(() => setShowCat(false), 200)}
+                placeholder={catLoading ? "Caricamento cataloghi…" : "es. dati.toscana.it, geodati.gov.it…"}
+                autoComplete="off" />
+              {showCat && filteredCats.length > 0 && (
+                <div className="ac-dropdown">
+                  {filteredCats.map((c, i) => (
+                    <div key={i} className="ac-item" onMouseDown={() => selectCatalog(c)}>
+                      <span>{c.label}</span>
+                      <span className="ac-count">{c.count.toLocaleString("it")} ds</span>
                     </div>
                   ))}
                 </div>
