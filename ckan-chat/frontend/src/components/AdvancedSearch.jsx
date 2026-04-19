@@ -144,7 +144,7 @@ function buildCatalogQuery(catalogUri, q, offset) {
   return `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTINCT STR(?kw);separator=",") AS ?keywords) WHERE {
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
@@ -153,8 +153,7 @@ SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTI
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d dcat:landingPage ?landingPage }
   OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
-  OPTIONAL { ?d dcat:keyword ?kw FILTER(LANG(?kw)='it'||LANG(?kw)='') }
-${kwF}} GROUP BY ?d ?title ?description ?modified ?rhName ?landingPage ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+${kwF}} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 }
 
 // Autocomplete rightsHolder — query SPARQL live con CONTAINS (come sidebar originale)
@@ -276,7 +275,7 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
             if (v.length > 30) return "";
             return v;
           })(),
-          keywords:     val(b, "keywords") ? val(b, "keywords").split(",").map(k=>k.trim()).filter(k=>k&&k!=="N_A"&&k.length>2).slice(0,8) : [],
+          keywords:     [], // non disponibile nella ricerca avanzata (GROUP_CONCAT causa 403)
           catalogUri:   catalog || "",
           catalogLabel: catalog ? catInput.split(" (")[0] : "",
           viewUrl,
