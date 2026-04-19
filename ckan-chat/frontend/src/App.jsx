@@ -666,11 +666,11 @@ SELECT ?ipaCode WHERE {
       });
 
       if (!datasets.length) {
-        addMsg("assistant", `Nessun dataset trovato per **"${query}"**.\n\nProva con termini più generici.`);
+        addMsg("assistant", `Nessun dataset trovato per **"${displayQuery}"**.\n\nProva con termini più generici.`);
         return;
       }
 
-      addMsg("assistant", `Trovati risultati per **"${query}"** — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
+      addMsg("assistant", `Trovati risultati per **"${displayQuery}"** — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
         type: "search_results",
         datasets,
         query,
