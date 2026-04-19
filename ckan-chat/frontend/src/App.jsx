@@ -597,7 +597,8 @@ SELECT ?ipaCode WHERE {
     } catch { return ""; }
   }
 
-  async function sendMessage(text) {
+  async function sendMessage(rawText) {
+    const text = rawText.trim();
     setMessages([]);  // nuova ricerca — pulisce la chat
     if (!text.trim() || loading) return;
     if (blocklist.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
@@ -648,7 +649,6 @@ SELECT ?ipaCode WHERE {
       // query = versione pulita per SPARQL (senza verbi e stopword)
       // displayQuery = testo originale per mostrarlo all'utente
       const displayQuery = text;
-      console.log('[sendMessage] text=', JSON.stringify(text), 'displayQuery=', JSON.stringify(displayQuery));
       const query = text
         .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
         .replace(/\b(dataset|open data)\b/gi, "")
