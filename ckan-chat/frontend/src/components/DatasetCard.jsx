@@ -64,7 +64,18 @@ SELECT ?distTitle ?format ?accessURL ?downloadURL WHERE {
 
 const CSV_FMTS = new Set(["CSV","TSV"]);
 
-export default function DatasetCard({ dataset, onValidate, onEnrich }) {
+// Evidenzia i termini cercati nel testo
+function highlight(text, terms) {
+  if (!text || !terms || terms.length === 0) return text;
+  const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const re = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(re);
+  return parts.map((part, i) =>
+    re.test(part) ? <mark key={i} style={{background:"#fff176",borderRadius:2,padding:"0 1px"}}>{part}</mark> : part
+  );
+}
+
+export default function DatasetCard({ dataset, onValidate, onEnrich, searchTerms = [] }) {
   const [distributions, setDistributions] = useState(null);
   const [loading, setLoading]             = useState(false);
   const [expanded, setExpanded]           = useState(false);
@@ -86,7 +97,7 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
   }
 
   const desc = dataset.description
-    ? dataset.description.slice(0, 200) + (dataset.description.length > 200 ? "…" : "")
+    ? dataset.description.slice(0, 400) + (dataset.description.length > 400 ? "…" : "")
     : "";
 
   const csvDists   = (distributions || []).filter(d => CSV_FMTS.has(d.format));
@@ -98,7 +109,7 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
         <div className="dataset-card-title">
           <a href={dataset.viewUrl} target="_blank" rel="noopener noreferrer" aria-label={`Apri dataset: ${dataset.title}`}
              onClick={e => e.stopPropagation()}>
-            {dataset.title}
+            {searchTerms.length > 0 ? highlight(dataset.title, searchTerms) : dataset.title}
           </a>
         </div>
         <span className="dataset-card-toggle" aria-hidden="true">
@@ -128,8 +139,17 @@ export default function DatasetCard({ dataset, onValidate, onEnrich }) {
         )}
       </div>
 
-      {desc && <p className="dataset-card-desc">{desc}</p>}
+      {desc && <p className="dataset-card-desc">{searchTerms.length > 0 ? highlight(desc, searchTerms) : desc}</p>}
 
+      {dataset.keywords && dataset.keywords.length > 0 && (
+        <div className="dataset-keywords">
+          {dataset.keywords.map((k,i) => (
+            <span key={i} className={`dataset-kw-tag${searchTerms.some(t => k.toLowerCase().includes(t.toLowerCase())) ? " dataset-kw-match" : ""}`}>
+              {k}
+            </span>
+          ))}
+        </div>
+      )}
       {expanded && (
         <div className="dataset-card-resources">
           {loading && <span className="loading-small">Carico distribuzioni...</span>}

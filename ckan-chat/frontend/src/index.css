@@ -1460,3 +1460,22 @@ body {
   font-family: 'Titillium Web', sans-serif;
   cursor: help;
 }
+
+/* ── Keywords e highlight nei risultati ───────────────────────────────────── */
+.dataset-keywords {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 4px 14px 8px;
+}
+.dataset-kw-tag {
+  font-size: 11px; padding: 2px 7px; border-radius: 10px;
+  background: #f0f4f8; color: #5c6f82;
+  border: 1px solid #dce3ea;
+  font-family: 'Titillium Web', sans-serif;
+}
+.dataset-kw-match {
+  background: #fff9c4; color: #7d4e00;
+  border-color: #f5c842; font-weight: 700;
+}
+mark {
+  background: #fff176; border-radius: 2px; padding: 0 1px;
+}
