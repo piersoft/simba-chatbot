@@ -328,7 +328,53 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
       } catch {}
     }
 
-    // Prima prova AND, se non trova nulla riprova con OR ma mantieni termini geografici in AND
+    // Strategia: prima cerca solo nel TITOLO (più preciso), poi allarga a desc+keyword se trova < 3 risultati
+    const titleOnlyFilter = (words) => words.map((w,i) => {
+      const wl = sanitizeSparql(w.toLowerCase());
+      return `CONTAINS(LCASE(?title),"${wl}")`;
+    }).join(" && ");
+
+    const titleOnlyQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:title ?title .
+  FILTER(LANG(?title)='it'||LANG(?title)='')
+  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:modified ?modified }
+  OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
+  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+  FILTER(${titleOnlyFilter(useWords)})
+} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+
+    try {
+      const titleUrl = `${SPARQL_EP}?query=${encodeURIComponent(titleOnlyQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+      const rt = await fetch(titleUrl, { headers: { Accept: "application/sparql-results+json" } });
+      if (rt.ok) {
+        const titleBindings = (await rt.json()).results?.bindings ?? [];
+        if (titleBindings.length >= 3) {
+          // Abbastanza risultati solo dal titolo — usa quelli (più precisi)
+          const seenT = new Map();
+          for (const b of titleBindings) {
+            const uri = b.d?.value ?? ""; if (!uri || seenT.has(uri)) continue;
+            const id = uri.split("/").pop();
+            const landingPage = b.landingPage?.value;
+            const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
+            const modRaw = b.modified?.value?.slice(0,10) ?? "";
+            const modYear = modRaw ? parseInt(modRaw.slice(0,4)) : 0;
+            const modInvalid = modYear > new Date().getFullYear()+1 || (modYear < 1990 && modYear > 0);
+            seenT.set(uri, { uri, id, title: b.title?.value ?? "", description: b.description?.value ?? "",
+              modified: modInvalid ? "" : modRaw, modifiedRaw: modRaw, modInvalid,
+              publisher: b.rhName?.value || (dove || ""), ipaCode: "", viewUrl, csvResources: [],
+              catalogUri: "", catalogLabel: "" });
+          }
+          return { datasets: [...seenT.values()].slice(0, PAGE_SIZE), query, offset };
+        }
+      }
+    } catch {}
+
+    // Prima prova AND su titolo+desc+keyword, se non trova nulla riprova con OR ma mantieni termini geografici in AND
     const geoTerms = new Set(["puglia","sicilia","lombardia","campania","lazio","veneto","toscana","emilia","romagna","piemonte","calabria","sardegna","liguria","marche","abruzzo","friuli","trentino","umbria","basilicata","molise","valle","aosta","bolzano","trento","roma","milano","napoli","torino","palermo","genova","bologna","firenze","bari","catania","venezia","verona","messina","padova","trieste","brescia","taranto","prato","reggio","modena","parma","perugia","ravenna","livorno","cagliari","foggia","rimini","salerno","ferrara","sassari","latina","giugliano","bergamo","siracusa","pescara","monza","lecce","novara","ancona","udine","arezzo","cesena","andria","vicenza","terni","forlì","trento","piacenza","como","brindisi","massa","grosseto","ragusa","catanzaro","crotone","cosenza","vibo","reggio_calabria","matera","potenza","campobasso","isernia","aosta","nuoro","oristano","agrigento","caltanissetta","enna","siracusa","trapani"]);
     const hasGeoTerm = useWords.some(w => geoTerms.has(w.toLowerCase()));
     let bindings = await runQuery(useWords, false, offset);
