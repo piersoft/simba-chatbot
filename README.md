@@ -397,4 +397,4 @@ Realizzato da [@piersoft](https://github.com/piersoft) per [AgID](https://www.ag
 
 ## Licenza
 
-MIT — [Piersoft](https://github.com/piersoft)
+AGPL 3.0 — [Piersoft](https://github.com/piersoft)
