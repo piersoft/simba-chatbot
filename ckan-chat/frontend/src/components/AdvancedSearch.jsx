@@ -68,10 +68,10 @@ async function sparqlFetch(query) {
 function val(b, k) { return b[k]?.value || ""; }
 
 function kwFilter(words) {
-  // Cerca solo nel titolo per massima precisione
-  return words.map((w) => {
+  // Cerca in titolo OR keyword — esclude descrizione (fonte principale di falsi positivi)
+  return words.map((w, i) => {
     const wl = sanitizeSparql(w.toLowerCase());
-    return `CONTAINS(LCASE(?title),"${wl}")`;
+    return `(CONTAINS(LCASE(?title),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
   }).join(" && ");
 }
 

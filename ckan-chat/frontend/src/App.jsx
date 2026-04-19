@@ -249,9 +249,10 @@ export default function App() {
 
     // kwFilter: AND con ricerca in titolo, descrizione E keyword
     function kwFilter(words, useOr = false) {
+      // Cerca in titolo OR keyword — esclude descrizione (fonte principale di falsi positivi)
       const parts = words.map((w, i) => {
         const wl = sanitizeSparql(w.toLowerCase());
-        return `(CONTAINS(LCASE(?title),"${wl}")||CONTAINS(LCASE(STR(?description)),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
+        return `(CONTAINS(LCASE(?title),"${wl}")||EXISTS { ?d <http://www.w3.org/ns/dcat#keyword> ?kw${i} . FILTER(CONTAINS(LCASE(STR(?kw${i})),"${wl}")) })`;
       });
       return parts.join(useOr ? " || " : " && ");
     }
