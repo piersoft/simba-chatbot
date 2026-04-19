@@ -88,8 +88,8 @@ const TOUR_STEPS = [
     target: "tour-enrich",
   },
   {
-    title: "Strumenti nella sidebar",
-    text: "Qui trovi i link ai tool AgID collegati: validatore CSV standalone, tool CSV-to-RDF, assistente ricerca e il tool di validazione massiva dei cataloghi CKAN.",
+    title: "Strumenti consigliati",
+    text: "Qui trovi i link per attività specifiche complementari a SIMBA.",
     target: "sidebar-tools",
   },
 ];
