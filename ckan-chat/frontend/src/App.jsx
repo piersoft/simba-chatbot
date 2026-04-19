@@ -89,7 +89,7 @@ const TOUR_STEPS = [
   },
   {
     title: "Strumenti consigliati",
-    text: "Qui trovi i link per attività specifiche complementari a SIMBA.",
+    text: "Qui trovi i link per attività specifiche complementari a SIMBA. Fortemente consigliati.",
     target: "sidebar-tools",
   },
 ];
