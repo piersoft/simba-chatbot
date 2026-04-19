@@ -1208,11 +1208,18 @@ SELECT ?ipaCode WHERE {
             <div className="tour-bubble" style={(() => {
               const isMobile = window.innerWidth < 600;
               if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%,-50%)" };
-              // Su mobile: bubble sempre centrata in basso (fixed bottom)
-              if (isMobile) return {
-                bottom: 16, left: "50%", transform: "translateX(-50%)",
-                width: "calc(100vw - 32px)", maxWidth: 360,
-              };
+              // Su mobile: bubble centrata in alto per step "above", in basso per gli altri
+              if (isMobile) {
+                const pos = step.pos || "below";
+                if (pos === "above") return {
+                  top: 16, left: "50%", transform: "translateX(-50%)",
+                  width: "calc(100vw - 32px)", maxWidth: 360,
+                };
+                return {
+                  bottom: 16, left: "50%", transform: "translateX(-50%)",
+                  width: "calc(100vw - 32px)", maxWidth: 360,
+                };
+              }
               const pos = step.pos || "below";
               if (pos === "above") return {
                 bottom: window.innerHeight - rect.top + 16,
