@@ -1,3 +1,50 @@
+
+// ── Post-processing ontologie (fix dall'index.html standalone) ───────────────
+function postProcessOntologie(ontos, headers) {
+  const result = new Set(ontos);
+  const norm = headers.map(h => h.toLowerCase().trim().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").substring(0, 30));
+  const has   = (cols) => cols.every(c => norm.includes(c));
+  const hasH  = (cols) => cols.some(c => norm.some(n => n.includes(c)));
+
+  // OSM schema: rimuovi ontologie spurie
+  const _hasPOIcoord = hasH(["lat","lon","latitudine","longitudine","utmx","utmy","x_wgs","y_wgs","x_etrs","y_etrs"]);
+  const _hasOSMschema = has(["osm_id","osm_type"]) && _hasPOIcoord;
+  if (_hasOSMschema) {
+    result.delete("SMAPIT"); result.delete("Cultural-ON"); result.delete("ACCO");
+    if (result.has("TI") && !hasH(["data_inizio","data_fine","data_evento","tipo_evento","titolo_evento"])) result.delete("TI");
+  }
+
+  // OpenCUP/BDAP: rimuovi Cultural-ON se c'è codice_cup
+  if (has(["codice_cup"]) || has(["codice_locale_progetto","codice_cup"])) {
+    result.delete("Cultural-ON"); result.delete("CulturalON"); result.delete("PARK"); result.delete("POI");
+  }
+
+  // Esercizi commerciali senza contratto: non PublicContract
+  const _hasEsercizio = hasH(["insegna","insegna_commerciale","tipo_esercizio","categoria_esercizio"]);
+  const _hasContratto = hasH(["cig","cup","importo_aggiudicazione","oggetto_gara","oggetto_contratto"]);
+  if (_hasEsercizio && !_hasContratto) result.delete("PublicContract");
+
+  // CLV toponomastica pura: rimuovi spurii se non ci sono coordinate o trigger forti
+  if (result.has("CLV") && !_hasPOIcoord && !result.has("IoT") &&
+      !hasH(["codice_ipa","partita_iva","tipo_poi","dae","importo","cig","cup","insegna"])) {
+    if (result.has("COV") && !hasH(["codice_ipa","cf_ente","ragione_sociale","tipo_ente"])) result.delete("COV");
+    if (result.has("TI") && !hasH(["data_inizio","data_fine","data_evento","quando","inizio","termine"])) result.delete("TI");
+    if (result.has("POI") && !hasH(["tipo_poi","nome_poi","dae","lat","lon","coorx","coory"])) result.delete("POI");
+    if (result.has("CPV") && !hasH(["cognome","codice_fiscale","data_nascita"])) result.delete("CPV");
+  }
+
+  // QB + CulturalON/ACCO/GTFS: QB non su strutture ricettive/trasporti
+  if (result.has("QB") && (result.has("CulturalON") || result.has("ACCO") || result.has("GTFS"))) result.delete("QB");
+
+  // SMAPIT esclude QB/CPV/CulturalON
+  if (result.has("SMAPIT")) { result.delete("CulturalON"); result.delete("Cultural-ON"); result.delete("QB"); result.delete("CPV"); }
+
+  // RO: data mandato non è evento
+  if (result.has("RO") && result.has("TI") && !hasH(["data_evento","titolo_evento","tipo_evento_pubblico"])) result.delete("TI");
+
+  return Array.from(result);
+}
+
 /**
  * rdf-mcp — Adapter locale per worker.js CSV-to-RDF
  *
@@ -108,7 +155,19 @@ app.use(async (req, res) => {
     });
 
     const body = await cfResponse.arrayBuffer();
-    res.end(Buffer.from(body));
+    // Post-processing ontologie: applica gli stessi fix dell'index.html standalone
+    try {
+      const txt = Buffer.from(body).toString("utf8");
+      const json = JSON.parse(txt);
+      if (json.ontologie && Array.isArray(json.ontologie)) {
+        json.ontologie = postProcessOntologie(json.ontologie, json.colonne || []);
+        res.end(Buffer.from(JSON.stringify(json)));
+      } else {
+        res.end(Buffer.from(body));
+      }
+    } catch {
+      res.end(Buffer.from(body));
+    }
 
   } catch (e) {
     console.error("[rdf-mcp] Errore handler:", e.message);
