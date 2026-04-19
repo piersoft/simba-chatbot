@@ -65,7 +65,7 @@ const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.
 // Sanitizza input utente per SPARQL — rimuove caratteri pericolosi
 function sanitizeSparql(s) {
   return (s || "")
-    .replace(/["{}<>\|^`]/g, "")  // rimuove caratteri SPARQL pericolosi
+    .replace(/["{}<>\\|^`]/g, "")  // rimuove caratteri SPARQL pericolosi
     .slice(0, 200);                   // limite lunghezza
 }
 
@@ -503,9 +503,8 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
           );
         }
 
-        const firstLine = csv_text.trim().split("
-")[0] || "";
-        const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("	");
+        const firstLine = csv_text.trim().split("\n")[0] || "";
+        const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("\t");
         if (hasSep) {
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
@@ -674,7 +673,7 @@ SELECT ?ipaCode WHERE {
   async function sendMessage(rawText) {
     const text = rawText.trim();
     setMessages([]);  // nuova ricerca — pulisce la chat
-    if (!text.trim() || loading) return;
+    if (!text || loading) return;
     if (blocklist.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
       emitAnalytics("off_topic", { query_preview: text.slice(0, 100), guardrail_layer: "blocklist" });
       addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana.");
@@ -697,26 +696,18 @@ SELECT ?ipaCode WHERE {
       else if (intent === "ENRICH") setPageTitle("Conversione RDF — SIMBA");
 
       if (intent === "OFF_TOPIC") {
-        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:
-- Ricerca dataset open data italiani
-- Validazione file CSV per la PA
-- Conversione CSV → RDF Linked Data
-
-Prova con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
+        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- Ricerca dataset open data italiani\n- Validazione file CSV per la PA\n- Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
         return;
       }
 
       if (intent === "VALIDATE") {
         const url = text.match(/https?:\/\/[^\s]+/)?.[0];
         if (!url) {
-          addMsg("assistant", "Per validare un CSV dimmi l'URL del file.
-
-Oppure usa il box qui sotto per incollarlo:");
+          addMsg("assistant", "Per validare un CSV dimmi l'URL del file.\n\nOppure usa il box qui sotto per incollarlo:");
           setShowCsvBox(true);
           return;
         }
-        addMsg("assistant", `Validazione in corso per:
-\`${url}\``, { type: "validating" });
+        addMsg("assistant", `Validazione in corso per:\n\`${url}\``, { type: "validating" });
         const report = await doValidate(url);
         addMsg("assistant", report, { type: "validate_report", url });
         return;
@@ -733,7 +724,7 @@ Oppure usa il box qui sotto per incollarlo:");
       const displayQuery = text;
       const query = text
         .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
-        .replace(/(dataset|open data)/gi, "")
+        .replace(/\b(dataset|open data)\b/gi, "")
         .replace(/\s+/g, " ").trim() || text;
 
       setPageTitle("Ricerca Dataset — Open Data Italia");
@@ -749,9 +740,7 @@ Oppure usa il box qui sotto per incollarlo:");
       });
 
       if (!datasets.length) {
-        addMsg("assistant", `Nessun dataset trovato per **"${displayQuery}"**.
-
-Prova con termini più generici.`);
+        addMsg("assistant", `Nessun dataset trovato per **"${displayQuery}"**.\n\nProva con termini più generici.`);
         return;
       }
 
@@ -788,10 +777,8 @@ Prova con termini più generici.`);
         throw new Error(`HTTP ${r.status}: ${err.slice(0,200)}`);
       }
       const ttl = await r.text();
-      const lines = ttl.split("
-").filter(Boolean);
-      const preview = lines.slice(0, 30).join("
-");
+      const lines = ttl.split("\n").filter(Boolean);
+      const preview = lines.slice(0, 30).join("\n");
       const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
       const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: mimeType });
@@ -837,11 +824,7 @@ Prova con termini più generici.`);
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
     } catch (e) {
       const msg = e.message.includes("Content-Type") || e.message.includes("non sembra un file CSV")
-        ? `❌ **Formato non supportato**
-
-L'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).
-
-**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`
+        ? `❌ **Formato non supportato**\n\nL'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).\n\n**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`
         : `❌ Errore: ${e.message}`;
       addMsg("assistant", msg);
     }
@@ -883,10 +866,8 @@ L'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potre
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
-      const lines = ttl.split("
-").filter(Boolean);
-      const preview = lines.slice(0, 30).join("
-");
+      const lines = ttl.split("\n").filter(Boolean);
+      const preview = lines.slice(0, 30).join("\n");
       const ext = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle" });
       const blobUrl = URL.createObjectURL(blob);
@@ -947,10 +928,8 @@ L'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potre
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
-      const lines = ttl.split("
-").filter(Boolean);
-      const preview = lines.slice(0, 30).join("
-");
+      const lines = ttl.split("\n").filter(Boolean);
+      const preview = lines.slice(0, 30).join("\n");
       const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
       replaceLastMsg("assistant", `✅ Conversione completata!`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt });
@@ -1011,8 +990,7 @@ L'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potre
             {m.preview && (
               <>
                 <p className="ttl-preview-label">Anteprima (prime righe) — scarica il file per il contenuto completo:</p>
-                <pre className="ttl-preview">{m.preview}{"
-…"}</pre>
+                <pre className="ttl-preview">{m.preview}{"\n…"}</pre>
               </>
             )}
             <div className="ttl-download-btns">
@@ -1038,8 +1016,7 @@ L'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potre
     return (
       <div key={i} className={`message ${m.role}`}>
         <div className="message-bubble">
-          {m.content.split("
-").map((line, j) => (
+          {m.content.split("\n").map((line, j) => (
             <p key={j} dangerouslySetInnerHTML={{ __html: mdToHtml(line) || "&nbsp;" }} />
           ))}
         </div>
