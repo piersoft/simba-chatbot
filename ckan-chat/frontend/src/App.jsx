@@ -977,14 +977,14 @@ SELECT ?ipaCode WHERE {
           <a className="sidebar-plain-link" href="https://github.com/piersoft/opendata-pa-quality-audit" target="_blank" rel="noopener noreferrer">
             Tool validazione CSV massivo <span className="plain-tag plain-tag-agid">AgID</span>
           </a>
+          <a className="sidebar-plain-link" href="https://lod.dati.gov.it/sparql/" target="_blank" rel="noopener noreferrer">
+            SPARQL Endpoint dati.gov.it <span className="plain-tag plain-tag-agid">AgID</span>
+          </a>
           <a className="sidebar-plain-link" href="https://github.com/ondata/ckan-mcp-server" target="_blank" rel="noopener noreferrer">
             CKAN MCP Server <span className="plain-tag plain-tag-ondata">OnData</span>
           </a>
           <a className="sidebar-plain-link" href="https://github.com/ondata/istat_mcp_server" target="_blank" rel="noopener noreferrer">
             ISTAT MCP Server <span className="plain-tag plain-tag-ondata">OnData</span>
-          </a>
-          <a className="sidebar-plain-link" href="https://lod.dati.gov.it/sparql/" target="_blank" rel="noopener noreferrer">
-            SPARQL Endpoint dati.gov.it <span className="plain-tag plain-tag-agid">AgID</span>
           </a>
         </div>
 
