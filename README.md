@@ -35,6 +35,13 @@ Usare i due campi separati garantisce risultati più precisi rispetto a scrivere
 
 Per ogni dataset trovato è possibile espandere le distribuzioni CSV, recuperate tramite una seconda query SPARQL usando la proprietà `dcat:downloadURL`.
 
+La ricerca avviene in tre fasi:
+1. **Query SPARQL ampia** — cerca in titolo, descrizione e keyword DCAT
+2. **Post-filter lato client** — mantiene solo i dataset dove i termini cercati appaiono visivamente in titolo, descrizione o keyword mostrate nella card
+3. **Highlight in giallo** — evidenzia i termini trovati nel titolo, descrizione e keyword di ogni card
+
+Le **keyword DCAT** di ogni dataset sono mostrate come tag nella card, evidenziate in giallo se corrispondono alla ricerca.
+
 La **Ricerca avanzata** permette di filtrare per tema DCAT, formato, licenza, dataset HVD e Titolare.
 
 ### ✅ Valida CSV
