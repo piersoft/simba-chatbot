@@ -1049,7 +1049,7 @@ app.post("/api/sparql", async (req, res) => {
       signal: AbortSignal.timeout(20000),
     });
     if (!r.ok) {
-      console.error(`[sparql-proxy] ${r.status} per query: ${query.slice(0, 100)}`);
+      console.error(`[sparql-proxy] ${r.status} per query: ${query.slice(0, 500)}`);
       // Restituisce risultati vuoti invece di errore — il frontend gestisce gracefully
       return res.json({ results: { bindings: [] } });
     }
