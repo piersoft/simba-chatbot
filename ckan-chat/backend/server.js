@@ -782,8 +782,10 @@ async function classifyIntent(userMessage) {
       const parsed = parseIntent(stripThinkTags(raw));
       // Se SPARQL ASK ha trovato dataset E Ollama dice OFF_TOPIC MA la query è una sola parola
       // significativa → il catalogo è più affidabile del modello per termini singoli PA
-      if (parsed === "OFF_TOPIC" && words.length === 1) {
-        console.log(`[intent] Ollama dice OFF_TOPIC su parola singola "${words[0]}" ma SPARQL ASK ha trovato dataset → SEARCH`);
+      // Se Ollama dice OFF_TOPIC ma SPARQL ASK ha trovato dataset e il messaggio è breve → SEARCH
+      const _sigWords = userMessage.toLowerCase().replace(/[^a-zàèéìòù\s]/g," ").split(/\s+/).filter(w => w.length > 3);
+      if (parsed === "OFF_TOPIC" && _sigWords.length === 1) {
+        console.log(`[intent] Ollama dice OFF_TOPIC su parola singola ma SPARQL ASK ha trovato dataset → SEARCH`);
         return { intent: "SEARCH", aiUsed: true };
       }
       return { intent: parsed, aiUsed: true };
@@ -1053,13 +1055,14 @@ app.post("/api/sparql", async (req, res) => {
     });
     if (!r.ok) {
       console.error(`[sparql-proxy] ${r.status} per query: ${query.slice(0, 100)}`);
-      throw new Error(`SPARQL ${r.status}`);
+      // Restituisce risultati vuoti invece di errore — il frontend gestisce gracefully
+      return res.json({ results: { bindings: [] } });
     }
     const data = await r.json();
     res.json(data);
   } catch (e) {
     console.error("[sparql-proxy] errore:", e.message);
-    res.status(500).json({ error: e.message });
+    res.json({ results: { bindings: [] } });
   }
 });
 
