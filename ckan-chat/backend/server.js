@@ -612,27 +612,12 @@ Se trovi dataset mostra: nome, organizzazione, descrizione breve e link.`;
 // Output atteso: SEARCH | VALIDATE | ENRICH | OFF_TOPIC
 // ~1 secondo su CPU, nessun tool definition, prompt minimale.
 
-const INTENT_PROMPT = `Sei un classificatore per un assistente open data italiano. Rispondi con UNA SOLA parola.
-
-SEARCH: cercare, trovare, scoprire dataset o dati aperti della PA
-VALIDATE: controllare, verificare, validare la qualità di un CSV che l'utente possiede
-ENRICH: convertire CSV in RDF, TTL, Turtle, Linked Data
-OFF_TOPIC: tutto il resto (cucina, sport, meteo, saluti, domande generali)
-
-Regola chiave: se l'utente dice "ho dei dati" o "ho un file" o "ho un CSV" → VALIDATE (possiede già i dati).
-Se l'utente vuole trovare dati → SEARCH.
-
-Esempi:
-"cerca dataset qualità aria" → SEARCH
-"trova dati sui rifiuti" → SEARCH
-"ho dei dati sui rifiuti da controllare" → VALIDATE
-"ho un CSV da verificare" → VALIDATE
-"ho un file CSV" → VALIDATE
-"valida questo CSV" → VALIDATE
-"converti in TTL" → ENRICH
-"come stai" → OFF_TOPIC
-
-Rispondi SOLO con una di queste parole: SEARCH VALIDATE ENRICH OFF_TOPIC`;
+const INTENT_PROMPT = `Sei un classificatore di intent per un assistente open data italiano. Rispondi SOLO con una parola.
+SEARCH: cerca dataset (es: defibrillatori, rifiuti Roma, bilancio comunale, CIG appalti)
+VALIDATE: valida o controlla un CSV (es: ho dei dati, controlla questo file, ho un CSV)
+ENRICH: converti in RDF o TTL o linked data (es: converti in RDF, trasforma in TTL)
+OFF_TOPIC: tutto il resto (es: come stai, pizza, attacco hacker, ricette, saluti)
+Rispondi SOLO con: SEARCH, VALIDATE, ENRICH o OFF_TOPIC`;
 
 // Pre-filtro deterministico — logica whitelist
 // Se il messaggio NON contiene nessuna keyword open data → OFF_TOPIC diretto
@@ -774,6 +759,7 @@ async function classifyIntent(userMessage) {
           model: OLLAMA_MODEL,
           messages: [{ role: "system", content: INTENT_PROMPT }, { role: "user", content: userMessage }],
           stream: false,
+          think: false,
           options: { temperature: 0, num_predict: 10 },
         }),
       });

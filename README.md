@@ -59,7 +59,7 @@ Per la conversione è **obbligatorio** specificare il **codice IPA** e il **nome
 
 - **Docker** e **Docker Compose** v2+
 - **nginx** (consigliato in produzione per l'accesso via porta 80)
-- Almeno **2 GB di RAM** libera per Ollama con `qwen2.5:1.5b`
+- Almeno **2 GB di RAM** libera per Ollama con `qwen3:1.7b`
 - Accesso a internet per la ricerca SPARQL su `lod.dati.gov.it`
 
 ---
@@ -87,7 +87,7 @@ SERVER_IP=YOUR_SERVER_IP
 
 LLM_PROVIDER=ollama
 OLLAMA_URL=http://ollama:11434
-OLLAMA_MODEL=qwen2.5:1.5b
+OLLAMA_MODEL=qwen3:1.7b
 
 # Con nginx (consigliato):
 VITE_BACKEND_URL=
@@ -111,7 +111,7 @@ SPARQL_ENDPOINT=
 docker compose --profile ollama-local -f docker-compose-full.yml up --build -d
 ```
 
-Il profilo `ollama-local` avvia anche i container `ollama` e `ollama-pull` che scaricano automaticamente il modello `qwen2.5:1.5b` (~1 GB).
+Il profilo `ollama-local` avvia anche i container `ollama` e `ollama-pull` che scaricano automaticamente il modello `qwen3:1.7b` (~1 GB).
 
 **Con Ollama già installato e avviato sul server (senza profilo):**
 

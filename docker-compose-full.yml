@@ -29,7 +29,7 @@ services:
       - ollama
     environment:
       OLLAMA_HOST: http://ollama:11434
-    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:1.5b} && echo 'Modello pronto'"]
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen3:1.7b} && echo 'Modello pronto'"]
     restart: "no"
 
   # ── Validatore CSV MCP (NUOVO) ──────────────────────────────────────────────
@@ -76,7 +76,7 @@ services:
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       ANALYTICS_URL: http://analytics-service:3004
