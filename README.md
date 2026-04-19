@@ -391,6 +391,10 @@ Tutto il resto — esecuzione della ricerca SPARQL, validazione CSV, conversione
 
 ---
 
+## Autore
+
+Realizzato da [@piersoft](https://github.com/piersoft) per [AgID](https://www.agid.gov.it).
+
 ## Licenza
 
 MIT — [Piersoft](https://github.com/piersoft)

@@ -15,5 +15,13 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/piersoft/ckan-mcp-server-docker-ollama"
-  }
+  },
+  "author": "piersoft <https://github.com/piersoft>",
+  "contributors": [
+    {
+      "name": "piersoft",
+      "url": "https://github.com/piersoft",
+      "note": "Realizzato per AgID"
+    }
+  ]
 }

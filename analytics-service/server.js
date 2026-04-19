@@ -1,3 +1,9 @@
+/**
+ * SIMBA — Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico
+ * Realizzato da @piersoft (https://github.com/piersoft) per AgID
+ * Repo: https://github.com/piersoft/simba-chatbot
+ * Licenza: MIT
+ */
 'use strict';
 
 const express     = require('express');

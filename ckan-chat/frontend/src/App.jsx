@@ -1,3 +1,9 @@
+/**
+ * SIMBA — Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico
+ * Realizzato da @piersoft (https://github.com/piersoft) per AgID
+ * Repo: https://github.com/piersoft/simba-chatbot
+ * Licenza: MIT
+ */
 import { useState, useRef, useEffect } from "react";
 import StatusBar from "./components/StatusBar";
 import DatasetCard from "./components/DatasetCard";
@@ -59,7 +65,7 @@ const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.
 // Sanitizza input utente per SPARQL — rimuove caratteri pericolosi
 function sanitizeSparql(s) {
   return (s || "")
-    .replace(/["{}<>\\|^`]/g, "")  // rimuove caratteri SPARQL pericolosi
+    .replace(/["{}<>\|^`]/g, "")  // rimuove caratteri SPARQL pericolosi
     .slice(0, 200);                   // limite lunghezza
 }
 
@@ -497,8 +503,9 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
           );
         }
 
-        const firstLine = csv_text.trim().split("\n")[0] || "";
-        const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("\t");
+        const firstLine = csv_text.trim().split("
+")[0] || "";
+        const hasSep = firstLine.includes(",") || firstLine.includes(";") || firstLine.includes("	");
         if (hasSep) {
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
@@ -690,18 +697,26 @@ SELECT ?ipaCode WHERE {
       else if (intent === "ENRICH") setPageTitle("Conversione RDF — SIMBA");
 
       if (intent === "OFF_TOPIC") {
-        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- Ricerca dataset open data italiani\n- Validazione file CSV per la PA\n- Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
+        addMsg("assistant", `Mi dispiace, posso aiutarti solo con:
+- Ricerca dataset open data italiani
+- Validazione file CSV per la PA
+- Conversione CSV → RDF Linked Data
+
+Prova con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
         return;
       }
 
       if (intent === "VALIDATE") {
         const url = text.match(/https?:\/\/[^\s]+/)?.[0];
         if (!url) {
-          addMsg("assistant", "Per validare un CSV dimmi l'URL del file.\n\nOppure usa il box qui sotto per incollarlo:");
+          addMsg("assistant", "Per validare un CSV dimmi l'URL del file.
+
+Oppure usa il box qui sotto per incollarlo:");
           setShowCsvBox(true);
           return;
         }
-        addMsg("assistant", `Validazione in corso per:\n\`${url}\``, { type: "validating" });
+        addMsg("assistant", `Validazione in corso per:
+\`${url}\``, { type: "validating" });
         const report = await doValidate(url);
         addMsg("assistant", report, { type: "validate_report", url });
         return;
@@ -718,7 +733,7 @@ SELECT ?ipaCode WHERE {
       const displayQuery = text;
       const query = text
         .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
-        .replace(/\b(dataset|open data)\b/gi, "")
+        .replace(/(dataset|open data)/gi, "")
         .replace(/\s+/g, " ").trim() || text;
 
       setPageTitle("Ricerca Dataset — Open Data Italia");
@@ -734,7 +749,9 @@ SELECT ?ipaCode WHERE {
       });
 
       if (!datasets.length) {
-        addMsg("assistant", `Nessun dataset trovato per **"${displayQuery}"**.\n\nProva con termini più generici.`);
+        addMsg("assistant", `Nessun dataset trovato per **"${displayQuery}"**.
+
+Prova con termini più generici.`);
         return;
       }
 
@@ -771,8 +788,10 @@ SELECT ?ipaCode WHERE {
         throw new Error(`HTTP ${r.status}: ${err.slice(0,200)}`);
       }
       const ttl = await r.text();
-      const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 30).join("\n");
+      const lines = ttl.split("
+").filter(Boolean);
+      const preview = lines.slice(0, 30).join("
+");
       const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
       const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: mimeType });
@@ -818,7 +837,11 @@ SELECT ?ipaCode WHERE {
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
     } catch (e) {
       const msg = e.message.includes("Content-Type") || e.message.includes("non sembra un file CSV")
-        ? `❌ **Formato non supportato**\n\nL'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).\n\n**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`
+        ? `❌ **Formato non supportato**
+
+L'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).
+
+**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`
         : `❌ Errore: ${e.message}`;
       addMsg("assistant", msg);
     }
@@ -860,8 +883,10 @@ SELECT ?ipaCode WHERE {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
-      const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 30).join("\n");
+      const lines = ttl.split("
+").filter(Boolean);
+      const preview = lines.slice(0, 30).join("
+");
       const ext = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle" });
       const blobUrl = URL.createObjectURL(blob);
@@ -922,8 +947,10 @@ SELECT ?ipaCode WHERE {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
-      const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 30).join("\n");
+      const lines = ttl.split("
+").filter(Boolean);
+      const preview = lines.slice(0, 30).join("
+");
       const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
       replaceLastMsg("assistant", `✅ Conversione completata!`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt });
@@ -984,7 +1011,8 @@ SELECT ?ipaCode WHERE {
             {m.preview && (
               <>
                 <p className="ttl-preview-label">Anteprima (prime righe) — scarica il file per il contenuto completo:</p>
-                <pre className="ttl-preview">{m.preview}{"\n…"}</pre>
+                <pre className="ttl-preview">{m.preview}{"
+…"}</pre>
               </>
             )}
             <div className="ttl-download-btns">
@@ -1010,7 +1038,8 @@ SELECT ?ipaCode WHERE {
     return (
       <div key={i} className={`message ${m.role}`}>
         <div className="message-bubble">
-          {m.content.split("\n").map((line, j) => (
+          {m.content.split("
+").map((line, j) => (
             <p key={j} dangerouslySetInnerHTML={{ __html: mdToHtml(line) || "&nbsp;" }} />
           ))}
         </div>

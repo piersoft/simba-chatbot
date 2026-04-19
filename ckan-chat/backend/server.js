@@ -1,3 +1,9 @@
+/**
+ * SIMBA — Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico
+ * Realizzato da @piersoft (https://github.com/piersoft) per AgID
+ * Repo: https://github.com/piersoft/simba-chatbot
+ * Licenza: MIT
+ */
 import express from "express";
 import { promises as dns } from "dns";
 import { writeFileSync, unlinkSync, existsSync, readFileSync } from "fs";
@@ -198,7 +204,8 @@ async function mcpCallTo(url, method, params = {}) {
     body: JSON.stringify({ jsonrpc: "2.0", method, params, id: Date.now() }),
   });
   const raw = await res.text();
-  for (const line of raw.split("\n")) {
+  for (const line of raw.split("
+")) {
     const t = line.trim();
     if (t.startsWith("data:")) {
       try { return JSON.parse(t.slice(5).trim()); } catch {}
@@ -263,7 +270,8 @@ async function callTool(name, args) {
     console.log(`[callTool] ${name} risposta ricevuta, error=${JSON.stringify(res.error)}`);
     if (res.error) throw new Error(`MCP error ${res.error.code}: ${res.error.message}`);
     const content = res.result?.content ?? [];
-    const text = content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
+    const text = content.map((c) => c.text ?? JSON.stringify(c)).join("
+");
     console.log(`[callTool] ${name} ok, ${text.length} chars`);
     return text;
   } catch (e) {
@@ -438,10 +446,11 @@ async function isQuestionOnTopic(userMessage) {
       const raw = data.message?.content ?? "";
       const stripped = stripThinkTags(raw).toUpperCase();
       // Cerca SI o NO ovunque nel testo (qwen3 a volte aggiunge punteggiatura)
-      const hasNo  = /\bNO\b/.test(stripped);
-      const hasSi  = /\bSI\b/.test(stripped) || stripped.includes("YES");
+      const hasNo  = /NO/.test(stripped);
+      const hasSi  = /SI/.test(stripped) || stripped.includes("YES");
       const answer = stripped.slice(0, 10); // per il log
-      console.log(`[guardrail] raw="${raw.slice(0,60).replace(/\n/g," ")}" → stripped="${answer}"`);
+      console.log(`[guardrail] raw="${raw.slice(0,60).replace(/
+/g," ")}" → stripped="${answer}"`);
       if (!stripped) return true; // fallback permissivo se vuoto
       if (hasNo && !hasSi) return false;
       return true;
@@ -508,7 +517,9 @@ Rispondi sempre in italiano.`;
 function buildNudgeMessage(userQuestion) {
   return {
     role: "user",
-    content: `[PROMEMORIA SISTEMA: Per rispondere a questa domanda DEVI chiamare uno strumento CKAN. Non rispondere senza aver prima chiamato un tool.]\n\n${userQuestion}`,
+    content: `[PROMEMORIA SISTEMA: Per rispondere a questa domanda DEVI chiamare uno strumento CKAN. Non rispondere senza aver prima chiamato un tool.]
+
+${userQuestion}`,
   };
 }
 
@@ -537,7 +548,8 @@ async function chatWithTools(messages, model) {
       if (finishReason === "stop" || finishReason === "end_turn" || !msg.tool_calls?.length) {
         const reply = typeof msg.content === "string"
           ? msg.content
-          : msg.content?.filter(b => b.type === "text").map(b => b.text).join("\n") ?? "";
+          : msg.content?.filter(b => b.type === "text").map(b => b.text).join("
+") ?? "";
         return { reply, toolCalls: toolCallsLog };
       }
       for (const tc of msg.tool_calls) {
@@ -583,7 +595,10 @@ Se trovi dataset mostra: nome, organizzazione, descrizione breve e link.`;
 
   const synthesisMessages = [
     { role: "system", content: synthesisPrompt },
-    { role: "user", content: `Domanda: ${lastUserMsg}\n\nDati disponibili:\n${mcpResult.slice(0, 3000)}` },
+    { role: "user", content: `Domanda: ${lastUserMsg}
+
+Dati disponibili:
+${mcpResult.slice(0, 3000)}` },
   ];
 
   try {
@@ -863,7 +878,8 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       });
       if (csvResp.ok) {
         csv_text = await csvResp.text();
-        console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/\n/g,' ')}`);
+        console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/
+/g,' ')}`);
         if (csv_text.trimStart().startsWith("<")) { console.warn(`[validate] risposta HTML, scarto`); csv_text = null; }
         if (csv_text && csv_text.length < 10) { console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`); csv_text = null; }
       } else {
