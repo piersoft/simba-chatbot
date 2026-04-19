@@ -299,7 +299,7 @@ ${doveFilter}  FILTER(${kwFilter(words, useOr)})
       const phraseQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTINCT STR(?kw);separator=",") AS ?keywords) WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
@@ -307,8 +307,9 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
   OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+  OPTIONAL { ?d dcat:keyword ?kw FILTER(LANG(?kw)='it'||LANG(?kw)='') }
   FILTER(CONTAINS(LCASE(STR(?title)),"${fullPhrase}"))
-} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+} GROUP BY ?d ?title ?description ?modified ?rhName ?landingPage ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
       try {
         const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(phraseQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
         const rd = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
@@ -321,7 +322,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
               const id = uri.split("/").pop();
               const landingPage = b.landingPage?.value;
               const viewUrl = landingPage || `https://www.dati.gov.it/view-dataset/dataset?id=${id}`;
-              seenP.set(uri, { uri, id, title: b.title?.value ?? "", description: b.description?.value ?? "", modified: b.modified?.value?.slice(0,10) ?? "", publisher: b.rhName?.value || "", ipaCode: "", viewUrl, csvResources: [] });
+              seenP.set(uri, { uri, id, title: b.title?.value ?? "", description: b.description?.value ?? "", modified: b.modified?.value?.slice(0,10) ?? "", publisher: b.rhName?.value || "", ipaCode: "", keywords: b.keywords?.value ? b.keywords.value.split(",").map(k=>k.trim()).filter(k=>k&&k!=="N_A"&&k.length>2).slice(0,8) : [], viewUrl, csvResources: [] });
             }
             return { datasets: [...seenP.values()], query, offset };
           }
@@ -368,8 +369,9 @@ SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTI
             const modInvalid = modYear > new Date().getFullYear()+1 || (modYear < 1990 && modYear > 0);
             seenT.set(uri, { uri, id, title: b.title?.value ?? "", description: b.description?.value ?? "",
               modified: modInvalid ? "" : modRaw, modifiedRaw: modRaw, modInvalid,
-              publisher: b.rhName?.value || (dove || ""), ipaCode: "", viewUrl, csvResources: [],
-              catalogUri: "", catalogLabel: "" });
+              publisher: b.rhName?.value || (dove || ""), ipaCode: "",
+              keywords: b.keywords?.value ? b.keywords.value.split(",").map(k=>k.trim()).filter(k=>k&&k!=="N_A"&&k.length>2).slice(0,8) : [],
+              viewUrl, csvResources: [], catalogUri: "", catalogLabel: "" });
           }
           return { datasets: [...seenT.values()].slice(0, PAGE_SIZE), query, offset };
         }
