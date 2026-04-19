@@ -64,7 +64,7 @@ const TOUR_STEPS = [
   },
   {
     title: "Campo COSA",
-    text: "Scrivi qui l'argomento che cerchi: «defibrillatori», «rifiuti», «bilancio comunale». Puoi anche incollare il titolo esatto di un dataset.",
+    text: "Scrivi l'argomento che ti interessa: «defibrillatori», «rifiuti», «bilancio comunale». Se conosci il titolo esteso di un dataset (es. oltre 30 caratteri), puoi incollarlo direttamente per trovarlo con precisione.",
     target: "wizard-cosa", pos: "above",
   },
   {
