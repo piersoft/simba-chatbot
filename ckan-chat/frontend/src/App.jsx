@@ -338,7 +338,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
     const titleOnlyQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
+SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTINCT STR(?kw);separator=",") AS ?keywords) WHERE {
   ?d a dcat:Dataset .
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
@@ -346,8 +346,9 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
   OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
+  OPTIONAL { ?d dcat:keyword ?kw FILTER(LANG(?kw)='it'||LANG(?kw)='') }
   FILTER(${titleOnlyFilter(useWords)})
-} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
+} GROUP BY ?d ?title ?description ?modified ?rhName ?landingPage ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 
     try {
       const titleUrl = `${SPARQL_EP}?query=${encodeURIComponent(titleOnlyQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
