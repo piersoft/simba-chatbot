@@ -79,11 +79,14 @@ services:
     # parte prima che rdf-mcp sia pronto e fallisce [tools] interrogo con ECONNREFUSED.
     # Uso node+fetch (Node 20 nativo) — evita dipendenze wget/curl sull'immagine alpine.
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3003/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      # Qualsiasi risposta HTTP (anche 400/500) significa che il server ascolta:
+      # rdf-mcp è un proxy catch-all al worker Cloudflare, 'GET /' senza param
+      # torna 4xx legittimamente — ma solo se Node è up e loadWorker() è completato.
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3003/').then(() => process.exit(0)).catch(() => process.exit(1))"]
       interval: 5s
-      timeout: 3s
-      retries: 15
-      start_period: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
     logging: *logging-default
 
   # ── Backend Node.js ─────────────────────────────────────────────────────────
