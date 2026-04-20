@@ -30,7 +30,11 @@ services:
       - ollama_data:/root/.ollama
     environment:
       OLLAMA_KEEP_ALIVE: 24h
-      OLLAMA_NUM_PARALLEL: 1
+      # Numero di richieste concorrenti gestite in parallelo da Ollama.
+      # Ogni slot aggiunge ~500MB RAM. Vincolo CPU: modelli piccoli (0.5b) usano
+      # 1 core/slot, modelli grandi (1.7b+) possono saturare tutti i core anche
+      # con 1 solo slot. Tunare in base al profilo modelli + core disponibili.
+      OLLAMA_NUM_PARALLEL: ${OLLAMA_NUM_PARALLEL:-1}
     deploy:
       resources:
         limits:
