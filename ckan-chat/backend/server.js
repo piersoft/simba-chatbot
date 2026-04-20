@@ -170,12 +170,14 @@ app.use("/api/chat", rateLimit({
 // ─── Configurazione provider ──────────────────────────────────────────────────
 const LLM_PROVIDER = process.env.LLM_PROVIDER || "mistral";
 
-// Lista MCP server: tutti opzionali (validatore e rdf forniti dai container locali)
-// MCP_URL è dead code ereditato dal vecchio setup (container ckan-mcp-server dismesso)
+// Lista MCP server: solo validatore-mcp espone tool via protocollo MCP.
+// rdf-mcp NON è un server MCP: è un adapter HTTP al worker CSV-to-RDF,
+// invocato direttamente via REST dall'endpoint /api/enrich (vedi RDF_MCP_URL
+// più sotto). Censirlo qui produceva solo rumore "→ 0 tool" nei log init.
+// MCP_URL è dead code ereditato dal vecchio setup (container ckan-mcp-server dismesso).
 const MCP_URLS = [
   process.env.MCP_URL              || null,
   process.env.MCP_URL_VALIDATORE   || null,
-  process.env.MCP_URL_RDF          || null,
 ].filter(Boolean);
 
 // Mistral
