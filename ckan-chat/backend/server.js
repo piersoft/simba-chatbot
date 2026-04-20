@@ -146,13 +146,21 @@ async function isResolvedIpSafe(hostname) {
 }
 
 // ─── Rate limiting globale ────────────────────────────────────────────────────
-// Load test bypass: se LOADTEST_BYPASS_IP è settata nel .env, i rate limiter
-// skippano le richieste da quell'IP (tipicamente 127.0.0.1 per test locali).
-// Se la variabile è vuota o non definita, zero effetto (backward compatible).
-const LOADTEST_BYPASS_IP = process.env.LOADTEST_BYPASS_IP || "";
+// Load test bypass: LOADTEST_BYPASS_IP controlla se saltare i rate limiter.
+// Valori supportati:
+//   vuoto / non definito  → nessun bypass (default produzione)
+//   "*"                   → bypass TOTALE (solo per load test in ambiente isolato!)
+//   IP specifico          → bypass solo per quell'IP (es. "172.18.0.1")
+// All'avvio stampa un log dichiarativo. SICUREZZA: non lasciare valorizzata in prod.
+const LOADTEST_BYPASS_IP = (process.env.LOADTEST_BYPASS_IP || "").trim();
+if (LOADTEST_BYPASS_IP === "*") {
+  console.log(`⚠ [loadtest] RATE LIMITERS DISABILITATI GLOBALMENTE (LOADTEST_BYPASS_IP="*")`);
+} else if (LOADTEST_BYPASS_IP) {
+  console.log(`⚠ [loadtest] rate limiters bypassati per IP=${LOADTEST_BYPASS_IP}`);
+}
 const skipIfLoadtest = (req) => {
   if (!LOADTEST_BYPASS_IP) return false;
-  // req.ip può essere "::ffff:127.0.0.1" (IPv4-mapped IPv6), normalizzo
+  if (LOADTEST_BYPASS_IP === "*") return true;
   const ip = (req.ip || "").replace(/^::ffff:/, "");
   return ip === LOADTEST_BYPASS_IP;
 };
