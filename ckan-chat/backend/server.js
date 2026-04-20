@@ -155,6 +155,20 @@ const globalLimiter = rateLimit({
 });
 app.use("/api/", globalLimiter);
 
+// ─── Perf logging: misura latenza di ogni endpoint /api/* ────────────────────
+// Stampa una riga [perf] per ogni risposta:
+//   [perf] POST /api/intent 200 45ms
+// Utile per diagnosticare dove si perde tempo (LLM vs SPARQL vs altro).
+// Formato fisso, grep-friendly. Overhead trascurabile (<0.1ms per richiesta).
+app.use("/api/", (req, res, next) => {
+  const t0 = Date.now();
+  res.on("finish", () => {
+    const ms = Date.now() - t0;
+    console.log(`[perf] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`);
+  });
+  next();
+});
+
 const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
