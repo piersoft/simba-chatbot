@@ -53,8 +53,12 @@ const ENDPOINTS = [
 ];
 const TOTAL_WEIGHT = ENDPOINTS.reduce((a, e) => a + e.weight, 0);
 
-// ─── Pool di query realistiche ──────────────────────────────────────────────
+// ─── Pool di query realistiche (ampio, per evitare che la cache domini) ────
+// 60 query miste: SEARCH, OFF_TOPIC, VALIDATE, ENRICH, ambigue (forzano LLM).
+// Con cache LRU size 1000, 60 query uniche occupano solo il 6% → la cache
+// si popola ma non copre il 100% delle richieste, misuriamo inferenza vera.
 const INTENT_QUERIES = [
+  // SEARCH — temi PA comuni (15)
   "Cerco dati sugli incidenti stradali in Lombardia",
   "Dammi i dati sulla qualità dell'aria a Milano",
   "bilanci comunali 2023",
@@ -62,9 +66,65 @@ const INTENT_QUERIES = [
   "Elenco delle scuole di Roma",
   "Dataset turismo Puglia in formato aperto",
   "dati popolazione comuni italiani",
+  "Quali sono i dati sui rifiuti urbani?",
+  "Cerco dati sui contratti pubblici",
+  "Informazioni sui musei regionali aperti",
+  "dati spesa sanitaria per regione",
+  "Voglio il dataset degli appalti PNRR",
+  "Elenco delle farmacie comunali di Torino",
+  "Ci sono dati sui trasporti pubblici?",
+  "mostrami i bilanci di previsione della Regione Veneto",
+  // SEARCH — varianti colloquiali / ambigue (10)
+  "Vorrei sapere quante scuole ci sono nella mia città",
+  "Voglio i dati della spesa pubblica",
+  "ma esistono dati aperti sulla qualità della vita?",
+  "hai dataset sull'educazione?",
+  "fammi vedere i dati sulle energie rinnovabili",
+  "che dataset ci sono sulla cultura?",
+  "ho bisogno di dati geografici del comune di Bari",
+  "datasets ambiente lombardia",
+  "dammi qualcosa su turismo e cultura in Sicilia",
+  "puoi cercarmi dati sulla mobilità elettrica",
+  // OFF_TOPIC — fact-trap (10)
   "Chi è il sindaco di Napoli?",
+  "Chi è il presidente della repubblica?",
+  "Quando è stata firmata la Costituzione italiana?",
+  "A che ora apre l'ufficio anagrafe?",
+  "Quanto costa un biglietto del treno Milano-Roma?",
+  "Chi ha vinto il campionato l'anno scorso?",
+  "Che tempo fa domani a Roma?",
+  "Quando è nato Leonardo da Vinci?",
+  "quali sono gli orari del comune di Firenze?",
+  "ma il parcheggio in centro costa quanto?",
+  // OFF_TOPIC — meta-bot (5)
+  "Ciao, ma tu che fai?",
+  "Cosa sai fare?",
+  "Sei meglio di ChatGPT?",
+  "Chi ti ha creato?",
+  "Quanto costa usarti?",
+  // OFF_TOPIC — task LLM / intrattenimento (10)
   "Come si fa il tiramisù?",
+  "Mi racconti una barzelletta?",
+  "Puoi scrivermi un'email al mio capo?",
+  "Traducimi 'ciao' in inglese",
+  "Fammi una poesia sulla primavera",
+  "Scrivimi un riassunto di questo testo",
+  "come si prepara il risotto alla milanese?",
+  "raccontami una storia divertente",
+  "fai un riassunto dell'Iliade",
+  "inventami uno slogan pubblicitario",
+  // VALIDATE (5)
+  "Puoi aiutarmi a migliorare i metadati del mio CSV?",
+  "Questo CSV ha errori?",
+  "Il mio file rispetta lo standard?",
+  "controlla se il mio dataset è conforme",
+  "verifica la qualità del mio file",
+  // ENRICH (5)
+  "Mi arricchisci questo dataset?",
+  "arricchisci semanticamente questo catalogo CKAN",
   "Puoi convertirmi un CSV in RDF?",
+  "Voglio generare i linked data dal mio dataset",
+  "trasforma il mio CSV in TTL",
 ];
 
 // Query SPARQL realistiche: cercano dataset per keyword con LIMIT basso
