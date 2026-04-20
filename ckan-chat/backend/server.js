@@ -146,11 +146,23 @@ async function isResolvedIpSafe(hostname) {
 }
 
 // ─── Rate limiting globale ────────────────────────────────────────────────────
+// Load test bypass: se LOADTEST_BYPASS_IP è settata nel .env, i rate limiter
+// skippano le richieste da quell'IP (tipicamente 127.0.0.1 per test locali).
+// Se la variabile è vuota o non definita, zero effetto (backward compatible).
+const LOADTEST_BYPASS_IP = process.env.LOADTEST_BYPASS_IP || "";
+const skipIfLoadtest = (req) => {
+  if (!LOADTEST_BYPASS_IP) return false;
+  // req.ip può essere "::ffff:127.0.0.1" (IPv4-mapped IPv6), normalizzo
+  const ip = (req.ip || "").replace(/^::ffff:/, "");
+  return ip === LOADTEST_BYPASS_IP;
+};
+
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipIfLoadtest,
   message: { error: "Troppe richieste. Riprova tra un minuto." }
 });
 app.use("/api/", globalLimiter);
@@ -172,12 +184,14 @@ app.use("/api/", (req, res, next) => {
 const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
+  skip: skipIfLoadtest,
   message: { error: "Troppe richieste su questo endpoint." }
 });
 
 app.use("/api/chat", rateLimit({
   windowMs: 60 * 1000,
   max: 10,
+  skip: skipIfLoadtest,
   message: { error: "Troppe richieste, riprova tra un minuto." }
 }));
 

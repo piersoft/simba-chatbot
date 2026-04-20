@@ -90,3 +90,60 @@ Edita l'array `TESTS` in `intent-classifier.mjs`. Convenzioni:
 - `q` la domanda esatta che l'utente scriverebbe
 - `expected` stringa o array di stringhe ammesse
 - `note` motivo/ipotesi del caso (utile per il debug dei mismatch)
+
+
+## load-test.mjs
+
+Load test con N worker concorrenti che simulano utenti che fanno query miste
+(intent/sparql/enrich con pesi realistici 60/35/5%) per M secondi. Misura
+latenze percentili (p50/p75/p95/p99), throughput, error rate.
+
+### Preparazione (obbligatoria)
+
+Il backend ha rate limiter aggressivi (20 req/min su /api/intent). Per un
+load test devi bypassarli per l'IP del tester:
+
+1. Aggiungi al `.env` sul server: `LOADTEST_BYPASS_IP=127.0.0.1`
+2. Ricrea il backend: `docker compose ... stop backend && rm -f backend && up -d backend`
+3. Verifica nel log: dovresti poter fare >20 richieste/min da localhost
+4. **Al termine del test, rimuovi la variabile dal .env e ricrea backend**
+
+### Come lanciarlo
+
+```bash
+# Sul server, in 2 finestre separate
+
+# Finestra 1 — campionamento risorse Docker
+bash tests/resource-sampler.sh
+
+# Finestra 2 — carico generato
+BASE_URL=http://localhost:3001 node tests/load-test.mjs
+
+# Oppure con parametri custom
+BASE_URL=http://localhost:3001 CONCURRENCY=50 DURATION_SEC=300 node tests/load-test.mjs
+```
+
+### Output
+
+- Console: progress ogni 10s, report finale tabellare
+- `load-test-results.json` — dump completo
+- `load-test-stats.csv` — campionamento CPU/MEM di ollama, backend, validatore, rdf-mcp
+
+### Parametri (tutti via env var)
+
+| Var | Default | Note |
+|---|---|---|
+| `BASE_URL` | (obbligatoria) | URL backend, tipicamente `http://localhost:3001` |
+| `CONCURRENCY` | 50 | Worker paralleli |
+| `DURATION_SEC` | 300 | Durata test in secondi |
+| `THINK_MIN_MS` | 200 | Min delay tra richieste dello stesso worker |
+| `THINK_MAX_MS` | 800 | Max delay tra richieste dello stesso worker |
+| `TIMEOUT_MS` | 30000 | Timeout per singola richiesta |
+
+### Interpretazione risultati
+
+- **p50**: latenza mediana — esperienza tipica utente
+- **p95**: il 5% dei casi peggiori — sensazione di lentezza percepita
+- **p99**: code estrema — outlier, spesso correlati a SPARQL esterno lento
+- **Error rate > 5%**: sistema sovraccarico
+- **p95 > 5s**: UX inaccettabile (soglia oltre cui l'utente abbandona)
