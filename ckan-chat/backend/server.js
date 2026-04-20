@@ -620,16 +620,26 @@ ${mcpResult.slice(0, 3000)}` },
 
 const INTENT_PROMPT = `Sei un classificatore di intent per un assistente open data italiano. Rispondi SOLO con una parola.
 
-REGOLA CHIAVE: l'utente cerca un DATASET (file, tabella, catalogo da scaricare) o chiede UN FATTO/INFORMAZIONE? Solo il primo caso è SEARCH.
+REGOLA CHIAVE: l'utente cerca DATI AGGREGATI/DATASET (conteggi, elenchi, tabelle, cataloghi della PA) → SEARCH. Cerca un FATTO PUNTUALE (una persona specifica, un orario, un prezzo corrente) → OFF_TOPIC.
 
-SEARCH: cerca un DATASET open data PA (es: defibrillatori, rifiuti Roma, bilancio comunale, CIG appalti, educazione, sanita, ambiente, popolazione, turismo Puglia)
+SEARCH: cerca DATASET o AGGREGATI open data della PA italiana, inclusi:
+- quantità e conteggi aggregati (quanti stranieri, quante scuole, quanti appalti)
+- elenchi di entità PA (elenco comuni, elenco scuole, elenco appalti CIG)
+- bilanci, spesa pubblica, contratti, sanità, ambiente, trasporti, turismo, cultura, eventi finanziati dalla PA, prodotti DOP/IGP
+
 VALIDATE: valida o controlla un CSV dell'utente (es: ho dei dati, controlla questo file, errori nel mio CSV)
+
 ENRICH: converti dati in RDF/TTL/linked data (es: converti in RDF, trasforma in TTL, arricchisci semanticamente)
-OFF_TOPIC: tutto il resto, inclusi:
-- domande su FATTI/EVENTI/PERSONE (chi è il sindaco, chi ha vinto, quando è nato, quanto costa il biglietto, a che ora apre)
-- domande sul BOT stesso (chi ti ha creato, cosa sai fare, sei un AI, quanto costi, sei meglio di X)
-- task LLM generici (scrivi email, traduci, riassumi, fai poesia, racconta barzelletta)
-- saluti, ricette, intrattenimento, meteo, sport
+
+OFF_TOPIC: solo per:
+- fatti su singola persona specifica (chi è il sindaco di X, chi ha vinto)
+- orari/prezzi correnti (a che ora apre, quanto costa il biglietto oggi)
+- meteo, sport, ricette di cucina (come si fa il tiramisù)
+- domande sul BOT (chi ti ha creato, cosa sai fare, sei un AI)
+- task LLM generici (scrivi email, traduci, riassumi, fai poesia)
+- saluti e cortesia
+
+ATTENZIONE: "quanti X ci sono" e "elenco di X" sono sempre SEARCH se X è una categoria (persone, scuole, appalti, eventi, prodotti).
 
 Rispondi SOLO con: SEARCH, VALIDATE, ENRICH o OFF_TOPIC`;
 
