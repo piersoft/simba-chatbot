@@ -87,7 +87,7 @@ async function suite1_InputFuzzing() {
   banner("SUITE 1 — Input fuzzing (payload estremi e caratteri speciali)");
   const suite = { name: "input-fuzzing", tests: [], passed: 0, failed: 0 };
 
-  subheader("Payload lunghi su /api/intent (verifica difese layer applicativo + nginx)");
+  subheader("Payload lunghi su /api/intent (limite atteso ~2000 char)");
   const sizes = [2001, 10_000, 100_000, 1_000_000];
   for (const size of sizes) {
     const msg = "a".repeat(size);
@@ -96,16 +96,20 @@ async function suite1_InputFuzzing() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: msg }),
     });
-    // Difese possibili:
-    //   400 = backend valida e rifiuta
-    //   413 = nginx client_max_body_size superato (difesa reverse proxy)
-    //   502 = reverse proxy chiude connessione (spesso accompagna 413 su alcune config)
-    //   429 = rate limiter (altra difesa valida)
-    // Tutte valide come "il payload non è stato processato dal classifier".
-    // Unico esito NEGATIVO: 200 = il sistema ha accettato payload malevolo.
-    const ok = [400, 413, 502, 429].includes(r.status);
-    recordTest(suite, `Payload ${size} char → bloccato da layer difensivo`,
-      "4xx/502 (layered defense)", `HTTP ${r.status}`, ok, `${r.latency}ms`);
+    // Esiti attesi (difese legittime):
+    //   400 = backend Node valida e rifiuta (comportamento primario voluto)
+    //   413 = nginx client_max_body_size superato (difesa secondaria)
+    //   429 = rate limiter scattato
+    // NON VALIDI:
+    //   200 = payload accettato (vulnerabilità)
+    //   502 = Bad Gateway (bug: backend non dovrebbe crashare o chiudere connessione)
+    //   5xx in generale = errore server non gestito
+    // Se vedi 502 ripetutamente, verifica che il backend sia completamente booted
+    // e stabile prima di lanciare il test. Un 502 occasionale può indicare boot
+    // in corso; uno persistente è un bug da investigare.
+    const ok = [400, 413, 429].includes(r.status);
+    recordTest(suite, `Payload ${size} char → rifiutato (400/413/429)`,
+      "4xx", `HTTP ${r.status}`, ok, `${r.latency}ms`);
   }
 
   subheader("Caratteri di controllo e null bytes");
