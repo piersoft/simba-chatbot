@@ -117,6 +117,8 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
       BLOCKLIST_PATH: /app/data/blocklist.json
       SPARQL_ENDPOINT: ${SPARQL_ENDPOINT:-https://lod.dati.gov.it/sparql}
+      # Load test bypass (lasciare vuoto in produzione)
+      LOADTEST_BYPASS_IP: ${LOADTEST_BYPASS_IP:-}
     volumes:
       - blocklist_data:/app/data
     depends_on:
