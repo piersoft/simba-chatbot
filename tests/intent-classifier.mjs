@@ -15,7 +15,10 @@
  * Uso:
  *   npm run test:intent
  *   node tests/intent-classifier.mjs
- *   BASE_URL=https://chatbot.piersoftckan.biz DELAY_MS=3500 node tests/intent-classifier.mjs
+ *   BASE_URL=https://tuo-dominio.it DELAY_MS=3500 node tests/intent-classifier.mjs
+ *
+ * BASE_URL è OBBLIGATORIA: senza di essa il test fallisce con errore
+ * esplicativo (niente default hardcoded a un dominio specifico).
  *
  * Requisiti: Node.js 18+, backend up su BASE_URL
  * Rate limit: /api/intent = 20 req/min → delay default 3500ms (totale ~2m20s)
@@ -30,7 +33,22 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const BASE_URL = process.env.BASE_URL ?? "https://chatbot.piersoftckan.biz";
+const BASE_URL = process.env.BASE_URL;
+if (!BASE_URL) {
+  console.error("");
+  console.error("┌─────────────────────────────────────────────────────────────┐");
+  console.error("│ ERRORE: variabile BASE_URL non configurata                  │");
+  console.error("├─────────────────────────────────────────────────────────────┤");
+  console.error("│ Il test ha bisogno dell\'URL del backend da testare.        │");
+  console.error("│ Esempio:                                                    │");
+  console.error("│                                                             │");
+  console.error("│   BASE_URL=https://tuo-dominio.it node tests/intent-...     │");
+  console.error("│   BASE_URL=http://localhost:3001 npm run test:intent        │");
+  console.error("│                                                             │");
+  console.error("└─────────────────────────────────────────────────────────────┘");
+  console.error("");
+  process.exit(2);
+}
 const ENDPOINT = `${BASE_URL}/api/intent`;
 const DELAY_MS = Number(process.env.DELAY_MS ?? 3500);
 const TIMEOUT  = Number(process.env.TIMEOUT  ?? 45000);

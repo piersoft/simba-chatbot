@@ -23,21 +23,25 @@ scelte per coprire sia i casi d'uso tipici che i casi-trappola.
 
 ### Come lanciarlo
 
+**`BASE_URL` è obbligatoria**: senza di essa il test si rifiuta di partire
+(nessun default hardcoded a un dominio specifico, così se il dominio
+di produzione cambia il test non gira per sbaglio contro l'URL vecchio).
+
 ```bash
-# dalla root del repo
-npm --prefix ckan-chat/backend run test:intent
+# puntando al backend di produzione
+BASE_URL=https://tuo-dominio.it node tests/intent-classifier.mjs
 
-# oppure direttamente
-node tests/intent-classifier.mjs
-
-# puntando a un backend diverso
+# puntando al backend locale in dev
 BASE_URL=http://localhost:3001 node tests/intent-classifier.mjs
 
+# via npm script (imposta BASE_URL nell'ambiente prima)
+BASE_URL=https://tuo-dominio.it npm --prefix ckan-chat/backend run test:intent
+
 # con delay diverso (default 3500ms per rispettare rate limit 20/min)
-DELAY_MS=2000 node tests/intent-classifier.mjs
+BASE_URL=http://localhost:3001 DELAY_MS=2000 node tests/intent-classifier.mjs
 ```
 
-Il backend deve essere up su `BASE_URL` (default `https://chatbot.piersoftckan.biz`).
+Il backend deve essere up e raggiungibile all'URL passato.
 Nessuna dipendenza esterna: usa solo `fetch` nativo di Node 18+.
 
 Durata stimata: ~2m20s (40 domande × 3.5s delay per rispettare lo
