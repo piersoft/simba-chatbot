@@ -618,10 +618,18 @@ ${mcpResult.slice(0, 3000)}` },
 // ~1 secondo su CPU, nessun tool definition, prompt minimale.
 
 const INTENT_PROMPT = `Sei un classificatore di intent per un assistente open data italiano. Rispondi SOLO con una parola.
-SEARCH: cerca dataset (es: defibrillatori, rifiuti Roma, bilancio comunale, CIG appalti, educazione, istruzione, sanita, ambiente, popolazione)
-VALIDATE: valida o controlla un CSV (es: ho dei dati, controlla questo file, ho un CSV)
-ENRICH: converti in RDF o TTL o linked data (es: converti in RDF, trasforma in TTL)
-OFF_TOPIC: tutto il resto (es: come stai, pizza, torta, ricette, attacco hacker, saluti)
+
+REGOLA CHIAVE: l'utente cerca un DATASET (file, tabella, catalogo da scaricare) o chiede UN FATTO/INFORMAZIONE? Solo il primo caso è SEARCH.
+
+SEARCH: cerca un DATASET open data PA (es: defibrillatori, rifiuti Roma, bilancio comunale, CIG appalti, educazione, sanita, ambiente, popolazione, turismo Puglia)
+VALIDATE: valida o controlla un CSV dell'utente (es: ho dei dati, controlla questo file, errori nel mio CSV)
+ENRICH: converti dati in RDF/TTL/linked data (es: converti in RDF, trasforma in TTL, arricchisci semanticamente)
+OFF_TOPIC: tutto il resto, inclusi:
+- domande su FATTI/EVENTI/PERSONE (chi è il sindaco, chi ha vinto, quando è nato, quanto costa il biglietto, a che ora apre)
+- domande sul BOT stesso (chi ti ha creato, cosa sai fare, sei un AI, quanto costi, sei meglio di X)
+- task LLM generici (scrivi email, traduci, riassumi, fai poesia, racconta barzelletta)
+- saluti, ricette, intrattenimento, meteo, sport
+
 Rispondi SOLO con: SEARCH, VALIDATE, ENRICH o OFF_TOPIC`;
 
 // Pre-filtro deterministico — logica whitelist
@@ -645,6 +653,28 @@ function preFilterIntent(text) {
   const enrichKw = ["ttl","turtle","rdf","linked data","ontolog",
     "converti in","trasforma in","arricch","semantic","genera ttl","genera rdf"];
   if (enrichKw.some(k => t.includes(k))) return "ENRICH";
+
+  // OFF_TOPIC deterministico — pattern meta-bot, task LLM, fatti puntuali
+  // Questi bypassano SPARQL ASK (evita falsi positivi "catalogo matcha keyword random")
+  const offTopicKw = [
+    // Meta-bot / identità
+    "chi ti ha creato","chi ti ha fatto","chi sei","cosa sai fare","cosa puoi fare",
+    "sei un'intelligenza","sei un intelligenza","sei un ai","sei un'ai","sei una ai",
+    "sei meglio di","come funzioni","quanto costi","quanto costa usarti",
+    // Task LLM generici
+    "scrivimi","scrivi per me","scrivi un'email","scrivi una mail","scrivi una email",
+    "traducimi","traduci in","traduci il","traduci la","traduci questo",
+    "fammi una poesia","fammi una barzelletta","raccontami","racconta una",
+    "fai un riassunto","riassumi","riassumimi","fammi un riassunto",
+    // Fatti/eventi puntuali (pattern interrogativi non-dataset)
+    "chi è il sindaco","chi è il presidente","chi è il ministro","chi è il premier",
+    "chi ha vinto","chi vincerà","quando è nato","quando è morto","quando è stata firmata",
+    "a che ora apre","a che ora chiude","a che ora","che ore sono",
+    "quanto costa un biglietto","quanto costa il biglietto","che tempo fa",
+    // Saluti e cortesia (già in parte in stopwords di sparqlAsk, ma rafforziamo)
+    "come stai","come va"
+  ];
+  if (offTopicKw.some(k => t.includes(k))) return "OFF_TOPIC";
 
   // Per tutto il resto: prima ASK SPARQL, poi eventualmente Ollama
   return null;
