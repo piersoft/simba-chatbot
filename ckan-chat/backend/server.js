@@ -639,7 +639,11 @@ OFF_TOPIC: solo per:
 - task LLM generici (scrivi email, traduci, riassumi, fai poesia)
 - saluti e cortesia
 
-ATTENZIONE: "quanti X ci sono" e "elenco di X" sono sempre SEARCH se X è una categoria (persone, scuole, appalti, eventi, prodotti).
+ATTENZIONE: questi pattern sono SEMPRE SEARCH anche se contengono parole che sembrano off-topic:
+- "dati su X" / "dati sulla X" / "dati della X" (X = qualunque tema PA)
+- "quanti X ci sono" / "quante X ci sono" (X = categoria)
+- "elenco di X" / "elenco delle X" / "elenco dei X" (X = categoria di entità PA)
+Solo "come si fa X" o "come si prepara X" sono OFF_TOPIC (ricetta di cucina).
 
 Rispondi SOLO con: SEARCH, VALIDATE, ENRICH o OFF_TOPIC`;
 
