@@ -64,13 +64,17 @@ const INTENT_QUERIES = [
   "Puoi convertirmi un CSV in RDF?",
 ];
 
-const SPARQL_QUERIES = [
-  { keywords: "defibrillatori", offset: 0 },
-  { keywords: "bilancio comunale", offset: 0 },
-  { keywords: "turismo", offset: 0 },
-  { keywords: "rifiuti urbani", offset: 0 },
-  { keywords: "istruzione", offset: 0 },
-];
+// Query SPARQL realistiche: cercano dataset per keyword con LIMIT basso
+// (il frontend usa LIMIT 32 per deduplicare → simuliamo comportamento tipico)
+const SPARQL_KEYWORDS = ["defibrillatori", "bilancio", "turismo", "rifiuti", "istruzione"];
+const buildSparqlQuery = (kw) => `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT ?d ?t ?desc WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:title ?t .
+  OPTIONAL { ?d dct:description ?desc }
+  FILTER(CONTAINS(LCASE(STR(?t)), "${kw}"))
+} LIMIT 32`;
 
 // CSV sintetico piccolo per enrich (pochi KB, no rete esterna)
 const ENRICH_CSV = [
@@ -130,11 +134,11 @@ async function callIntent(sessionId) {
 }
 
 async function callSparql(sessionId) {
-  const q = pick(SPARQL_QUERIES);
+  const kw = pick(SPARQL_KEYWORDS);
   return timedFetch(`${BASE_URL}/api/sparql`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-session-id": sessionId },
-    body: JSON.stringify({ keywords: q.keywords, offset: q.offset }),
+    body: JSON.stringify({ query: buildSparqlQuery(kw) }),
   });
 }
 
