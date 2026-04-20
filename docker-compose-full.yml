@@ -70,7 +70,6 @@ services:
     environment:
       PORT: 3001
       SERVER_IP: ${SERVER_IP:-localhost}
-      MCP_URL: ${MCP_URL:-https://ckan-mcp-server.datigovit.workers.dev/mcp}
       MCP_URL_VALIDATORE: http://validatore-mcp:3002/mcp
       MCP_URL_RDF: http://rdf-mcp:3003
       LLM_PROVIDER: ${LLM_PROVIDER:-mistral}
