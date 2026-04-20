@@ -119,7 +119,7 @@ services:
       - "${ANALYTICS_PORT:-3004}:3004"
     environment:
       PORT: 3004
-      CHATBOT_ORIGIN: ${CHATBOT_ORIGIN:-https://chatbot.piersoftckan.biz}
+      CHATBOT_ORIGIN: ${CHATBOT_ORIGIN:?CHATBOT_ORIGIN deve essere definita in .env (es. https://tuo-dominio.it)}
       ANALYTICS_TOKEN: ${ANALYTICS_TOKEN:-changeme}
       SQLITE_PATH: /app/data/analytics.db
     volumes:

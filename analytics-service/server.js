@@ -13,8 +13,27 @@ const db          = require('./db/sqlite');
 
 const app  = express();
 const PORT = process.env.PORT || 3004;
-const ORIGIN         = process.env.CHATBOT_ORIGIN  || 'https://chatbot.piersoftckan.biz';
+const ORIGIN = process.env.CHATBOT_ORIGIN;
 const ANALYTICS_TOKEN = process.env.ANALYTICS_TOKEN || 'changeme';
+
+// Controllo obbligatorio: CHATBOT_ORIGIN deve essere configurato nel .env
+// Questa variabile definisce l'origin consentito per CORS ed è essenziale
+// per la sicurezza del servizio analytics.
+if (!ORIGIN) {
+  console.error('');
+  console.error('┌─────────────────────────────────────────────────────────────┐');
+  console.error('│ ERRORE: variabile CHATBOT_ORIGIN non configurata            │');
+  console.error('├─────────────────────────────────────────────────────────────┤');
+  console.error('│ Il servizio analytics non può partire senza CHATBOT_ORIGIN. │');
+  console.error('│ Aggiungi al file .env:                                      │');
+  console.error('│                                                             │');
+  console.error('│   CHATBOT_ORIGIN=https://tuo-dominio.it                     │');
+  console.error('│                                                             │');
+  console.error('│ Questa variabile definisce l\'origin consentito per CORS.   │');
+  console.error('└─────────────────────────────────────────────────────────────┘');
+  console.error('');
+  process.exit(1);
+}
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
