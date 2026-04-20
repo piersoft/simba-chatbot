@@ -170,9 +170,10 @@ app.use("/api/chat", rateLimit({
 // ─── Configurazione provider ──────────────────────────────────────────────────
 const LLM_PROVIDER = process.env.LLM_PROVIDER || "mistral";
 
-// Lista MCP server: CKAN obbligatorio, validatore e rdf opzionali
+// Lista MCP server: tutti opzionali (validatore e rdf forniti dai container locali)
+// MCP_URL è dead code ereditato dal vecchio setup (container ckan-mcp-server dismesso)
 const MCP_URLS = [
-  process.env.MCP_URL              || "http://ckan-mcp-server:3000/mcp",
+  process.env.MCP_URL              || null,
   process.env.MCP_URL_VALIDATORE   || null,
   process.env.MCP_URL_RDF          || null,
 ].filter(Boolean);
