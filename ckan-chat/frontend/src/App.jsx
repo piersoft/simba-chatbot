@@ -118,7 +118,7 @@ export default function App() {
   }
 
   const [messages,    setMessages]    = useState([]);
-  const [pageTitle,   setPageTitle]   = useState("Esplora i Dati Aperti Italiani");
+  const [pageTitle,   setPageTitle]   = useState("Chatbot");
   const [input,       setInput]       = useState("");
   const [loading,     setLoading]     = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -184,6 +184,7 @@ export default function App() {
   const inputRef  = useRef(null);
 
   useEffect(() => { fetchHealth(); }, []);
+  useEffect(() => { document.title = `SIMBA · ${pageTitle}`; }, [pageTitle]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -691,9 +692,9 @@ SELECT ?ipaCode WHERE {
       const { intent, aiUsed } = await classifyIntent(text);
       if (aiUsed) addMsg("assistant", "🤖 *Classificazione AI attiva* — il motore AI ha interpretato la tua richiesta per indirizzarla correttamente.", { type: "ai_note" });
 
-      if (intent === "SEARCH") setPageTitle("Ricerca Dataset — Open Data Italia");
-      else if (intent === "VALIDATE") setPageTitle("Validazione CSV — Open Data Italia");
-      else if (intent === "ENRICH") setPageTitle("Conversione RDF — SIMBA");
+      if (intent === "SEARCH") setPageTitle("Ricerca Dataset");
+      else if (intent === "VALIDATE") setPageTitle("Validazione CSV");
+      else if (intent === "ENRICH") setPageTitle("Conversione RDF");
 
       if (intent === "OFF_TOPIC") {
         addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- Ricerca dataset open data italiani\n- Validazione file CSV per la PA\n- Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
@@ -727,7 +728,7 @@ SELECT ?ipaCode WHERE {
         .replace(/\b(dataset|open data)\b/gi, "")
         .replace(/\s+/g, " ").trim() || text;
 
-      setPageTitle("Ricerca Dataset — Open Data Italia");
+      setPageTitle("Ricerca Dataset");
 
 
       const t0search = Date.now();
@@ -762,7 +763,7 @@ SELECT ?ipaCode WHERE {
   // ── Conversione CSV → RDF ────────────────────────────────────────────────────
   async function doEnrich(url, datasetTitle, ipa = "ente", fmt = "ttl") {
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${url}`);
-    setPageTitle("Conversione RDF — SIMBA");
+    setPageTitle("Conversione RDF");
     addMsg("assistant", `Conversione in RDF/${fmt.toUpperCase()} di **"${datasetTitle}"** in corso…`, { type: "loading_ttl" });
     setLoading(true);
     try {
@@ -809,7 +810,7 @@ SELECT ?ipaCode WHERE {
   // ── Valida CSV da card ────────────────────────────────────────────────────
   async function validateFromCard(url, datasetTitle, publisher = "", datasetUri = "") {
     addMsg("user",      `Valida CSV: ${url}`);
-    setPageTitle("Validazione CSV — Open Data Italia");
+    setPageTitle("Validazione CSV");
     addMsg("assistant", `Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
