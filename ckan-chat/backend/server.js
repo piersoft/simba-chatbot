@@ -224,8 +224,15 @@ const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
 // Ollama
 const OLLAMA_URL   = process.env.OLLAMA_URL   || "http://ollama:11434";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:1.5b";
+// Modello separato per classifier intent: output è 1 parola (SEARCH/VALIDATE/
+// ENRICH/OFF_TOPIC), non serve un modello grande. Default = OLLAMA_MODEL.
+// Raccomandato: qwen2.5:0.5b (3x più veloce su CPU di qwen3:1.7b).
+const OLLAMA_INTENT_MODEL = process.env.OLLAMA_INTENT_MODEL || OLLAMA_MODEL;
 
 console.log(`Motore LLM: ${LLM_PROVIDER === "mistral" ? `Mistral (${MISTRAL_MODEL})` : `Ollama (${OLLAMA_URL} - ${OLLAMA_MODEL})`}`);
+if (LLM_PROVIDER !== "mistral" && OLLAMA_INTENT_MODEL !== OLLAMA_MODEL) {
+  console.log(`Modello intent classifier: ${OLLAMA_INTENT_MODEL}`);
+}
 console.log(`MCP servers: ${MCP_URLS.join(", ")}`);
 
 // ─── MCP helpers (multi-server) ───────────────────────────────────────────────
@@ -917,7 +924,7 @@ async function classifyIntent(userMessage) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: OLLAMA_MODEL,
+          model: OLLAMA_INTENT_MODEL,
           messages: [{ role: "system", content: INTENT_PROMPT }, { role: "user", content: userMessage }],
           stream: false,
           think: false,

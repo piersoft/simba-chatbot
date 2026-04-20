@@ -111,6 +111,10 @@ services:
       MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
+      # Modello separato per intent classifier (opzionale).
+      # Se vuoto o uguale a OLLAMA_MODEL, usa lo stesso.
+      # Raccomandato: qwen2.5:0.5b per 3x meno CPU.
+      OLLAMA_INTENT_MODEL: ${OLLAMA_INTENT_MODEL:-}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       ANALYTICS_URL: http://analytics-service:3004
