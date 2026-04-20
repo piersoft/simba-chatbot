@@ -912,14 +912,14 @@ body {
 .ac-item:hover { background: #f0f4ff; }
 .ac-count { font-size: 12px; color: #999; margin-left: 8px; flex-shrink: 0; }
 
-.btn-ttl { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
-.btn-ttl:hover { background: #e1bee7; }
+.btn-ttl { background: #fbeaea; color: #a01515; border-color: #f0b5b5; }
+.btn-ttl:hover { background: #f5d5d5; }
 
-.ttl-box { border-color: #ce93d8; background: #fdf6ff; }
+.ttl-box { border-color: #e89595; background: #fef7f7; }
 .ttl-meta-row { display: flex; gap: 8px; margin-bottom: 10px; }
 .ttl-meta-row .csv-url-input { flex: 1; }
-.btn-ttl-box { background: #6a1b9a; color: #fff; }
-.btn-ttl-box:hover { background: #4a148c; }
+.btn-ttl-box { background: #e23a3a; color: #fff; }
+.btn-ttl-box:hover { background: #b91c1c; }
 .btn-ttl-box:disabled { background: #aaa; cursor: not-allowed; }
 
 .validate-convert-btns {
@@ -937,9 +937,9 @@ body {
 .ttl-download-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
 .ttl-fmt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-.fmt-btn { padding: 5px 12px; border-radius: 6px; border: 2px solid #ce93d8; background: #fff; color: #6a1b9a; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-.fmt-btn:hover { background: #f3e5f5; }
-.fmt-btn.active { background: #6a1b9a; color: #fff; border-color: #6a1b9a; }
+.fmt-btn { padding: 5px 12px; border-radius: 6px; border: 2px solid #e89595; background: #fff; color: #a01515; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.fmt-btn:hover { background: #fbeaea; }
+.fmt-btn.active { background: #e23a3a; color: #fff; border-color: #e23a3a; }
 
 /* Box CSV e TTL fissi sopra l'input — non scorrono con la chat */
 .csv-box, .ttl-box {
@@ -963,8 +963,8 @@ body {
 .tool-search:hover   { background: #cce0f5; }
 .tool-validate { background: #f0f7f4; color: #006b38; border: 1px solid #b3d9c8; }
 .tool-validate:hover { background: #d4eddf; }
-.tool-ttl      { background: #f5f0f9; color: #5b2d8e; border: 1px solid #d4b8e8; }
-.tool-ttl:hover      { background: #e8d8f5; }
+.tool-ttl      { background: #fbeaea; color: #a01515; border: 1px solid #f0b5b5; }
+.tool-ttl:hover      { background: #f5d5d5; }
 .tool-card:disabled  { opacity: 0.5; cursor: not-allowed; filter: none; }
 
 /* Bottoni azioni card */
