@@ -725,11 +725,14 @@ function preFilterIntent(text) {
     "chi ti ha creato","chi ti ha fatto","chi sei","cosa sai fare","cosa puoi fare",
     "sei un'intelligenza","sei un intelligenza","sei un ai","sei un'ai","sei una ai",
     "sei meglio di","come funzioni","quanto costi","quanto costa usarti",
+    // Procedurali / ricette (come si fa X, come si prepara X)
+    "come si fa","come si prepara","come si cucina","come preparare","come cucinare",
     // Task LLM generici
     "scrivimi","scrivi per me","scrivi un'email","scrivi una mail","scrivi una email",
+    "scrivermi","scrivere un'email","scrivere una mail","scrivere una email",
     "traducimi","traduci in","traduci il","traduci la","traduci questo",
     "fammi una poesia","fammi una barzelletta","raccontami","racconta una",
-    "fai un riassunto","riassumi","riassumimi","fammi un riassunto",
+    "mi racconti","mi dici una","fai un riassunto","riassumi","riassumimi","fammi un riassunto",
     // Fatti/eventi puntuali (pattern interrogativi non-dataset)
     "chi è il sindaco","chi è il presidente","chi è il ministro","chi è il premier",
     "chi ha vinto","chi vincerà","quando è nato","quando è morto","quando è stata firmata",
