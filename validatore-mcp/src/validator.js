@@ -3,14 +3,12 @@
  * Realizzato da @piersoft (https://github.com/piersoft) per AgID
  * Repo: https://github.com/piersoft/simba-chatbot
  * Licenza: MIT
- */
-// validator.js — logica estratta da validatore-csv-pa.html (v2026.04.14.08)
+ */\n// validator.js — logica estratta da validatore-csv-pa.html (v2026.04.14.08)
 // Portata in ES module Node.js: zero dipendenze esterne.
 
 // ─── Rilevamento separatore ───────────────────────────────────────────────────
 export function detectSep(raw) {
-  const line = raw.split('
-')[0] || '';
+  const line = raw.split('\n')[0] || '';
   const counts = { ',': 0, ';': 0, '	': 0, '|': 0 };
   for (const ch of line) if (ch in counts) counts[ch]++;
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
@@ -21,8 +19,7 @@ export function parseCSV(raw, sep) {
   const lines = raw.replace(/
 /g, '
 ').replace(//g, '
-').split('
-');
+').split('\n');
   const rows = [];
   for (const line of lines) {
     if (!line.trim()) continue;
@@ -105,8 +102,7 @@ export function checksStruttura(raw, rows, sep, headers) {
   else push('S10', 'Nessun marcatore BOM', 'Struttura corretta.', 'pass');
 
   const ctrlRe = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
-  const ctrlLines = raw.split('
-').map((l, i) => [i + 1, l]).filter(([, l]) => ctrlRe.test(l));
+  const ctrlLines = raw.split('\n').map((l, i) => [i + 1, l]).filter(([, l]) => ctrlRe.test(l));
   if (ctrlLines.length > 0) push('S11', 'Caratteri nascosti nel file', `Riga/e: ${ctrlLines.slice(0, 3).map(([i]) => i).join(', ')}.`, 'warn');
   else push('S11', 'Nessun carattere nascosto', '', 'pass');
 
@@ -274,8 +270,7 @@ export function checksOpendata(rows, headers, raw = '') {
   else push('O9', 'Nessuna colonna booleana rilevata', '', 'pass');
 
   // O10 - Commenti o metadati in coda
-  const lastLines = raw.trim().split('
-').slice(-3);
+  const lastLines = raw.trim().split('\n').slice(-3);
   const hasComment = lastLines.some(l => l.startsWith('#'));
   if (hasComment) push('O10', 'Righe commento in fondo al file', 'Righe che iniziano con "#" in fondo - rimuoverle per massima compatibilità.', 'warn');
   else push('O10', 'Nessuna riga commento in coda', '', 'pass');
