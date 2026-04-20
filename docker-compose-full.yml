@@ -1,3 +1,20 @@
+# ── Log rotation policy (YAML anchors) ──────────────────────────────────────
+# Limita lo spazio occupato dai log Docker su disco. Senza questi blocchi,
+# i file json-log crescerebbero indefinitamente.
+#   standard: 30MB max per container (10MB × 3 file rotanti)
+#   ollama:   60MB max (20MB × 3) — loggaa di più durante pull modelli
+x-logging-default: &logging-default
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-logging-ollama: &logging-ollama
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
 services:
 
   # ── Ollama locale (solo se usi --profile ollama-local) ──────────────────────
@@ -18,6 +35,7 @@ services:
       resources:
         limits:
           memory: 3G
+    logging: *logging-ollama
 
   # ── Ollama model puller (solo con profile ollama-local) ─────────────────────
   ollama-pull:
@@ -31,6 +49,7 @@ services:
       OLLAMA_HOST: http://ollama:11434
     entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen3:1.7b} && echo 'Modello pronto'"]
     restart: "no"
+    logging: *logging-default
 
   # ── Validatore CSV MCP (NUOVO) ──────────────────────────────────────────────
   validatore-mcp:
@@ -41,6 +60,7 @@ services:
     restart: unless-stopped
     ports:
       - "3002:3002"
+    logging: *logging-default
 
   # ── RDF MCP — CSV to RDF/TTL ────────────────────────────────────────────────
   rdf-mcp:
@@ -54,6 +74,7 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    logging: *logging-default
 
   # ── Backend Node.js ─────────────────────────────────────────────────────────
   backend:
@@ -88,6 +109,7 @@ services:
     depends_on:
       - validatore-mcp
       - rdf-mcp
+    logging: *logging-default
 
   # ── Frontend React ──────────────────────────────────────────────────────────
   frontend:
@@ -107,6 +129,7 @@ services:
       - "${FRONTEND_PORT:-8080}:80"
     depends_on:
       - backend
+    logging: *logging-default
 
   # ── Analytics Service ───────────────────────────────────────────────────────
   analytics-service:
@@ -126,6 +149,7 @@ services:
       - analytics_data:/app/data
     depends_on:
       - backend
+    logging: *logging-default
 
 volumes:
   blocklist_data:
