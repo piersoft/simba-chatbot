@@ -1324,6 +1324,16 @@ body {
   font-family: 'Roboto Mono', monospace; font-size: 12px;
   color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
 }
+/* Grid a 2 righe per lo status: Backend/Ollama sopra, Validatore/RDF sotto.
+   flex-wrap come rete di sicurezza in caso di sidebar molto stretta. */
+.status-compact-grid {
+  display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0;
+}
+.status-compact-line {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-family: 'Roboto Mono', monospace; font-size: 12px;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
+}
 .refresh-btn-compact {
   background: none; border: none; cursor: pointer;
   color: var(--text3); font-size: 13px; padding: 2px 4px;
