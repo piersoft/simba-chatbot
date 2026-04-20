@@ -738,6 +738,12 @@ function preFilterIntent(text) {
     "traducimi","traduci in","traduci il","traduci la","traduci questo",
     "fammi una poesia","fammi una barzelletta","raccontami","racconta una",
     "mi racconti","mi dici una","fai un riassunto","riassumi","riassumimi","fammi un riassunto",
+    // Prompt injection / meta-LLM: pattern che indicano tentativo di manipolare
+    // il classificatore stesso (non interrogazione su dati). Nessuna query PA
+    // legittima contiene queste sequenze. Bypass totale di SPARQL ASK e LLM.
+    "ignora le istruzioni","ignora le tue istruzioni","ignora istruzioni precedenti",
+    "ignore previous","ignore instructions","system:","[[assistant",
+    "you are now","you are dan","```\n","```json",
     // Fatti/eventi puntuali (pattern interrogativi non-dataset)
     "chi è il sindaco","chi è il presidente","chi è il ministro","chi è il premier",
     "chi ha vinto","chi vincerà","quando è nato","quando è morto","quando è stata firmata",
