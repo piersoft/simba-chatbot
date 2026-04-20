@@ -661,7 +661,11 @@ function preFilterIntent(text) {
     "ho dei csv","miei dati","mio csv","mio file","da controllare","da verificare",
     "da validare","da analizzare","da controllare",
     "verifica i dati","verifica il file","controlla i dati","controlla il file",
-    "qualità dei dati","qualità del csv","qualità del file"];
+    "qualità dei dati","qualità del csv","qualità del file",
+    // Pattern naturali domanda utente: "il CSV ha errori", "ci sono errori nel file"
+    "csv ha errori","file ha errori","ha degli errori","ha un errore",
+    "errori nel csv","errori nel file","errore nel csv","errore nel file",
+    "rispetta lo standard","rispetta gli standard"];
   if (validateKw.some(k => t.includes(k))) return "VALIDATE";
 
   // ENRICH — univoco, intercetta con certezza
@@ -690,6 +694,16 @@ function preFilterIntent(text) {
     "come stai","come va"
   ];
   if (offTopicKw.some(k => t.includes(k))) return "OFF_TOPIC";
+
+  // SEARCH deterministico — pattern forti all'inizio frase che dominano la semantica
+  // "elenco delle X", "dati su X", "quanti X ci sono" → SEARCH anche con parole ambigue
+  // (bypassa LLM che su modelli piccoli può confondersi con parole come "ricette", "qualità")
+  const searchPatterns = [
+    /^(l['' ]?)?elenco\s+(di|delle|dei|degli|del)\s+/i,
+    /^dati\s+(su|sulla|sullo|sugli|sulle|del|dei|delle|della|dello)\s+/i,
+    /^quant[ie]\s+\w+.{0,40}(ci sono|esistono|ci stanno|vivono|operano)/i,
+  ];
+  if (searchPatterns.some(rx => rx.test(t))) return "SEARCH";
 
   // Per tutto il resto: prima ASK SPARQL, poi eventualmente Ollama
   return null;
