@@ -51,7 +51,7 @@ services:
       - ollama
     environment:
       OLLAMA_HOST: http://ollama:11434
-    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen3:1.7b} && echo 'Modello pronto'"]
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:0.5b} && echo 'Modello pronto'"]
     restart: "no"
     logging: *logging-default
 
@@ -114,10 +114,10 @@ services:
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-latest}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
-      # Modello separato per intent classifier (opzionale).
-      # Se vuoto o uguale a OLLAMA_MODEL, usa lo stesso.
-      # Raccomandato: qwen2.5:0.5b per 3x meno CPU.
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
+      # Modello separato per intent classifier (opzionale, uso avanzato).
+      # Utile se OLLAMA_MODEL è un modello grande (1.7b+) per chat libere e si
+      # vuole un classifier più veloce. Se vuoto, classifier usa OLLAMA_MODEL.
       OLLAMA_INTENT_MODEL: ${OLLAMA_INTENT_MODEL:-}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
