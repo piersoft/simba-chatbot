@@ -43,10 +43,13 @@ if (!BASE_URL) {
 // intent: chiamata di classificazione, fatta ad OGNI query dell'utente
 // sparql: quando l'intent è SEARCH, segue una query SPARQL al backend
 // enrich: raro, solo quando l'utente chiede conversione CSV → RDF
+// sparql escluso dal mix: lod.dati.gov.it ha anti-scraping attivo che
+// risponde 403 a query ripetitive, producendo latenze false (20ms = tempo
+// di gestione errore, non query vera). Riattivare solo se si testa contro
+// un triplestore privato. Peso redistribuito su intent (vero bottleneck).
 const ENDPOINTS = [
-  { name: "intent", weight: 60, fn: callIntent },
-  { name: "sparql", weight: 35, fn: callSparql },
-  { name: "enrich", weight:  5, fn: callEnrich },
+  { name: "intent", weight: 90, fn: callIntent },
+  { name: "enrich", weight: 10, fn: callEnrich },
 ];
 const TOTAL_WEIGHT = ENDPOINTS.reduce((a, e) => a + e.weight, 0);
 
