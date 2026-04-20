@@ -824,11 +824,64 @@ ASK {
   }
 }
 
+// ─── Cache intent classifier ────────────────────────────────────────────────
+// LRU-like con TTL: riduce carico sull'LLM per query ricorrenti.
+// Hit rate tipico in un chatbot: 20-40% (utenti rifanno query simili).
+// Normalizzazione conservativa (lowercase+trim+whitespace normal) per catturare
+// "Cerco dati" == "CERCO DATI  " senza over-match.
+const INTENT_CACHE_MAX_SIZE = Number(process.env.INTENT_CACHE_SIZE) || 1000;
+const INTENT_CACHE_TTL_MS   = Number(process.env.INTENT_CACHE_TTL_SEC || 3600) * 1000;
+const intentCache = new Map(); // key → { intent, expiresAt }
+let intentCacheHits = 0, intentCacheMisses = 0;
+
+function intentCacheKey(text) {
+  return text.toLowerCase().trim().replace(/\s+/g, " ");
+}
+function intentCacheGet(text) {
+  const key = intentCacheKey(text);
+  const entry = intentCache.get(key);
+  if (!entry) { intentCacheMisses++; return null; }
+  if (Date.now() > entry.expiresAt) {
+    intentCache.delete(key);
+    intentCacheMisses++;
+    return null;
+  }
+  // LRU touch: re-insert per far avanzare nel Map order
+  intentCache.delete(key);
+  intentCache.set(key, entry);
+  intentCacheHits++;
+  return entry.intent;
+}
+function intentCacheSet(text, intent) {
+  const key = intentCacheKey(text);
+  // Eviction FIFO se oltre limite (Map preserva insertion order)
+  if (intentCache.size >= INTENT_CACHE_MAX_SIZE) {
+    const firstKey = intentCache.keys().next().value;
+    intentCache.delete(firstKey);
+  }
+  intentCache.set(key, { intent, expiresAt: Date.now() + INTENT_CACHE_TTL_MS });
+}
+// Log periodico stats (ogni 5 min) — utile per tuning
+setInterval(() => {
+  const total = intentCacheHits + intentCacheMisses;
+  if (total > 0) {
+    const hitRate = ((intentCacheHits / total) * 100).toFixed(1);
+    console.log(`[intent-cache] stats: ${intentCacheHits} hit, ${intentCacheMisses} miss, ${hitRate}% hit rate, size=${intentCache.size}`);
+  }
+}, 5 * 60 * 1000).unref?.();
+
 async function classifyIntent(userMessage) {
+  // Check cache per primo — se hit, risposta in <1ms
+  const cached = intentCacheGet(userMessage);
+  if (cached) {
+    console.log(`[intent] cache hit → ${cached}`);
+    return { intent: cached, aiUsed: false };
+  }
   // Prima prova il pre-filtro deterministico
   const preFilter = preFilterIntent(userMessage);
   if (preFilter) {
     console.log(`[intent] pre-filtro → ${preFilter}`);
+    intentCacheSet(userMessage, preFilter);
     return { intent: preFilter, aiUsed: false };
   }
   // Testo SPARQL ASK — il catalogo reale decide se esistono dataset
@@ -836,6 +889,7 @@ async function classifyIntent(userMessage) {
   const hasDatasets = await sparqlAsk(userMessage);
   if (!hasDatasets) {
     console.log(`[intent] SPARQL ASK → nessun dataset → OFF_TOPIC`);
+    intentCacheSet(userMessage, "OFF_TOPIC");
     return { intent: "OFF_TOPIC", aiUsed: false };
   }
   console.log(`[intent] SPARQL ASK → dataset trovati → chiedo ad Ollama per disambiguare`);
@@ -856,6 +910,7 @@ async function classifyIntent(userMessage) {
       const data = await response.json();
       const raw = data.choices?.[0]?.message?.content ?? "SEARCH";
       const parsed = parseIntent(raw);
+      intentCacheSet(userMessage, parsed);
       return { intent: parsed, aiUsed: true };
     } else {
       const res = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -879,8 +934,10 @@ async function classifyIntent(userMessage) {
       const _sigWords = userMessage.toLowerCase().replace(/[^a-zàèéìòù\s]/g," ").split(/\s+/).filter(w => w.length > 3);
       if (parsed === "OFF_TOPIC" && _sigWords.length === 1) {
         console.log(`[intent] Ollama dice OFF_TOPIC su parola singola ma SPARQL ASK ha trovato dataset → SEARCH`);
+        intentCacheSet(userMessage, "SEARCH");
         return { intent: "SEARCH", aiUsed: true };
       }
+      intentCacheSet(userMessage, parsed);
       return { intent: parsed, aiUsed: true };
     }
   } catch (e) {
