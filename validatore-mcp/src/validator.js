@@ -1,25 +1,23 @@
 /**
  * SIMBA — Sistema Intelligente per la ricerca di Metadati, Bonifica e Arricchimento semantico
  * Realizzato da @piersoft (https://github.com/piersoft) per AgID
- * Repo: https://github.com/piersoft/simba-chatbot
+ * Repo: https://github.com/piersoft/ckan-mcp-server-docker-ollama
  * Licenza: MIT
- */\n// validator.js — logica estratta da validatore-csv-pa.html (v2026.04.14.08)
+ */
+// validator.js — logica estratta da validatore-csv-pa.html (v2026.04.14.08)
 // Portata in ES module Node.js: zero dipendenze esterne.
 
 // ─── Rilevamento separatore ───────────────────────────────────────────────────
 export function detectSep(raw) {
   const line = raw.split('\n')[0] || '';
-  const counts = { ',': 0, ';': 0, '	': 0, '|': 0 };
+  const counts = { ',': 0, ';': 0, '\t': 0, '|': 0 };
   for (const ch of line) if (ch in counts) counts[ch]++;
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
 }
 
 // ─── Parser CSV minimale robusto ──────────────────────────────────────────────
 export function parseCSV(raw, sep) {
-  const lines = raw.replace(/
-/g, '
-').replace(//g, '
-').split('\n');
+  const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const rows = [];
   for (const line of lines) {
     if (!line.trim()) continue;
@@ -56,7 +54,7 @@ export function checksStruttura(raw, rows, sep, headers) {
   }
   push('S1', 'File non vuoto', `${raw.trim().length} caratteri totali.`, 'pass');
 
-  const sepNames = { ',': 'virgola (,)', ';': 'punto e virgola (;)', '	': 'tabulazione', '|': 'pipe (|)' };
+  const sepNames = { ',': 'virgola (,)', ';': 'punto e virgola (;)', '\t': 'tabulazione', '|': 'pipe (|)' };
   push('S2', 'Separatore rilevato', `Rilevato: ${sepNames[sep] || sep}`, 'pass');
 
   if (headers.length === 0) {
