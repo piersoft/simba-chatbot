@@ -738,10 +738,12 @@ SELECT ?ipaCode WHERE {
       // displayQuery = testo originale per mostrarlo all'utente
       const displayQuery = text;
       const query = text
-        // Rimuovi frasi introduttive comuni
-        .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova|ho bisogno di|mi servono|vorrei|voglio|puoi darmi|puoi trovarmi|sto cercando|cerco|fammi vedere|hai|ci sono|esistono|dove trovo|come trovo)\s+(dati\s+su(lla?|lle?|gli?|i)?\s+|informazioni\s+su(lla?|lle?|gli?|i)?\s+|dataset\s+su(lla?|lle?|gli?|i)?\s+)?/i, "")
-        .replace(/^(dati\s+su(lla?|lle?|gli?|i)?|informazioni\s+su(lla?|lle?|gli?|i)?|dataset\s+su(lla?|lle?|gli?|i)?)\s+/i, "")
+        // Rimuovi frasi introduttive comuni + articolazioni su/sul/sulla/sull'/degli ecc.
+        .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova|ho bisogno di|mi servono|vorrei|voglio|puoi darmi|puoi trovarmi|sto cercando|cerco|fammi vedere|hai|ci sono|esistono|dove trovo|come trovo)\s+/i, "")
+        .replace(/^(dati|informazioni|dataset|statistiche|numeri)\s+(su[gli']?\s*|dell[aeo']?\s*|d[ie]\s+)/i, "")
+        .replace(/\s+(su[gli']?|dell[aeo']?|d[ie])\s+/gi, " ")
         .replace(/\b(dataset|open data)\b/gi, "")
+        .replace(/[?!.]+$/, "")
         .replace(/\s+/g, " ").trim() || text;
 
       setPageTitle("Ricerca Dataset");
