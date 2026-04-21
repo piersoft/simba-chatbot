@@ -1160,46 +1160,6 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
   if (csv_text && csv_text.length > 10000000) return res.status(400).json({ error: "File CSV troppo grande (max 10MB)." });
   if (ipa && !/^[a-z0-9_]{1,20}$/i.test(ipa)) return res.status(400).json({ error: "Codice IPA non valido." });
   console.log(`[enrich] url=${url || "upload"} ipa=${ipa} pa=${pa}`);
-
-  // ── Semantic Gate pre-enrich ──────────────────────────────────────────────
-  // Se il CSV è fornito come testo, valutalo prima di procedere con l'arricchimento
-  if (csv_text) {
-    try {
-      const gateRes = await fetch(`${RDF_MCP_URL}/validate-semantic`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          headers: csv_text.split("\n")[0].split(/[,;\t]/).map(h => h.trim().replace(/^"|"$/g, "")),
-          rows: [],
-          ontos: [],
-          title: pa || ""
-        }),
-        signal: AbortSignal.timeout(10000)
-      });
-      if (gateRes.ok) {
-        const gate = await gateRes.json();
-        if (gate.stato === "BLOCCANTE" || gate.stato === "MIGLIORABILE") {
-          return res.status(422).json({
-            gate_blocked: true,
-            stato: gate.stato,
-            score: gate.score,
-            score_detail: gate.score_detail,
-            blockers: gate.blockers,
-            warnings: gate.warnings,
-            suggestions: gate.suggestions,
-            message: gate.stato === "BLOCCANTE"
-              ? "Il CSV non è convertibile in RDF. Correggi i problemi indicati."
-              : "Il CSV necessita miglioramenti prima della conversione RDF. Applica i suggerimenti e riprova."
-          });
-        }
-      }
-    } catch (gateErr) {
-      // Gate non disponibile: procedi comunque (degraded mode)
-      console.warn("[enrich] gate non disponibile, procedo:", gateErr.message);
-    }
-  }
-  // ── Fine Semantic Gate ────────────────────────────────────────────────────
-
   try {
     let csvUrl = url;
     let tempId = null;
