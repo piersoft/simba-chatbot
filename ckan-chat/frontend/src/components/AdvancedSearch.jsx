@@ -175,8 +175,7 @@ ${kwF}} ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 // Autocomplete rightsHolder — query SPARQL live con CONTAINS (come sidebar originale)
 async function searchRightsHolder(q) {
   const ql = sanitizeSparql(q.toLowerCase());
-  const rows = await sparqlFetch(
-    `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+  const query = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
@@ -184,8 +183,15 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
   ?d dct:rightsHolder ?rh .
   ?rh foaf:name ?name .
   FILTER(CONTAINS(LCASE(STR(?name)),"${ql}"))
-} GROUP BY ?name ORDER BY DESC(?count) LIMIT 12`
-  );
+} GROUP BY ?name ORDER BY DESC(?count) LIMIT 20`;
+  const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
+  let rows = [];
+  try {
+    const url = `${SPARQL_EP}?query=${encodeURIComponent(query)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+    if (r.ok) rows = (await r.json()).results?.bindings ?? [];
+  } catch {}
+  if (!rows.length) rows = await sparqlFetch(query);
   const seen = new Set();
   return rows
     .map(r => ({ name: val(r, "name").trim(), count: parseInt(val(r, "count") || "0") }))
