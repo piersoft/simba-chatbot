@@ -107,8 +107,8 @@ app.get('/stats/overview', statsLimiter, authStats, (req, res) => {
       searches:      db.countEvents('search', from, to),
       validations:   db.countEvents('validate', from, to),
       ttl_created:   db.countEvents('ttl_create', from, to),
-      off_topic:     db.countEvents('off_topic', from, to),
-      blocked:       db.countEvents('blocked', from, to),
+      off_topic:     db.countOffTopicClassifier(from, to),  // solo classificatore LLM
+      blocked:       db.countBlockedByBlocklist(from, to),    // solo blocklist
       errors:        db.countEvents('error', from, to),
       avg_latency_ms: db.avgLatency(from, to),
       top_queries:   db.topQueries(10, from, to),

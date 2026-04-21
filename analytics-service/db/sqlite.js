@@ -54,6 +54,31 @@ function countDistinct(field, from, to) {
   ).get(from, to)?.n || 0;
 }
 
+function countOffTopicClassifier(from, to) {
+  // Solo off_topic dal classificatore LLM (domande fuori tema vere)
+  const d = getDb();
+  const rows = d.prepare(
+    `SELECT payload FROM events WHERE type='off_topic' AND ts BETWEEN ? AND ?`
+  ).all(from, to);
+  return rows.filter(r => {
+    try { return JSON.parse(r.payload).guardrail_layer === 'classifier'; } catch { return false; }
+  }).length;
+}
+
+function countBlockedByBlocklist(from, to) {
+  // Solo richieste bloccate dalla blocklist
+  const d = getDb();
+  const rows = d.prepare(
+    `SELECT payload FROM events WHERE (type='off_topic' OR type='blocked') AND ts BETWEEN ? AND ?`
+  ).all(from, to);
+  return rows.filter(r => {
+    try {
+      const p = JSON.parse(r.payload);
+      return p.guardrail_layer === 'blocklist' || r.type === 'blocked';
+    } catch { return false; }
+  }).length;
+}
+
 function countEvents(type, from, to) {
   const d = getDb();
   if (type) {
@@ -307,6 +332,7 @@ module.exports = {
   countDistinct, countEvents,
   avgLatency, percentileLatency,
   topQueries, topBlockedQueries, topRightsHolders,
+  countOffTopicClassifier, countBlockedByBlocklist,
   topValidatedDatasets, topTTLDatasets, topTTLAdmins,
   validationSuccessRate, errorsByType,
   eventsPerDay, hourlyTraffic, errorsPerHour,
