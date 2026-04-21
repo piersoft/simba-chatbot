@@ -70,12 +70,25 @@ const SPARQL_ENDPOINT = process.env.SPARQL_ENDPOINT || "https://lod.dati.gov.it/
 // ── Blocklist dinamica ────────────────────────────────────────────────────────
 const BLOCKLIST_PATH = process.env.BLOCKLIST_PATH || "/app/data/blocklist.json";
 const DEFAULT_BLOCKLIST = [
+  // Prompt injection / jailbreak
   "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
   "ignore instructions","disregard","bypass",
-  "porn","porno","pornograph","xxx","nude","naked","escort","prostitut",
-  "pedofil","pedophil","child abuse","snuff","gore",
+  // Contenuto sessuale esplicito
+  "porno","pornografia","sesso esplicito","xxx","nude","naked","escort",
   "cumshot","blowjob","handjob","gangbang","creampie","onlyfans","dildo","vibrat",
-  "cocain","eroina","metanfetamin","drug deal","narcotic"
+  "cazzo","figa","scopare","troia","puttana","bordello",
+  // Pedofilia / abusi
+  "pedofil","pedophil","child abuse","snuff","gore",
+  // Violenza esplicita / autolesionismo
+  "come uccidere","come fare una bomba","come costruire un'arma",
+  "suicidarsi","ammazzarsi","come morire","farsi del male",
+  // Attacchi informatici
+  "sql injection","ddos attack","come hackerare","come bucare",
+  "ransomware","malware","exploit kit","phishing kit",
+  // Hate speech
+  "negro","frocio","terrone di merda","zingaro di merda","ritardato di merda",
+  // Droghe sintetiche / spaccio (non dataset PA)
+  "drug deal","narcotic","cocain","eroina","metanfetamin","spaccio di droga"
 ];
 
 function loadBlocklist() {
