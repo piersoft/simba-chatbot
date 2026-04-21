@@ -874,53 +874,13 @@ SELECT ?ipaCode WHERE {
     // Conversione diretta da testo CSV (file già caricato) — niente box IPA/PA
     const title = paName || filename.replace(/\.csv$/i,"");
 
-    // ── Semantic Gate (solo frontend) ────────────────────────────────────────
-    try {
-      const csvLines = (csv_text || "").split(/\r?\n/).filter(l => l.trim());
-      if (csvLines.length > 0) {
-        const sep = (csvLines[0].match(/;/g)||[]).length > (csvLines[0].match(/,/g)||[]).length ? ";" : ",";
-        const headers = csvLines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,""));
-        // Righe reali (max 5) per non far scattare S4 "nessuna riga di dati"
-        const rows = [];
-        for (let i = 1; i < Math.min(csvLines.length, 6); i++) {
-          const vals = csvLines[i].split(sep).map(v => v.trim().replace(/^"|"$/g,""));
-          const row = {}; headers.forEach((h,j) => { row[h] = vals[j] || ""; }); rows.push(row);
-        }
-        if (rows.length === 0) { rows.push({}); rows.push({}); rows.push({}); }
-        const gateRes = await fetch(`${BACKEND_URL}/api/validate-semantic`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ headers, rows, ontos: [], title }),
-          signal: AbortSignal.timeout(8000),
-        });
-        if (gateRes.ok) {
-          const gate = await gateRes.json();
-          if (gate.stato === "BLOCCANTE" || gate.stato === "MIGLIORABILE") {
-            const icon = gate.stato === "BLOCCANTE" ? "⊗" : "⚠";
-            const sd = gate.score_detail || {};
-            let msg = `${icon} **CSV ${gate.stato} per la conversione RDF** (score: ${gate.score}/100)\n\n`;
-            msg += `Struttura: ${sd.struttura||0}/40 | Ontologie: ${sd.ontologie||0}/40 | Linked Data: ${sd.linked_data||0}/20\n\n`;
-            if (gate.blockers?.length)  msg += gate.blockers.map(b => `❌ ${b.msg}`).join("\n") + "\n\n";
-            if (gate.warnings?.length)  msg += gate.warnings.map(w => `⚠️ ${w.msg}`).join("\n") + "\n\n";
-            if (gate.suggestions?.length) {
-              msg += "**Suggerimenti per abilitare la conversione:**\n";
-              gate.suggestions.forEach(s => {
-                msg += `\n**${s.label}**\n`;
-                (s.renames||[]).forEach(r => { msg += `• Rinomina \`${r.da}\` → \`${r.a}\`\n`; });
-                (s.aggiungi||[]).filter(a => a.priorita !== "bassa").forEach(a => { msg += `• Aggiungi [${a.priorita}]: \`${a.colonna}\`\n`; });
-              });
-            }
-            msg += `\n*Correggi il CSV e ricaricalo per procedere con la conversione.*`;
-            addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
-            addMsg("assistant", msg);
-            return;
-          }
-        }
-      }
-    } catch (_gateErr) {
-      // Gate non disponibile — procede in degraded mode
+    // ── Semantic Gate via helper ─────────────────────────────────────────────
+    const _gateBlocked = await runGateCheck(csv_text, title);
+    if (_gateBlocked) {
+      addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
+      return;
     }
-    // ── Fine Semantic Gate ────────────────────────────────────────────────────
+    // ── Fine Gate ─────────────────────────────────────────────────────────────
 
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
     addMsg("assistant", `Conversione in RDF/${fmt.toUpperCase()} di **"${title}"** in corso…`);
@@ -956,6 +916,52 @@ SELECT ?ipaCode WHERE {
     setShowTtlBox(true);
   }
 
+
+  // ── Helper gate semantico ─────────────────────────────────────────────────
+  async function runGateCheck(csv_text, title) {
+    try {
+      const csvLines = (csv_text || "").split(/\r?\n/).filter(l => l.trim());
+      if (csvLines.length === 0) return false;
+      const sep = (csvLines[0].match(/;/g)||[]).length > (csvLines[0].match(/,/g)||[]).length ? ";" : ",";
+      const headers = csvLines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,""));
+      if (headers.length === 0) return false;
+      const rows = [];
+      for (let i = 1; i < Math.min(csvLines.length, 6); i++) {
+        const vals = csvLines[i].split(sep).map(v => v.trim().replace(/^"|"$/g,""));
+        const row = {}; headers.forEach((h,j) => { row[h] = vals[j] || ""; }); rows.push(row);
+      }
+      if (rows.length === 0) { rows.push({}); rows.push({}); rows.push({}); }
+      const gateRes = await fetch(`${BACKEND_URL}/api/validate-semantic`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ headers, rows, ontos: [], title }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!gateRes.ok) return false;
+      const gate = await gateRes.json();
+      if (gate.stato === "BLOCCANTE" || gate.stato === "MIGLIORABILE") {
+        const icon = gate.stato === "BLOCCANTE" ? "⊗" : "⚠";
+        const sd = gate.score_detail || {};
+        let msg = `${icon} **CSV ${gate.stato} per la conversione RDF** (score: ${gate.score}/100)\n\n`;
+        msg += `Struttura: ${sd.struttura||0}/40 | Ontologie: ${sd.ontologie||0}/40 | Linked Data: ${sd.linked_data||0}/20\n\n`;
+        if (gate.blockers?.length)  msg += gate.blockers.map(b => `❌ ${b.msg}`).join("\n") + "\n\n";
+        if (gate.warnings?.length)  msg += gate.warnings.map(w => `⚠️ ${w.msg}`).join("\n") + "\n\n";
+        if (gate.suggestions?.length) {
+          msg += "**Suggerimenti per abilitare la conversione:**\n";
+          gate.suggestions.forEach(s => {
+            msg += `\n**${s.label}**\n`;
+            (s.renames||[]).forEach(r => { msg += `• Rinomina \`${r.da}\` → \`${r.a}\`\n`; });
+            (s.aggiungi||[]).filter(a => a.priorita !== "bassa").forEach(a => { msg += `• Aggiungi [${a.priorita}]: \`${a.colonna}\`\n`; });
+          });
+        }
+        msg += `\n*Correggi il CSV e ricaricalo per procedere con la conversione.*`;
+        addMsg("assistant", msg);
+        return true; // bloccato
+      }
+    } catch (_) {}
+    return false; // passa
+  }
+
   async function enrichFromBox() {
     if (!ttlUrl.trim()) return;
     if (!ttlIpa.trim()) { alert("Inserisci il Codice IPA dell'ente (es. c_b220)"); return; }
@@ -963,6 +969,11 @@ SELECT ?ipaCode WHERE {
     setShowTtlBox(false);
     const pa = ttlPa.trim();
     const ipa = ttlIpa.trim();
+    // Gate solo se abbiamo il CSV in memoria (da URL non possiamo scaricare qui)
+    if (ttlCsvText) {
+      const gateBlocked = await runGateCheck(ttlCsvText, pa);
+      if (gateBlocked) { return; }
+    }
     await doEnrich(ttlUrl.trim(), pa, ipa, ttlFmt);
     setTtlUrl(""); setTtlIpa(""); setTtlPa(""); setTtlFmt("ttl");
   }
@@ -988,6 +999,10 @@ SELECT ?ipaCode WHERE {
     setLoading(true);
     try {
       const csv_text = hasMemory ? ttlCsvText : await ttlFile.text();
+      // ── Semantic Gate ───────────────────────────────────────────────────────
+      const gateBlocked = await runGateCheck(csv_text, pa);
+      if (gateBlocked) { setLoading(false); setTtlFile(null); return; }
+      // ── Fine Gate ───────────────────────────────────────────────────────────
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: apiHeaders(),
