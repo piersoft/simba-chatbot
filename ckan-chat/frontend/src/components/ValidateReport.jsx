@@ -95,7 +95,7 @@ export default function ValidateReport({ report, url, csvText, onEnrich, onEnric
   // ── Calcola gate semantico quando il report è disponibile ──────────────────
   useEffect(() => {
     if (!report) return;
-    const { headers, ontos } = extractFromReport(report, csvText);
+    const { headers, rows, ontos } = extractFromReport(report, csvText);
     if (!headers.length && !ontos.length) return;
 
     setGateLoading(true);
