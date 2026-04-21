@@ -127,6 +127,31 @@ app.use((req, res, next) => {
 
 app.options("*", (req, res) => res.sendStatus(204));
 
+// ── Endpoint /validate-semantic ──────────────────────────────────────────────
+app.post("/validate-semantic", express.json(), async (req, res) => {
+  try {
+    const { headers, rows, ontos, title } = req.body || {};
+    // Headers vuoti o mancanti → BLOCCANTE diretto
+    if (!headers || !Array.isArray(headers) || headers.length === 0) {
+      return res.json({
+        stato: "BLOCCANTE", score: 0,
+        score_detail: { struttura: 0, ontologie: 0, linked_data: 0 },
+        blockers: [{ id: "S0", msg: "Nessun header rilevato. Impossibile valutare il CSV." }],
+        warnings: [], suggestions: [], renamed_headers: {}, ontos_detected: []
+      });
+    }
+    const fn = globalThis.computeSemanticScore;
+    if (typeof fn !== "function") {
+      return res.status(503).json({ error: "computeSemanticScore non disponibile" });
+    }
+    const result = fn(headers, rows || [], ontos || [], title || "", "", null);
+    res.json(result);
+  } catch (e) {
+    console.error("[rdf-mcp] /validate-semantic errore:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.use(async (req, res) => {
   try {
     // Costruisco un oggetto Request compatibile con Cloudflare Worker
