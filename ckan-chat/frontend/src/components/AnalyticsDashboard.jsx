@@ -321,16 +321,12 @@ export default function AnalyticsDashboard(){
         </Panel>
 
         {/* Richieste bloccate */}
-        {(data?.search?.top_blocked?.length > 0) && (<>
-          <Section icon="🚫" title="Richieste bloccate"/>
-          <div style={{display:"grid",gridTemplateColumns:col2,gap:12}}>
-            <Panel title="Termini bloccati" style={{gridColumn:"1/-1",border:"1px solid #fca5a5",background:"#fff5f5"}}
-              action={<DownloadBtn filename={`bloccati-${rangeLabel}.csv`} rows={data?.search?.top_blocked}
-                cols={[{label:"Termine",key:"query"},{label:"Tentativi",key:"count"}]}/>}>
-              {loading?<Skeleton h={120}/>:<HBar data={data?.search?.top_blocked} keyY="query" color="#ef4444"/>}
-            </Panel>
-          </div>
-        </>)}
+        <Section icon="🚫" title="Richieste bloccate"/>
+        <Panel title="Termini bloccati dalla blocklist" style={{border:"1px solid #fca5a5",background:"#fff5f5"}}
+          action={<DownloadBtn filename={`bloccati-${rangeLabel}.csv`} rows={data?.search?.top_blocked}
+            cols={[{label:"Termine",key:"query"},{label:"Tentativi",key:"count"}]}/>}>
+          {loading?<Skeleton h={120}/>:<HBar data={data?.search?.top_blocked||[]} keyY="query" color="#ef4444"/>}
+        </Panel>
 
         {/* Ricerche */}
         <Section icon="🔍" title="Ricerche"/>
