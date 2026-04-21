@@ -513,7 +513,15 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
             body: JSON.stringify({ csv_text, filename: title, dataset_title: datasetTitle, dataset_description: datasetDescription }),
           });
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return (await r.json()).report ?? "";
+          const rData = await r.json();
+          // Estrai headers dal csv_text scaricato dal browser
+          let bHeaders = [];
+          const bFirstLine = csv_text.split(/\r?\n/).find(l => l.trim()) || "";
+          if (bFirstLine) {
+            const bSep = (bFirstLine.match(/;/g)||[]).length > (bFirstLine.match(/,/g)||[]).length ? ";" : ",";
+            bHeaders = bFirstLine.split(bSep).map(h => h.trim().replace(/^"|"$/g,"")).filter(Boolean);
+          }
+          return { report: rData.report ?? "", headers: bHeaders, csvText: csv_text };
         }
       }
     } catch(e) {
@@ -545,7 +553,8 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
       throw new Error(data.error || "Formato non CSV");
     }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return (await r.json()).report ?? "";
+    const bkData = await r.json();
+    return { report: bkData.report ?? "", headers: bkData.headers || [], csvText: null };
   }
 
   // ── Callback per risultati ricerca avanzata ─────────────────────────────
@@ -830,9 +839,12 @@ SELECT ?ipaCode WHERE {
           if (!isHtml) csvText = await csvRes.text();
         }
       } catch { /* CORS o rete — lascia null, ci pensa il backend */ }
-      const report = await doValidate(url, datasetTitle, datasetDescription, csvText);
+      const vResult = await doValidate(url, datasetTitle, datasetDescription, csvText);
+      const report = typeof vResult === "string" ? vResult : vResult.report;
+      const vHeaders = typeof vResult === "string" ? [] : (vResult.headers || []);
+      const vCsvText = typeof vResult === "string" ? csvText : (vResult.csvText || csvText);
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
-      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
+      addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText: vCsvText, csvHeaders: vHeaders, datasetTitle });
     } catch (e) {
       let msg;
       if (e.message.includes("Content-Type") || e.message.includes("non sembra un file CSV")) {
@@ -865,7 +877,14 @@ SELECT ?ipaCode WHERE {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      addMsg("assistant", data.report ?? "Errore nella validazione", { type: "validate_report", url: csvFile.name, csvText: text });
+      // Estrai headers dal csv caricato
+      let ulHeaders = [];
+      const ulFirstLine = text.split(/\r?\n/).find(l => l.trim()) || "";
+      if (ulFirstLine) {
+        const ulSep = (ulFirstLine.match(/;/g)||[]).length > (ulFirstLine.match(/,/g)||[]).length ? ";" : ",";
+        ulHeaders = ulFirstLine.split(ulSep).map(h => h.trim().replace(/^"|"$/g,"")).filter(Boolean);
+      }
+      addMsg("assistant", data.report ?? "Errore nella validazione", { type: "validate_report", url: csvFile.name, csvText: text, csvHeaders: ulHeaders });
     } catch (e) { addMsg("assistant", `❌ Errore: ${e.message}`); }
     finally { setLoading(false); setCsvFile(null); }
   }
@@ -1101,7 +1120,7 @@ SELECT ?ipaCode WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={(csv_text, filename, fmt) => doEnrichText(csv_text, filename, fmt, m.datasetTitle || m.publisher || "")} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} csvHeaders={m.csvHeaders || []} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={(csv_text, filename, fmt) => doEnrichText(csv_text, filename, fmt, m.datasetTitle || m.publisher || "")} />
           </div>
         </div>
       );
