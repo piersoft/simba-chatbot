@@ -46,11 +46,23 @@ function extractFromReport(report, csvText) {
   if (csvText) {
     const lines = csvText.split(/\r?\n/).filter(l => l.trim());
     if (lines.length > 0) {
+      // Parser CSV che gestisce campi quoted con virgole interne
+      function parseCSVLine(line, sep) {
+        const result = []; let field = ""; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { if (inQ && line[i+1]==='"') { field+='"'; i++; } else inQ=!inQ; }
+          else if (ch === sep && !inQ) { result.push(field.trim()); field = ""; }
+          else { field += ch; }
+        }
+        result.push(field.trim());
+        return result;
+      }
       const sep = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ";" : ",";
-      headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ""));
+      headers = parseCSVLine(lines[0], sep).map(h => h.replace(/^"|"$/g, "").trim());
       // Estrai fino a 5 righe di dati reali
       for (let i = 1; i < Math.min(lines.length, 6); i++) {
-        const vals = lines[i].split(sep).map(v => v.trim().replace(/^"|"$/g, ""));
+        const vals = parseCSVLine(lines[i], sep).map(v => v.replace(/^"|"$/g, "").trim());
         const row = {};
         headers.forEach((h, j) => { row[h] = vals[j] || ""; });
         rows.push(row);
