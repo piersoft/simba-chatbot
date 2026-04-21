@@ -232,8 +232,8 @@ export function checksOpendata(rows, headers, raw = '') {
   if (withSpaces.length) push('O4', 'Intestazioni con spazi o trattini',
     `${withSpaces.map(h => '"' + h + '"').join(', ')} — usare underscore (es. "data_apertura").`, 'warn');
   if (withUpper.length) push('O4', 'Intestazioni con lettere maiuscole',
-    `${withUpper.map(h => '"' + h + '"').join(', ')} — le LG AGID raccomandano il minuscolo, ma molti dataset PA usano maiuscolo per convenzione. Non è un requisito normativo bloccante.`, 'info');
-  if (!withSpaces.length && !withUpper.length) push('O4', 'Intestazioni in formato ottimale', 'Minuscolo con underscore: formato raccomandato dalle LG AGID Open Data.', 'pass');
+    `${withUpper.map(h => '"' + h + '"').join(', ')} — le LG AGID Open Data (Allegato B) indicano di allinearsi alle etichette delle ontologie di riferimento; molti dataset PA usano maiuscolo per convenzione. Non è un requisito normativo bloccante.`, 'info');
+  if (!withSpaces.length && !withUpper.length) push('O4', 'Intestazioni in formato ottimale', 'Le intestazioni seguono le etichette delle ontologie del Catalogo Nazionale della Semantica dei Dati (schema.gov.it), come indicato nelle LG AGID Open Data Allegato B.', 'pass');
 
   const geoKeys = ['lat', 'lon', 'lng', 'latitude', 'longitude', 'comune', 'regione', 'provincia', 'codice_istat', 'indirizzo'];
   const hasGeo = normH.some(h => geoKeys.some(k => h.includes(k)));
