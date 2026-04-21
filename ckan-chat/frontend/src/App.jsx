@@ -834,9 +834,16 @@ SELECT ?ipaCode WHERE {
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
     } catch (e) {
-      const msg = e.message.includes("Content-Type") || e.message.includes("non sembra un file CSV")
-        ? `❌ **Formato non supportato**\n\nL'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).\n\n**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`
-        : `❌ Errore: ${e.message}`;
+      let msg;
+      if (e.message.includes("Content-Type") || e.message.includes("non sembra un file CSV")) {
+        msg = `❌ **Formato non supportato**\n\nL'URL punta a una risorsa che non è un file CSV scaricabile direttamente (potrebbe essere una API JSON, una pagina HTML o un archivio ZIP).\n\n**Suggerimento:** cerca il link diretto al file .csv nel portale open data e incollalo nel campo di validazione manuale.`;
+      } else if (e.message.includes("503") || e.message.includes("502") || e.message.includes("500")) {
+        msg = `❌ **Server non raggiungibile**\n\nIl server che ospita il file CSV ha risposto con un errore temporaneo (${e.message}). Il file potrebbe essere temporaneamente non disponibile.\n\n**Suggerimento:** riprova tra qualche minuto o scarica il file manualmente dal portale open data.`;
+      } else if (e.message.includes("404")) {
+        msg = `❌ **File non trovato**\n\nL'URL non esiste o il file è stato spostato (HTTP 404).\n\n**Suggerimento:** verifica l'URL sul portale open data.`;
+      } else {
+        msg = `❌ Errore: ${e.message}`;
+      }
       addMsg("assistant", msg);
     }
     finally { setLoading(false); }

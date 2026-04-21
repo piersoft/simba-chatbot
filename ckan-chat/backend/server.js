@@ -1046,6 +1046,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     if (csv_text) {
       console.log(`[validate] CSV fornito dal browser (${csv_text.length} chars) — skip download server-side`);
     }
+    let downloadHttpStatus = null;
     if (!csv_text) try {
       const csvResp = await fetch(url, {
         headers: { "User-Agent": "Mozilla/5.0", "Accept": "text/csv,text/plain,*/*" },
@@ -1059,6 +1060,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
         if (csv_text && csv_text.length < 10) { console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`); csv_text = null; }
       } else {
         console.warn(`[validate] download fallito: HTTP ${csvResp.status}`);
+        downloadHttpStatus = csvResp.status;
       }
     } catch (e) {
       console.warn(`[validate] download diretto fallito: ${e.message}`);
@@ -1087,10 +1089,15 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       result = await callTool("csv_validate_url", { url, summary_only: false, dataset_title: reqTitle || "", dataset_description: reqDesc });
     } else {
       console.warn(`[validate] impossibile scaricare il file da ${url}`);
-      return res.status(422).json({
-        error: `Impossibile scaricare il file da questo URL. Il server potrebbe bloccare le richieste automatiche. ` +
-               `Prova a scaricare il CSV manualmente e caricarlo con l'opzione "Carica file".`
-      });
+      const httpHint = downloadHttpStatus ? ` (HTTP ${downloadHttpStatus})` : "";
+      const errMsg = downloadHttpStatus === 503 || downloadHttpStatus === 502
+        ? `Il server che ospita il file CSV non è raggiungibile${httpHint}. Potrebbe essere temporaneamente offline.`
+        : downloadHttpStatus === 404
+        ? `Il file CSV non esiste o è stato spostato${httpHint}.`
+        : downloadHttpStatus === 403
+        ? `Il server blocca le richieste automatiche${httpHint}. Prova a scaricare il CSV manualmente.`
+        : `Impossibile scaricare il file da questo URL${httpHint}. Prova a scaricare il CSV manualmente e caricarlo.`;
+      return res.status(422).json({ error: errMsg });
     }
     const cleanTitle = reqTitle || url.split("/").pop().split("?")[0] || url;
     emitEvent("validate", {
