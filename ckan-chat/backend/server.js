@@ -1086,8 +1086,23 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       if (csvResp.ok) {
         csv_text = await csvResp.text();
         console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/\n/g,' ')}`);
-        if (csv_text.trimStart().startsWith("<")) { console.warn(`[validate] risposta HTML, scarto`); csv_text = null; }
-        if (csv_text && csv_text.length < 10) { console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`); csv_text = null; }
+        if (csv_text.trimStart().startsWith("<")) {
+          console.warn(`[validate] risposta HTML, scarto`);
+          return res.status(422).json({ error: "L'URL punta a una pagina web, non a un file CSV scaricabile direttamente. Cerca il link diretto al file .csv nel portale open data." });
+        }
+        if (csv_text.length === 0) {
+          return res.status(422).json({ error: "Il file scaricato è vuoto (0 byte). Il dataset potrebbe non essere ancora pubblicato o il link non è valido." });
+        }
+        if (csv_text.length < 10) {
+          console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`);
+          return res.status(422).json({ error: `Il file scaricato è troppo piccolo (${csv_text.length} byte) per essere un CSV valido. Verifica il link sul portale open data.` });
+        }
+        // Controlla se il contenuto sembra un CSV (ha almeno una virgola o punto e virgola nella prima riga)
+        const firstLine = csv_text.split("\n")[0] || "";
+        if (!firstLine.includes(",") && !firstLine.includes(";") && !firstLine.includes("\t")) {
+          console.warn(`[validate] prima riga senza separatori: ${firstLine.slice(0,80)}`);
+          return res.status(422).json({ error: `Il file scaricato non sembra un CSV valido — nessun separatore rilevato nella prima riga. Potrebbe essere un file binario, un archivio o un formato non supportato.` });
+        }
       } else {
         console.warn(`[validate] download fallito: HTTP ${csvResp.status}`);
         downloadHttpStatus = csvResp.status;
