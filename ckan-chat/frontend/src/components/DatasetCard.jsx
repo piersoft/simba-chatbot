@@ -171,7 +171,7 @@ export default function DatasetCard({ dataset, onValidate, onEnrich, searchTerms
                 <a href={d.downloadURL} target="_blank" rel="noopener noreferrer" className="btn-small btn-download">
                   <Icon name="download" size={13} /> Scarica
                 </a>
-                <button className="btn-small btn-validate" onClick={() => onValidate(d.downloadURL, dataset.title, dataset.publisher, dataset.uri)}>
+                <button className="btn-small btn-validate" onClick={() => onValidate(d.downloadURL, dataset.title, dataset.publisher, dataset.uri, dataset.description || "")}>
                   <Icon name="check2-circle" size={13} /> Valida
                 </button>
 

@@ -1038,7 +1038,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
   }
 
   console.log(`[validate] ${url}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
-  const { dataset_title: reqTitle } = req.body;
+  const { dataset_title: reqTitle, dataset_description: reqDesc = "" } = req.body;
   const t0val = Date.now();
   try {
     // Scarica il CSV dal backend (più affidabile del validatore-mcp per URL difficili)
@@ -1078,10 +1078,10 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     }
     let result;
     if (csv_text) {
-      result = await callTool("csv_validate", { csv_text, summary_only: false });
+      result = await callTool("csv_validate", { csv_text, summary_only: false, dataset_title: reqTitle || "", dataset_description: reqDesc });
     } else if (toolsRouteMap["csv_validate_url"]) {
       console.log(`[validate] download backend fallito, provo csv_validate_url`);
-      result = await callTool("csv_validate_url", { url, summary_only: false });
+      result = await callTool("csv_validate_url", { url, summary_only: false, dataset_title: reqTitle || "", dataset_description: reqDesc });
     } else {
       console.warn(`[validate] impossibile scaricare il file da ${url}`);
       return res.status(422).json({
@@ -1190,7 +1190,7 @@ app.post("/api/validate-text", strictLimiter, async (req, res) => {
   const t0vt = Date.now();
   try {
     if (!toolsRouteMap["csv_validate"]) { toolsCache = null; toolsRouteMap = {}; await getTools(); }
-    const result = await callTool("csv_validate", { csv_text, summary_only: false });
+    const result = await callTool("csv_validate", { csv_text, summary_only: false, dataset_title: reqTitle || "", dataset_description: reqDesc });
     const cleanFilename = (filename || "upload").split("?")[0].slice(0, 200);
     emitEvent("validate", {
       dataset_id: cleanFilename || "upload",

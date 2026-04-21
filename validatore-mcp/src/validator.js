@@ -354,7 +354,9 @@ export function isCriticalFail(allChecks) {
 }
 
 // ─── Entry point principale ───────────────────────────────────────────────────
-export function validateCSV(raw) {
+export function validateCSV(raw, datasetTitle = "", datasetDescription = "") {
+  // Contesto dataset per migliorare il detect ontologie
+  const _ctx = (datasetTitle + " " + datasetDescription).toLowerCase();
   const sep = detectSep(raw);
   const rows = parseCSV(raw, sep);
   const headers = rows[0] || [];

@@ -466,7 +466,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   }
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
-  async function doValidate(url, datasetTitle = "") {
+  async function doValidate(url, datasetTitle = "", datasetDescription = "") {
     const title = datasetTitle || url.split("/").pop().split("?")[0] || url;
     // 1. Prima prova dal browser (segue redirect, nessun CORS problem su CSV diretti)
     try {
@@ -533,7 +533,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: apiHeaders(),
-      body: JSON.stringify({ url, dataset_title: title }),
+      body: JSON.stringify({ url, dataset_title: title, dataset_description: datasetDescription }),
     });
     if (r.status === 422) {
       const data = await r.json();
@@ -808,7 +808,7 @@ SELECT ?ipaCode WHERE {
   }
 
   // ── Valida CSV da card ────────────────────────────────────────────────────
-  async function validateFromCard(url, datasetTitle, publisher = "", datasetUri = "") {
+  async function validateFromCard(url, datasetTitle, publisher = "", datasetUri = "", datasetDescription = "") {
     addMsg("user",      `Valida CSV: ${url}`);
     setPageTitle("Validazione CSV");
     addMsg("assistant", `Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
@@ -820,7 +820,7 @@ SELECT ?ipaCode WHERE {
         const csvRes = await fetch(url);
         if (csvRes.ok) csvText = await csvRes.text();
       } catch { /* se non scaricabile, lascia null */ }
-      const report = await doValidate(url, datasetTitle);
+      const report = await doValidate(url, datasetTitle, datasetDescription);
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
     } catch (e) {

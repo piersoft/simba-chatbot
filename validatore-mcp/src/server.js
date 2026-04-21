@@ -33,6 +33,14 @@ const TOOLS = [
           description: 'Se true restituisce solo score, verdict e summary senza la lista completa dei check. Default: false.',
           default: false,
         },
+        dataset_title: {
+          type: 'string',
+          description: 'Titolo del dataset DCAT (opzionale) — migliora il rilevamento delle ontologie.',
+        },
+        dataset_description: {
+          type: 'string',
+          description: 'Descrizione del dataset DCAT (opzionale) — migliora il rilevamento delle ontologie.',
+        },
       },
       required: [],
     },
@@ -81,7 +89,7 @@ async function handleToolCall(name, args) {
 
     if (!raw.trim()) return 'Il CSV ricevuto è vuoto.';
 
-    const result = validateCSV(raw);
+    const result = validateCSV(raw, args.dataset_title || "", args.dataset_description || "");
 
     if (args.summary_only) {
       return formatSummary(result);
