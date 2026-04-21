@@ -510,7 +510,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
           const r = await fetch(`${BACKEND_URL}/api/validate-text`, {
             method: "POST",
             headers: apiHeaders(),
-            body: JSON.stringify({ csv_text, filename: title }),
+            body: JSON.stringify({ csv_text, filename: title, dataset_title: datasetTitle, dataset_description: datasetDescription }),
           });
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return (await r.json()).report ?? "";

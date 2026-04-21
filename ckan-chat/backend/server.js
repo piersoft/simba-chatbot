@@ -1193,7 +1193,7 @@ app.post("/api/enrich", strictLimiter, async (req, res) => {
 
 // Validazione da testo CSV grezzo (upload file dal browser)
 app.post("/api/validate-text", strictLimiter, async (req, res) => {
-  const { csv_text, filename } = req.body;
+  const { csv_text, filename, dataset_title: reqTitle = "", dataset_description: reqDesc = "" } = req.body;
   if (!csv_text) return res.status(400).json({ error: "csv_text required" });
   if (csv_text.length > 10000000) return res.status(400).json({ error: "File CSV troppo grande (max 10MB)." });
   console.log(`[validate-text] ${filename || "upload"} (${csv_text.length} chars)`);
