@@ -1124,7 +1124,22 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       errors_count: (result.match(/error/gi) || []).length,
       latency_ms: Date.now() - t0val,
     }, req);
-    res.json({ report: result });
+    // Estrai headers dal csv_text per il gate semantico nel frontend
+    let csvHeaders = [];
+    if (csv_text) {
+      const firstLine = csv_text.split(/\r?\n/).find(l => l.trim());
+      if (firstLine) {
+        const sep = (firstLine.match(/;/g)||[]).length > (firstLine.match(/,/g)||[]).length ? ";" : ",";
+        // Parser quoted-aware
+        function parseCSVLine(line, s) {
+          const r2=[]; let f="", inQ=false;
+          for (let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(inQ&&line[i+1]==='"'){f+='"';i++;}else inQ=!inQ;}else if(c===s&&!inQ){r2.push(f.trim());f="";}else f+=c;}
+          r2.push(f.trim()); return r2;
+        }
+        csvHeaders = parseCSVLine(firstLine, sep).map(h => h.replace(/^"|"$/g,"").trim()).filter(Boolean);
+      }
+    }
+    res.json({ report: result, headers: csvHeaders });
   } catch (e) {
     console.error("[validate] errore:", e.message);
     emitEvent("error", { error_type: "validate_error", error_message: e.message.slice(0, 300), endpoint: "/api/validate" }, req);
