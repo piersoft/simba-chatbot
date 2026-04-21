@@ -299,17 +299,7 @@ export default function ValidateReport({ report, url, csvText, onEnrich, onEnric
           >
             <Icon name="file-earmark-text" size={13} /> RDF/XML
           </button>
-          {csvText && (
-            <button
-              className="btn-small btn-ttl"
-              disabled={gateBlocked}
-              title={gateBlocked ? `CSV ${gateResult.stato} — applica i suggerimenti e ricarica il file` : ""}
-              style={gateBlocked ? { opacity: 0.4, cursor: "not-allowed" } : {}}
-              onClick={() => !gateBlocked && onEnrichText(csvText, (url||"dataset.csv").split("/").pop(), "ttl")}
-            >
-              <Icon name="file-earmark-code" size={13} /> RDF/Turtle (upload)
-            </button>
-          )}
+
         </div>
       )}
 
