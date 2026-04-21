@@ -81,7 +81,7 @@ function extractFromReport(report, csvText) {
   return { headers, rows, ontos };
 }
 
-export default function ValidateReport({ report, url, csvText, onEnrich, onEnrichText }) {
+export default function ValidateReport({ report, url, csvText, csvHeaders, onEnrich, onEnrichText }) {
   const [showAll, setShowAll] = useState(false);
   const [showStandards, setShowStandards] = useState(false);
   const [gateResult, setGateResult] = useState(null);
@@ -107,7 +107,14 @@ export default function ValidateReport({ report, url, csvText, onEnrich, onEnric
   // ── Calcola gate semantico quando il report è disponibile ──────────────────
   useEffect(() => {
     if (!report) return;
-    const { headers, rows, ontos } = extractFromReport(report, csvText);
+    // Se csvText non disponibile (CORS), usa csvHeaders passati dal backend
+    const effectiveCsvText = csvText || null;
+    const backendHeaders = (!csvText && csvHeaders && csvHeaders.length > 0) ? csvHeaders : null;
+    const extracted = extractFromReport(report, effectiveCsvText);
+    // Combina: se abbiamo csvHeaders dal backend e non headers da csvText, usali
+    const headers = extracted.headers.length > 0 ? extracted.headers : (backendHeaders || []);
+    const rows = extracted.rows.length > 0 ? extracted.rows : (headers.length > 0 ? [{},{},{}] : []);
+    const ontos = extracted.ontos;
     if (!headers.length && !ontos.length) return;
 
     setGateLoading(true);
