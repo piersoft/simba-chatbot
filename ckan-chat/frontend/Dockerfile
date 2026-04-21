@@ -2,6 +2,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
+ARG CACHEBUST=1
 COPY . .
 ARG VITE_BACKEND_URL=http://localhost:3001
 ARG VITE_BASE_PATH=/chatbot/
