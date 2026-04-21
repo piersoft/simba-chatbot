@@ -104,6 +104,7 @@ async function loadWorker() {
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
+  src += '\n if(typeof detectOntologiesDeterministic==="function") globalThis.detectOntologiesDeterministic=detectOntologiesDeterministic;\n';
 
   // Eseguo in un contesto isolato usando Function()
   try {
@@ -144,7 +145,12 @@ app.post("/validate-semantic", express.json(), async (req, res) => {
     if (typeof fn !== "function") {
       return res.status(503).json({ error: "computeSemanticScore non disponibile" });
     }
-    const result = fn(headers, rows || [], ontos || [], title || "", "", null);
+    // Se ontos non forniti, rileva automaticamente dagli header
+    let resolvedOntos = (ontos && ontos.length > 0) ? ontos : [];
+    if (resolvedOntos.length === 0 && typeof globalThis.detectOntologiesDeterministic === "function") {
+      resolvedOntos = globalThis.detectOntologiesDeterministic(headers, rows || []) || [];
+    }
+    const result = fn(headers, rows || [], resolvedOntos, title || "", "", null);
     res.json(result);
   } catch (e) {
     console.error("[rdf-mcp] /validate-semantic errore:", e.message);
