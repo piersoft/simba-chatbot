@@ -373,6 +373,17 @@ export function isCriticalFail(allChecks) {
 export function validateCSV(raw, datasetTitle = "", datasetDescription = "") {
   // Contesto dataset per migliorare il detect ontologie
   const _ctx = (datasetTitle + " " + datasetDescription).toLowerCase();
+  const _ctxHints = {
+    hasDefibrillatori: _ctx.includes("defibrillator") || _ctx.includes("dae") || _ctx.includes("defibrillat"),
+    hasRifiuti: _ctx.includes("rifiut") || _ctx.includes("raccolta differenziata"),
+    hasBilancio: _ctx.includes("bilancio") || _ctx.includes("entrate") || _ctx.includes("uscite"),
+    hasAppalti: _ctx.includes("appalto") || _ctx.includes("appalti") || _ctx.includes("gara") || _ctx.includes("cig"),
+    hasPersonale: _ctx.includes("personale") || _ctx.includes("dipendenti") || _ctx.includes("stipendi"),
+    hasParcheggi: _ctx.includes("parcheggi") || _ctx.includes("parking") || _ctx.includes("sosta"),
+    hasEventi: _ctx.includes("eventi") || _ctx.includes("manifestazioni") || _ctx.includes("sagre"),
+    hasTurismo: _ctx.includes("turismo") || _ctx.includes("albergh") || _ctx.includes("strutture ricettive"),
+    hasAmbiente: _ctx.includes("qualit") && (_ctx.includes("aria") || _ctx.includes("centraline") || _ctx.includes("pm10")),
+  };
   const sep = detectSep(raw);
   const rows = parseCSV(raw, sep);
   const headers = rows[0] || [];
