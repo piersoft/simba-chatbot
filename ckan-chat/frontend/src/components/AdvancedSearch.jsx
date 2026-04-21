@@ -120,11 +120,27 @@ ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 
 // Carica lista cataloghi (una sola volta) ordinati per numero dataset
 async function loadCatalogs() {
-  const rows = await sparqlFetch(
-    `SELECT ?catalog (COUNT(?s) AS ?count) WHERE {
+  const q = `SELECT ?catalog (COUNT(?s) AS ?count) WHERE {
+  ?catalog a <http://www.w3.org/ns/dcat#Catalog> .
   ?catalog <http://www.w3.org/ns/dcat#dataset> ?s .
-} GROUP BY ?catalog ORDER BY DESC(?count) LIMIT 400`
-  );
+} GROUP BY ?catalog ORDER BY DESC(?count) LIMIT 500`;
+  // Tenta prima dal browser, poi proxy backend
+  const SPARQL_EP = import.meta.env.VITE_SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
+  try {
+    const url = `${SPARQL_EP}?query=${encodeURIComponent(q)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+    const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
+    if (r.ok) {
+      const data = await r.json();
+      const rows = data.results?.bindings ?? [];
+      return rows.map(r => ({
+        uri:   r.catalog?.value || "",
+        label: (r.catalog?.value || "").replace(/https?:\/\//, "").replace(/\/$/, ""),
+        count: parseInt(r.count?.value || "0"),
+      })).filter(c => c.uri);
+    }
+  } catch {}
+  // Fallback proxy
+  const rows = await sparqlFetch(q);
   return rows.map(r => ({
     uri:   r.catalog?.value || "",
     label: (r.catalog?.value || "").replace(/https?:\/\//, "").replace(/\/$/, ""),
