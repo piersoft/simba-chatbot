@@ -132,12 +132,15 @@ function topQueries(limit, from, to) {
 
 function topBlockedQueries(limit, from, to) {
   const rows = getDb().prepare(
-    `SELECT payload FROM events WHERE type='blocked' AND ts BETWEEN ? AND ?`
+    `SELECT payload FROM events WHERE (type='blocked' OR type='off_topic') AND ts BETWEEN ? AND ?`
   ).all(from, to);
   const counts = {};
   for (const r of rows) {
     try {
-      const q = (JSON.parse(r.payload).query || '').trim().toLowerCase().slice(0, 100);
+      const p = JSON.parse(r.payload);
+      // Includi solo eventi dalla blocklist, non dal classificatore LLM
+      if (p.guardrail_layer && p.guardrail_layer !== 'blocklist') continue;
+      const q = (p.query_preview || p.query || '').trim().toLowerCase().slice(0, 100);
       if (q) counts[q] = (counts[q] || 0) + 1;
     } catch {}
   }
