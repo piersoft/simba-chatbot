@@ -1091,7 +1091,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
           return res.status(422).json({ error: "L'URL punta a una pagina web, non a un file CSV scaricabile direttamente. Cerca il link diretto al file .csv nel portale open data." });
         }
         if (csv_text.length === 0) {
-          return res.status(422).json({ error: "Il file scaricato è vuoto (0 byte). Il dataset potrebbe non essere ancora pubblicato o il link non è valido." });
+          return res.status(422).json({ error: "Il file scaricato è vuoto (0 byte). Verifica il link sul portale open data." });
         }
         if (csv_text.length < 10) {
           console.warn(`[validate] risposta troppo corta (${csv_text.length} chars), scarto`);
