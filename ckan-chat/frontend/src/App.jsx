@@ -466,7 +466,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   }
 
   // ── Validazione CSV ───────────────────────────────────────────────────────
-  async function doValidate(url, datasetTitle = "", datasetDescription = "") {
+  async function doValidate(url, datasetTitle = "", datasetDescription = "", csvText = null) {
     const title = datasetTitle || url.split("/").pop().split("?")[0] || url;
     // 1. Prima prova dal browser (segue redirect, nessun CORS problem su CSV diretti)
     try {
@@ -533,7 +533,12 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
     const r = await fetch(`${BACKEND_URL}/api/validate`, {
       method: "POST",
       headers: apiHeaders(),
-      body: JSON.stringify({ url, dataset_title: title, dataset_description: datasetDescription }),
+      body: JSON.stringify({
+          url,
+          dataset_title: title,
+          dataset_description: datasetDescription,
+          ...(csvText ? { csv_text: csvText } : {}),
+        }),
     });
     if (r.status === 422) {
       const data = await r.json();
@@ -814,13 +819,18 @@ SELECT ?ipaCode WHERE {
     addMsg("assistant", `Validazione CSV di **"${datasetTitle}"** in corso…`, { type: "validating" });
     setLoading(true);
     try {
-      // Scarica il CSV dal browser (evita 403 server-side su rdf-mcp)
+      // Scarica il CSV dal browser — se riesce, lo manda direttamente al backend
+      // evitando i 403 che i server PA danno alle richieste server-side
       let csvText = null;
       try {
         const csvRes = await fetch(url);
-        if (csvRes.ok) csvText = await csvRes.text();
-      } catch { /* se non scaricabile, lascia null */ }
-      const report = await doValidate(url, datasetTitle, datasetDescription);
+        if (csvRes.ok) {
+          const ct = (csvRes.headers.get("content-type") || "").toLowerCase();
+          const isHtml = ct.includes("text/html") || ct.includes("application/xhtml");
+          if (!isHtml) csvText = await csvRes.text();
+        }
+      } catch { /* CORS o rete — lascia null, ci pensa il backend */ }
+      const report = await doValidate(url, datasetTitle, datasetDescription, csvText);
       const ipaCode = datasetUri ? await fetchIpaCode(datasetUri) : "";
       addMsg("assistant", report, { type: "validate_report", url, publisher, ipaCode, csvText, datasetTitle });
     } catch (e) {

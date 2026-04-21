@@ -1038,12 +1038,15 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
   }
 
   console.log(`[validate] ${url}` + (ctCheck.warning ? ` [warning: ${ctCheck.warning}]` : ""));
-  const { dataset_title: reqTitle, dataset_description: reqDesc = "" } = req.body;
+  const { dataset_title: reqTitle, dataset_description: reqDesc = "", csv_text: clientCsvText = null } = req.body;
   const t0val = Date.now();
   try {
-    // Scarica il CSV dal backend (più affidabile del validatore-mcp per URL difficili)
-    let csv_text = null;
-    try {
+    // Se il frontend ha già scaricato il CSV (es. server PA che blocca richieste server-side), usalo direttamente
+    let csv_text = clientCsvText || null;
+    if (csv_text) {
+      console.log(`[validate] CSV fornito dal browser (${csv_text.length} chars) — skip download server-side`);
+    }
+    if (!csv_text) try {
       const csvResp = await fetch(url, {
         headers: { "User-Agent": "Mozilla/5.0", "Accept": "text/csv,text/plain,*/*" },
         signal: AbortSignal.timeout(15000),
