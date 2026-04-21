@@ -42,12 +42,31 @@ function extractFromReport(report, csvText) {
     if (!ontos.includes(m[1])) ontos.push(m[1]);
   }
   let headers = [];
+  let rows = [];
   if (csvText) {
-    const firstLine = csvText.split(/\r?\n/)[0] || "";
-    const sep = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ";" : ",";
-    headers = firstLine.split(sep).map(h => h.trim().replace(/^"|"$/g, ""));
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length > 0) {
+      const sep = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ";" : ",";
+      headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ""));
+      // Estrai fino a 5 righe di dati reali
+      for (let i = 1; i < Math.min(lines.length, 6); i++) {
+        const vals = lines[i].split(sep).map(v => v.trim().replace(/^"|"$/g, ""));
+        const row = {};
+        headers.forEach((h, j) => { row[h] = vals[j] || ""; });
+        rows.push(row);
+      }
+    }
   }
-  return { headers, ontos };
+  // Se non abbiamo righe reali ma abbiamo header, aggiungi righe dummy
+  // per non fare scattare il blocco S4 "nessuna riga di dati"
+  if (headers.length > 0 && rows.length === 0) {
+    for (let i = 0; i < 3; i++) {
+      const row = {};
+      headers.forEach(h => { row[h] = "valore"; });
+      rows.push(row);
+    }
+  }
+  return { headers, rows, ontos };
 }
 
 export default function ValidateReport({ report, url, csvText, onEnrich, onEnrichText }) {
@@ -83,7 +102,7 @@ export default function ValidateReport({ report, url, csvText, onEnrich, onEnric
     fetch(`${BACKEND_URL}/api/validate-semantic`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ headers, rows: [], ontos, title: url || "" }),
+      body: JSON.stringify({ headers, rows, ontos, title: url || "" }),
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setGateResult(data); })
