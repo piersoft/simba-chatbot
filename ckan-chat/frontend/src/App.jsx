@@ -869,6 +869,11 @@ SELECT ?ipaCode WHERE {
   async function validateFromUpload() {
     if (!csvFile) return;
     setShowCsvBox(false);
+    if (csvFile.size === 0) {
+      addMsg("assistant", `❌ **File vuoto**\n\nIl file "${csvFile.name}" è vuoto (0 byte) e non può essere validato.`);
+      setCsvFile(null);
+      return;
+    }
     addMsg("user", `Valida CSV: ${csvFile.name}`);
     addMsg("assistant", `Validazione CSV di **"${csvFile.name}"** in corso…`, { type: "validating" });
     setLoading(true);
