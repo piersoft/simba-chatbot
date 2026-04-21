@@ -738,7 +738,9 @@ SELECT ?ipaCode WHERE {
       // displayQuery = testo originale per mostrarlo all'utente
       const displayQuery = text;
       const query = text
-        .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova)\s+/i, "")
+        // Rimuovi frasi introduttive comuni
+        .replace(/^(cerca|trovami|mostrami|dammi|elenca|trova|ho bisogno di|mi servono|vorrei|voglio|puoi darmi|puoi trovarmi|sto cercando|cerco|fammi vedere|hai|ci sono|esistono|dove trovo|come trovo)\s+(dati\s+su(lla?|lle?|gli?|i)?\s+|informazioni\s+su(lla?|lle?|gli?|i)?\s+|dataset\s+su(lla?|lle?|gli?|i)?\s+)?/i, "")
+        .replace(/^(dati\s+su(lla?|lle?|gli?|i)?|informazioni\s+su(lla?|lle?|gli?|i)?|dataset\s+su(lla?|lle?|gli?|i)?)\s+/i, "")
         .replace(/\b(dataset|open data)\b/gi, "")
         .replace(/\s+/g, " ").trim() || text;
 
