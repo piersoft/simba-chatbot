@@ -873,6 +873,52 @@ SELECT ?ipaCode WHERE {
   async function doEnrichText(csv_text, filename, fmt = "ttl", paName = "") {
     // Conversione diretta da testo CSV (file già caricato) — niente box IPA/PA
     const title = paName || filename.replace(/\.csv$/i,"");
+
+    // ── Semantic Gate pre-conversione ─────────────────────────────────────────
+    try {
+      const firstLine = (csv_text || "").split(/\r?\n/)[0] || "";
+      const sep = (firstLine.match(/;/g)||[]).length > (firstLine.match(/,/g)||[]).length ? ";" : ",";
+      const headers = firstLine.split(sep).map(h => h.trim().replace(/^"|"$/g,""));
+      if (headers.length > 0) {
+        const gateRes = await fetch(`${BACKEND_URL}/api/validate-semantic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ headers, rows: [], ontos: [], title }),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (gateRes.ok) {
+          const gate = await gateRes.json();
+          if (gate.stato === "BLOCCANTE" || gate.stato === "MIGLIORABILE") {
+            const icon = gate.stato === "BLOCCANTE" ? "⊗" : "⚠";
+            const sd = gate.score_detail || {};
+            let msg = `${icon} **CSV ${gate.stato} per la conversione RDF** (score: ${gate.score}/100)
+
+`;
+            msg += `Struttura: ${sd.struttura||0}/40 | Ontologie: ${sd.ontologie||0}/40 | Linked Data: ${sd.linked_data||0}/20
+
+`;
+            if (gate.blockers?.length)  msg += gate.blockers.map(b  => `❌ ${b.msg}`).join("\n") + "\n\n";
+            if (gate.warnings?.length)  msg += gate.warnings.map(w  => `⚠️ ${w.msg}`).join("\n") + "\n\n";
+            if (gate.suggestions?.length) {
+              msg += "**Suggerimenti per abilitare la conversione:**\n";
+              gate.suggestions.forEach(s => {
+                msg += `\n**${s.label}**\n`;
+                (s.renames||[]).forEach(r => { msg += `• Rinomina \`${r.da}\` → \`${r.a}\`\n`; });
+                (s.aggiungi||[]).filter(a=>a.priorita!=="bassa").forEach(a => { msg += `• Aggiungi [${a.priorita}]: \`${a.colonna}\`\n`; });
+              });
+            }
+            msg += `\n*Correggi il CSV e ricaricalo per procedere con la conversione.*`;
+            addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
+            addMsg("assistant", msg);
+            return;
+          }
+        }
+      }
+    } catch (_gateErr) {
+      // Gate non disponibile — procedi in degraded mode
+    }
+    // ── Fine Semantic Gate ────────────────────────────────────────────────────
+
     addMsg("user", `Converti in ${fmt.toUpperCase()}: ${title}`);
     addMsg("assistant", `Conversione in RDF/${fmt.toUpperCase()} di **"${title}"** in corso…`);
     setLoading(true);
