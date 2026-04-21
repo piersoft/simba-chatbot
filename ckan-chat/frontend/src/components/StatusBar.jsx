@@ -9,7 +9,7 @@ export default function StatusBar({ health, onRefresh, compact }) {
         <div className="status-compact-grid">
           <div className="status-compact-line">
             {dot(health?.backend)} <span>Backend</span>
-            {dot(health?.ollama)} <span>Ollama</span>
+            {dot(health?.ollama)} <span>AI</span>
           </div>
           <div className="status-compact-line">
             {dot(health?.validatore)} <span>Validatore</span>
@@ -24,7 +24,7 @@ export default function StatusBar({ health, onRefresh, compact }) {
   return (
     <div className="status-bar">
       <div className="status-row">{dot(health?.backend)} <span>Backend</span></div>
-      <div className="status-row">{dot(health?.ollama)} <span>Ollama</span></div>
+      <div className="status-row">{dot(health?.ollama)} <span>AI</span></div>
       <div className="status-row">{dot(health?.validatore)} <span>Validatore</span></div>
       <div className="status-row">{dot(health?.rdf)} <span>RDF</span></div>
       <button className="refresh-btn" onClick={onRefresh} title="Aggiorna stato">↻</button>
