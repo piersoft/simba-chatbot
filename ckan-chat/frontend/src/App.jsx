@@ -274,7 +274,7 @@ export default function App() {
     async function runQuery(words, useOr, off) {
       const doveFilter = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
-  FILTER(CONTAINS(LCASE(STR(?rhName)),"${sanitizeSparql(dove.toLowerCase())}"))
+  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")
 `
         : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
 `;
@@ -803,7 +803,7 @@ SELECT ?ipaCode WHERE {
     const newOffset = currentOffset + 8;
     setLoadingMore(true);
     try {
-      const { datasets } = await doSearch(query, newOffset);
+      let { datasets } = await doSearch(query, newOffset);
       if (!datasets.length) { addMsg("assistant", "Nessun altro risultato disponibile."); return; }
       addMsg("assistant", `Altri risultati per **"${query}"**:`, {
         type: "search_results", datasets, query, offset: newOffset,
@@ -1159,7 +1159,7 @@ SELECT ?ipaCode WHERE {
           <button id="tour-validate" className="tool-card tool-validate" aria-label="Valida un file CSV" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
             Valida CSV
           </button>
-          <button id="tour-enrich" className="tool-card tool-ttl" aria-label="Converti CSV in RDF" onClick={() => { setSidebarOpen(false); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
+          <button id="tour-enrich" className="tool-card tool-ttl" aria-label="Converti CSV in RDF" onClick={() => { setSidebarOpen(false); setMessages([]); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
             Trasforma in RDF TTL/XML
           </button>
         </div>
