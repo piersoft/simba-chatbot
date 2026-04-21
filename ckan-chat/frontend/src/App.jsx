@@ -321,9 +321,8 @@ SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTI
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
   OPTIONAL { ?d dcat:keyword ?kw FILTER(LANG(?kw)='it'||LANG(?kw)='') }
-  FILTER(CONTAINS(LCASE(STR(?title)),"${fullPhrase}"))
+${dove ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")\n` : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n`}  FILTER(CONTAINS(LCASE(STR(?title)),"${fullPhrase}"))
 } GROUP BY ?d ?title ?description ?modified ?rhName ?landingPage ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
       try {
         const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(phraseQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
@@ -361,9 +360,8 @@ SELECT ?d ?title ?description ?modified ?rhName ?landingPage (GROUP_CONCAT(DISTI
   OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d <http://www.w3.org/ns/dcat#landingPage> ?landingPage }
-  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
   OPTIONAL { ?d dcat:keyword ?kw FILTER(LANG(?kw)='it'||LANG(?kw)='') }
-  FILTER(${titleOnlyFilter(useWords)})
+${dove ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")\n` : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n`}  FILTER(${titleOnlyFilter(useWords)})
 } GROUP BY ?d ?title ?description ?modified ?rhName ?landingPage ORDER BY DESC(?modified) LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 
     try {
