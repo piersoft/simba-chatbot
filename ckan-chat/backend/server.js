@@ -1018,6 +1018,23 @@ app.get("/api/resources/:datasetId", async (req, res) => {
 // ─── Validate endpoint diretto ───────────────────────────────────────────────
 // Chiama validatore-mcp direttamente senza passare per Ollama.
 
+app.post("/api/validate-semantic", async (req, res) => {
+  // Proxy verso rdf-mcp /validate-semantic
+  // Body: { headers, rows, ontos, title }
+  try {
+    const r = await fetch(`${RDF_MCP_URL}/validate-semantic`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body || {}),
+      signal: AbortSignal.timeout(10000)
+    });
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch (e) {
+    res.status(503).json({ error: "gate non disponibile: " + e.message });
+  }
+});
+
 app.post("/api/validate", strictLimiter, async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "url required" });
