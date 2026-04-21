@@ -102,6 +102,8 @@ async function loadWorker() {
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
+  // Esponi computeSemanticScore per /validate-semantic
+  src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
 
   // Eseguo in un contesto isolato usando Function()
   try {
