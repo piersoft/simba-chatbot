@@ -922,12 +922,24 @@ SELECT ?ipaCode WHERE {
     try {
       const csvLines = (csv_text || "").split(/\r?\n/).filter(l => l.trim());
       if (csvLines.length === 0) return false;
+      // Parser CSV che gestisce campi quoted con virgole interne
+      function parseCSVLine(line, sep) {
+        const result = []; let field = ""; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { if (inQ && line[i+1]==='"') { field+='"'; i++; } else inQ=!inQ; }
+          else if (ch === sep && !inQ) { result.push(field.trim()); field = ""; }
+          else { field += ch; }
+        }
+        result.push(field.trim());
+        return result;
+      }
       const sep = (csvLines[0].match(/;/g)||[]).length > (csvLines[0].match(/,/g)||[]).length ? ";" : ",";
-      const headers = csvLines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,""));
+      const headers = parseCSVLine(csvLines[0], sep).map(h => h.replace(/^"|"$/g,"").trim());
       if (headers.length === 0) return false;
       const rows = [];
       for (let i = 1; i < Math.min(csvLines.length, 6); i++) {
-        const vals = csvLines[i].split(sep).map(v => v.trim().replace(/^"|"$/g,""));
+        const vals = parseCSVLine(csvLines[i], sep).map(v => v.replace(/^"|"$/g,"").trim());
         const row = {}; headers.forEach((h,j) => { row[h] = vals[j] || ""; }); rows.push(row);
       }
       if (rows.length === 0) { rows.push({}); rows.push({}); rows.push({}); }
