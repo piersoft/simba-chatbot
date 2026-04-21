@@ -277,7 +277,7 @@ export function checksOpendata(rows, headers, raw = '') {
 }
 
 // ─── CHECK: Linked Data ───────────────────────────────────────────────────────
-export function checksLinkeddata(rows, headers) {
+export function checksLinkeddata(rows, headers, ctxHints = {}) {
   const results = [];
   const push = (id, title, detail, status) => results.push({ id, title, detail, status });
   const normH = headers.map(normHeader);
@@ -313,8 +313,24 @@ export function checksLinkeddata(rows, headers) {
       }
     }
   });
+  // Arricchisce onto_map con ontologie suggerite dal contesto dataset
+  const ctxOnto = [];
+  if (ctxHints.hasDefibrillatori) ctxOnto.push('POI (Points of Interest)', 'IoT (Sensori/Misure)');
+  if (ctxHints.hasRifiuti) ctxOnto.push('QB (DataCube statistico)', 'TI (TimeInterval)');
+  if (ctxHints.hasBilancio) ctxOnto.push('QB (DataCube)', 'TI (TimeInterval)');
+  if (ctxHints.hasAppalti) ctxOnto.push('PublicContract (PC)', 'COV (Organization)');
+  if (ctxHints.hasPersonale) ctxOnto.push('CPV (Person)', 'COV (Organization)');
+  if (ctxHints.hasParcheggi) ctxOnto.push('PARK (Parcheggi)', 'POI (Points of Interest)');
+  if (ctxHints.hasEventi) ctxOnto.push('CPEV (EventiPA)', 'TI (TimeInterval)');
+  if (ctxHints.hasTurismo) ctxOnto.push('ACCO (Accommodation)');
+  if (ctxHints.hasAmbiente) ctxOnto.push('IoT (Sensori/Misure)', 'QB (DataCube)');
+
   if (matched.length > 0) {
-    push('L2', 'Colonne mappabili a ontologie italiane', matched.map(m => `"${m.col}" → ${m.onto}`).join('; '), 'pass');
+    const detail = matched.map(m => `"${m.col}" → ${m.onto}`).join('; ')
+      + (ctxOnto.length ? ` | Contesto dataset suggerisce: ${ctxOnto.join(', ')}` : '');
+    push('L2', 'Colonne mappabili a ontologie italiane', detail, 'pass');
+  } else if (ctxOnto.length > 0) {
+    push('L2', 'Ontologie rilevate dal contesto dataset', `Il titolo/descrizione suggerisce: ${ctxOnto.join(', ')}. Verificare naming conventions delle colonne.`, 'info');
   } else push('L2', 'Nessuna colonna riconosciuta dalle ontologie', 'Verificare naming conventions.', 'warn');
 
   const istatCols = normH.map((h, i) => [h, i]).filter(([h]) => /istat|cod_comune|codice_comune|pro_com/.test(h));
@@ -334,7 +350,7 @@ export function checksLinkeddata(rows, headers) {
   if (linkedVals.length > 0) push('L5', 'URI di ontologie note nei valori', `${linkedVals.length} valori con URI schema.gov.it / w3.org / dati.gov.it.`, 'pass');
   else push('L5', 'Nessun URI di ontologia nei valori', 'Considerare l\'uso di URI da schema.gov.it per i valori codificati.', 'info');
 
-  if (matched.length >= 2 && headers.length >= 5)
+  if ((matched.length >= 2 || ctxOnto.length >= 1) && headers.length >= 5)
     push('L6', 'Potenziale 5 stelle Open Data', 'Dataset ricco e mappabile per RDF Linked Data.', 'pass');
   else push('L6', 'Dataset da arricchire', 'Servono almeno 5 colonne ben nominate.', 'info');
 
@@ -364,7 +380,7 @@ export function validateCSV(raw, datasetTitle = "", datasetDescription = "") {
   const strChecks = checksStruttura(raw, rows, sep, headers);
   const contChecks = checksContenuto(rows, headers);
   const odChecks = checksOpendata(rows, headers, raw);
-  const ldChecks = checksLinkeddata(rows, headers);
+  const ldChecks = checksLinkeddata(rows, headers, _ctxHints);
 
   const allChecks = [...strChecks, ...contChecks, ...odChecks, ...ldChecks];
   const score = computeScore(allChecks);
