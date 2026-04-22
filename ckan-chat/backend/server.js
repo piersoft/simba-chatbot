@@ -1088,7 +1088,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
         console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/\n/g,' ')}`);
         if (csv_text.trimStart().startsWith("<")) {
           console.warn(`[validate] risposta HTML, scarto`);
-          return res.status(422).json({ error: "L'URL punta a una pagina web, non a un file CSV scaricabile direttamente. Cerca il link diretto al file .csv nel portale open data." });
+          return res.status(422).json({ error: "Il server ha restituito una pagina web invece del file CSV. Il portale potrebbe richiedere autenticazione o il link non è diretto al file. Scarica il CSV manualmente e caricalo tramite il box di upload." });
         }
         if (csv_text.length === 0) {
           return res.status(422).json({ error: "Il file scaricato è vuoto (0 byte). Verifica il link sul portale open data." });
