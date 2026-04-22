@@ -836,11 +836,14 @@ SELECT ?ipaCode WHERE {
       // evitando i 403 che i server PA danno alle richieste server-side
       let csvText = null;
       try {
-        const csvRes = await fetch(url);
+        const csvRes = await fetch(url, { headers: { "Accept": "text/csv,text/plain,*/*" } });
         if (csvRes.ok) {
           const ct = (csvRes.headers.get("content-type") || "").toLowerCase();
           const isHtml = ct.includes("text/html") || ct.includes("application/xhtml");
-          if (!isHtml) csvText = await csvRes.text();
+          const urlIsCsv = url.toLowerCase().includes(".csv") || url.toLowerCase().includes("/download/") || url.toLowerCase().includes("output=csv") || url.toLowerCase().includes("format=csv");
+          if (!isHtml || urlIsCsv) csvText = await csvRes.text();
+          // Se il contenuto è HTML nonostante urlIsCsv, scarta
+          if (csvText && csvText.trimStart().startsWith("<")) csvText = null;
         }
       } catch { /* CORS o rete — lascia null, ci pensa il backend */ }
       const vResult = await doValidate(url, datasetTitle, datasetDescription, csvText);
