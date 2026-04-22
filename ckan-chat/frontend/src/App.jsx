@@ -480,7 +480,8 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
         const isExcelCt = ct.includes("spreadsheetml") || ct.includes("ms-excel")
           || url.toLowerCase().endsWith(".xlsx") || url.toLowerCase().endsWith(".xls");
 
-        if (isHtmlCt || isZipCt || isPdfCt || isExcelCt) {
+        const urlIsCsv = url.toLowerCase().includes('.csv') || url.toLowerCase().includes('/download/');
+        if ((isHtmlCt && !urlIsCsv) || isZipCt || isPdfCt || isExcelCt) {
           throw new Error(
             `La risorsa non è un file CSV — Content-Type rilevato: "${ct || "non dichiarato"}". ` +
             (isHtmlCt ? "L'URL punta a una pagina web, non al file diretto. Cerca il link diretto al CSV nel portale open data." : "") +
