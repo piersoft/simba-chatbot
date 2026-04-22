@@ -480,7 +480,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
         const isExcelCt = ct.includes("spreadsheetml") || ct.includes("ms-excel")
           || url.toLowerCase().endsWith(".xlsx") || url.toLowerCase().endsWith(".xls");
 
-        const urlIsCsv = url.toLowerCase().includes('.csv') || url.toLowerCase().includes('/download/');
+        const urlIsCsv = url.toLowerCase().includes('.csv') || url.toLowerCase().includes('/download/') || url.toLowerCase().includes('output=csv') || url.toLowerCase().includes('format=csv') || url.toLowerCase().includes('export=csv');
         if ((isHtmlCt && !urlIsCsv) || isZipCt || isPdfCt || isExcelCt) {
           throw new Error(
             `La risorsa non è un file CSV — Content-Type rilevato: "${ct || "non dichiarato"}". ` +
