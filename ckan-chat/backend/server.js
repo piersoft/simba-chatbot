@@ -1079,7 +1079,7 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
     let downloadHttpStatus = null;
     if (!csv_text) try {
       const csvResp = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0", "Accept": "text/csv,text/plain,*/*" },
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Accept": "text/csv,text/plain,application/csv,*/*" },
         signal: AbortSignal.timeout(15000),
         redirect: "follow",
       });
@@ -1395,7 +1395,7 @@ async function checkCsvContentType(url) {
   try {
     const r = await fetch(url, {
       method: "HEAD",
-      headers: { "User-Agent": "Mozilla/5.0" },
+      headers: { "User-Agent": "Mozilla/5.0", "Accept": "text/csv,text/plain,application/csv,*/*" },
       signal: AbortSignal.timeout(8000),
       redirect: "follow",
     });
