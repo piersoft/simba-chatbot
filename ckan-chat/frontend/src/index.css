@@ -931,7 +931,7 @@ body {
 .ttl-preview {
   background: #1e1e2e; color: #cdd6f4; border-radius: 6px;
   padding: 10px 14px; font-size: 12px; line-height: 1.6;
-  overflow-x: auto; max-height: 200px; overflow-y: auto;
+  overflow-x: auto; max-height: 500px; overflow-y: auto;
   margin: 8px 0; white-space: pre;
 }
 .ttl-download-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
