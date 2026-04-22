@@ -795,7 +795,8 @@ SELECT ?ipaCode WHERE {
       }
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 100).join("\n");
+      // Anteprima: tutto se < 1000 righe, altrimenti prime 500 (utili per CSV multi-ontologia)
+      const preview = lines.length < 1000 ? ttl : lines.slice(0, 500).join("\n");
       const mimeType = fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle";
       const ext      = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: mimeType });
@@ -922,7 +923,8 @@ SELECT ?ipaCode WHERE {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 100).join("\n");
+      // Anteprima: tutto se < 1000 righe, altrimenti prime 500 (utili per CSV multi-ontologia)
+      const preview = lines.length < 1000 ? ttl : lines.slice(0, 500).join("\n");
       const ext = fmt === "rdfxml" ? "rdf" : "ttl";
       const blob = new Blob([ttl], { type: fmt === "rdfxml" ? "application/rdf+xml" : "text/turtle" });
       const blobUrl = URL.createObjectURL(blob);
@@ -1051,7 +1053,8 @@ SELECT ?ipaCode WHERE {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
       const lines = ttl.split("\n").filter(Boolean);
-      const preview = lines.slice(0, 100).join("\n");
+      // Anteprima: tutto se < 1000 righe, altrimenti prime 500 (utili per CSV multi-ontologia)
+      const preview = lines.length < 1000 ? ttl : lines.slice(0, 500).join("\n");
       const blob = new Blob([ttl], { type: mimeType });
       const blobUrl = URL.createObjectURL(blob);
       replaceLastMsg("assistant", `✅ Conversione completata!`, { type: "ttl_result", blobUrl, filename: `${ipa}-${Date.now()}.${ext}`, preview, fmt });
@@ -1111,8 +1114,8 @@ SELECT ?ipaCode WHERE {
             <p>Conversione completata.</p>
             {m.preview && (
               <>
-                <p className="ttl-preview-label">Anteprima (prime righe) — scarica il file per il contenuto completo:</p>
-                <pre className="ttl-preview">{m.preview}{"\n…"}</pre>
+                <p className="ttl-preview-label">{m.preview.split("\n").filter(Boolean).length >= 500 ? "Anteprima (prime 500 righe) — scarica il file per il contenuto completo:" : "Anteprima completa:"}</p>
+                <pre className="ttl-preview">{m.preview}{m.preview.split("\n").filter(Boolean).length >= 500 ? "\n…" : ""}</pre>
               </>
             )}
             <div className="ttl-download-btns">
