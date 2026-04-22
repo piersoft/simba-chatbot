@@ -1086,9 +1086,14 @@ app.post("/api/validate", strictLimiter, async (req, res) => {
       if (csvResp.ok) {
         csv_text = await csvResp.text();
         console.log(`[validate] scaricati ${csv_text.length} chars, inizio: ${csv_text.slice(0,80).replace(/\n/g,' ')}`);
-        if (csv_text.trimStart().startsWith("<")) {
+        const urlIsCsv = url.toLowerCase().includes('.csv') || url.toLowerCase().includes('/download/') || url.toLowerCase().includes('output=csv') || url.toLowerCase().includes('format=csv');
+        if (csv_text.trimStart().startsWith("<") && !urlIsCsv) {
           console.warn(`[validate] risposta HTML, scarto`);
-          return res.status(422).json({ error: "Il server ha restituito una pagina web invece del file CSV. Il portale potrebbe richiedere autenticazione o il link non è diretto al file. Scarica il CSV manualmente e caricalo tramite il box di upload." });
+          return res.status(422).json({ error: "Il server ha restituito una pagina web invece del file CSV. Scarica il CSV manualmente e caricalo tramite il box di upload." });
+        }
+        if (csv_text.trimStart().startsWith("<") && urlIsCsv) {
+          console.warn(`[validate] risposta HTML su URL .csv — il server richiede sessione/cookie, impossibile scaricare server-side`);
+          return res.status(422).json({ error: "Il server blocca il download diretto (richiede sessione browser). Scarica il file manualmente e caricalo tramite il box di upload nella sidebar." });
         }
         if (csv_text.length === 0) {
           return res.status(422).json({ error: "Il file scaricato è vuoto (0 byte). Verifica il link sul portale open data." });
