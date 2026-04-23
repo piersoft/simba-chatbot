@@ -121,6 +121,7 @@ ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 // Carica lista cataloghi (una sola volta) ordinati per numero dataset
 async function loadCatalogs() {
   const q = `SELECT ?catalog (COUNT(?s) AS ?count) WHERE {
+  ?catalog a <http://www.w3.org/ns/dcat#Catalog> .
   ?catalog <http://www.w3.org/ns/dcat#dataset> ?s .
 } GROUP BY ?catalog ORDER BY DESC(?count) LIMIT 500`;
   // Tenta prima dal browser, poi proxy backend
@@ -164,7 +165,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
   FILTER(EXISTS { <${catalogUri}> dcat:dataset ?d })
-  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+${format ? `  ?d dcat:distribution ?distFmt . ?distFmt dct:format <http://publications.europa.eu/resource/authority/file-type/${format}> .\n` : ""}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d dcat:landingPage ?landingPage }
   OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
