@@ -101,17 +101,6 @@ async function loadWorker() {
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
-  // Patch: assegna normalizeTTL a globalThis dopo la sua definizione IIFE
-  // Necessario perché new Function() isola le var dal contesto globale
-  src = src.replace(
-    'var normalizeTTL=(function(){',
-    'globalThis.normalizeTTL=(function(){'
-  );
-  // Patch anche il "return normalizeTTL" dentro l'IIFE
-  src = src.replace(
-    'return normalizeTTL;\n})()',
-    'return globalThis.normalizeTTL;\n})()'
-  );
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   src += "\n if(typeof normalizeTTL!=='undefined') globalThis.normalizeTTL=normalizeTTL;\n";
   src += "\n if(typeof buildDeterministicTTL==='function') globalThis.buildDeterministicTTL=buildDeterministicTTL;\n";
@@ -119,10 +108,10 @@ async function loadWorker() {
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
 
-  // Eseguo il worker — usa eval indiretto per preservare lo scope delle var
+  // Eseguo il worker con vm.runInThisContext() — preserva le var nel contesto globale
+  const vm = createRequire(import.meta.url)("vm");
   try {
-    const execFn = new Function("globalThis", src);
-    execFn(globalThis);
+    vm.runInThisContext(src);
     workerHandler = globalThis.__workerHandler;
     console.log("[rdf-mcp] worker.js caricato OK");
   } catch (e) {
