@@ -785,10 +785,10 @@ SELECT ?ipaCode WHERE {
         return;
       }
 
-      let _total = 0;
-      try { _total = await countQuery(useWords, false); } catch {}
-      const _totLabel = _total > 0 ? ` (${_total.toLocaleString("it")} dataset trovati)` : "";
-      addMsg("assistant", `Trovati risultati per **"${displayQuery}"**${_totLabel} — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
+      const _totLabel = datasets.length >= FETCH_SIZE
+        ? ` — ${datasets.length}+ risultati`
+        : ` — ${datasets.length} risultati`;
+      addMsg("assistant", `Trovati risultati per **"${displayQuery}"**${_totLabel}. Clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
         type: "search_results",
         datasets,
         query,
