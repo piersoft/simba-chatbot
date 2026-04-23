@@ -101,12 +101,13 @@ async function loadWorker() {
 
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
-  // Fix: normalizeTTL è una no-op nel worker — sostituisci con ttl-normalizer.js
-  const TTLNormalizer = createRequire(import.meta.url)(path.join(__dirname, "ttl-normalizer.js"));
-  globalThis.__ttlNormalizer = TTLNormalizer;
+  // Fix: normalizeTTL è una no-op nel worker — inietta ttl-normalizer.js come stringa
+  const normalizerSrc = readFileSync(path.join(__dirname, "ttl-normalizer.js"), "utf-8");
+  // Estrai la factory UMD e ottieni la funzione
+  const normalizerFn = new Function("module", "exports", normalizerSrc + "\nreturn module.exports;")({exports:{}}, {});
   src = src.replace(
     /var normalizeTTL=\(function\(\)[\s\S]*?\}\)\(\);/,
-    "var normalizeTTL = globalThis.__ttlNormalizer;"
+    "var normalizeTTL = " + normalizerFn.toString() + ";"
   );
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
