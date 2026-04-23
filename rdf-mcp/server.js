@@ -101,9 +101,10 @@ async function loadWorker() {
 
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
+  // Fix: rinomina IIFE normalizeTTL con named function expression per auto-riferimento in new Function()
+  src = src.replace(/var normalizeTTL=\(function\(\)\{/, "var normalizeTTL=(function _nTTL(){");
+  src = src.replace(/return normalizeTTL;\n\}\)\(\);/, "return _nTTL;\n})();");
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
-  // Fix: dentro new Function() le var non sono globali — usa globalThis.normalizeTTL
-  src = src.replace("ttl = normalizeTTL(ttl);", "ttl = (globalThis.normalizeTTL||normalizeTTL)(ttl);");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
