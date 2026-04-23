@@ -1,4 +1,3 @@
-root@MCP-SERVER:/home/ubuntu/ckan-mcp-server-docker-ollama# cat docker-compose-full.yml
 # ── Log rotation policy (YAML anchors) ──────────────────────────────────────
 # Limita lo spazio occupato dai log Docker su disco. Senza questi blocchi,
 # i file json-log crescerebbero indefinitamente.
