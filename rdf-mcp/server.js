@@ -120,8 +120,12 @@ async function loadWorker() {
     "})();"
   ].join("\n");
   src += "\n" + normalizerWrapped + "\n";
+  // Esponi computeSemanticScore su globalThis prima che export default venga rinominato
+  src = src.replace(
+    /^(function computeSemanticScore\()/m,
+    "globalThis.computeSemanticScore = function computeSemanticScore("
+  );
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
-  src += "\n globalThis.computeSemanticScore = (typeof computeSemanticScore==='function') ? computeSemanticScore : null;\n";
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
