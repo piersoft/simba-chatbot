@@ -120,14 +120,14 @@ async function loadWorker() {
     "})();"
   ].join("\n");
   src += "\n" + normalizerWrapped + "\n";
-  // Esponi detectOntologiesDeterministic su globalThis
+  // Esponi detectOntologiesDeterministic su globalThis (replace stringa esatta)
   src = src.replace(
-    /^(function detectOntologiesDeterministic\()/m,
+    "function detectOntologiesDeterministic(",
     "globalThis.detectOntologiesDeterministic = function detectOntologiesDeterministic("
   );
-  // Esponi computeSemanticScore su globalThis prima che export default venga rinominato
+  // Esponi computeSemanticScore su globalThis (replace stringa esatta)
   src = src.replace(
-    /^(function computeSemanticScore\()/m,
+    "function computeSemanticScore(",
     "globalThis.computeSemanticScore = function computeSemanticScore("
   );
   // Fix: scoreOntologie rileva le ontologie ma non le restituisce — patcha per includerle
