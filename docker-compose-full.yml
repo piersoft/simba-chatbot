@@ -176,4 +176,3 @@ volumes:
   blocklist_data:
   ollama_data:
   analytics_data:
-root@MCP-SERVER:/home/ubuntu/ckan-mcp-server-docker-ollama# 
