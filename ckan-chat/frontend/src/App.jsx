@@ -1149,7 +1149,7 @@ SELECT ?ipaCode WHERE {
       return (
         <div key={i} className="message assistant">
           <div className="message-bubble">
-            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} csvHeaders={m.csvHeaders || []} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={(csv_text, filename, fmt) => doEnrichText(csv_text, filename, fmt, m.datasetTitle || m.publisher || "")} />
+            <ValidateReport report={m.content} url={m.url} csvText={m.csvText} csvHeaders={m.csvHeaders || []} onEnrich={(url, fmt) => openTtlBox(url, fmt, m.csvText, m.publisher || "", m.ipaCode || "")} onEnrichText={(csv_text, filename, fmt) => doEnrichText(csv_text, filename, fmt, m.datasetTitle || m.publisher || "")} datasetTitle={m.datasetTitle || ""} />
           </div>
         </div>
       );
