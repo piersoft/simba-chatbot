@@ -180,6 +180,7 @@ export default function App() {
 
   const bottomRef   = useRef(null);
   const csvFileRef   = useRef(null);
+  const advResetRef  = useRef(null);
   const ttlFileRef   = useRef(null);
   const inputRef  = useRef(null);
 
@@ -684,9 +685,14 @@ SELECT ?ipaCode WHERE {
     } catch { return ""; }
   }
 
+  function resetAdvancedSearch() {
+    if (advResetRef.current) advResetRef.current();
+  }
+
   async function sendMessage(rawText) {
     const text = rawText.trim();
     setMessages([]);  // nuova ricerca — pulisce la chat
+    resetAdvancedSearch();
     if (!text || loading) return;
     if (blocklist.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
       emitAnalytics("off_topic", { query_preview: text.slice(0, 100), guardrail_layer: "blocklist" });
@@ -1213,7 +1219,7 @@ SELECT ?ipaCode WHERE {
           <button id="tour-validate" className="tool-card tool-validate" aria-label="Valida un file CSV" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }} disabled={loading}>
             Valida CSV
           </button>
-          <button id="tour-enrich" className="tool-card tool-ttl" aria-label="Converti CSV in RDF" onClick={() => { setSidebarOpen(false); setMessages([]); setShowTtlBox(true); setShowCsvBox(false); }} disabled={loading}>
+          <button id="tour-enrich" className="tool-card tool-ttl" aria-label="Converti CSV in RDF" onClick={() => { setSidebarOpen(false); setMessages([]); setShowTtlBox(true); setShowCsvBox(false); resetAdvancedSearch(); }} disabled={loading}>
             Trasforma in RDF TTL/XML
           </button>
         </div>

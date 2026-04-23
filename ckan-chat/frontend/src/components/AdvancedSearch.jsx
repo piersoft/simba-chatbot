@@ -198,7 +198,7 @@ SELECT ?name (COUNT(DISTINCT ?d) AS ?count) WHERE {
     .filter(m => { const k = m.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
-export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
+export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg, onResetRef }) {
   const [open,    setOpen]    = useState(false);
   const [q,       setQ]       = useState("");
   const [theme,   setTheme]   = useState("");
@@ -215,6 +215,15 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg }) {
   const [catLoading, setCatLoading] = useState(false);   // caricamento lista
   const [showCat,    setShowCat]    = useState(false);   // dropdown catalogo aperto
   const [catLoaded,  setCatLoaded]  = useState(false);   // già caricata
+
+  // Esponi funzione reset al genitore
+  if (onResetRef) {
+    onResetRef.current = () => {
+      setQ(""); setTheme(""); setHvd(""); setRh(""); setFormat("");
+      setLicense(""); setSort("modified"); setCatalog(""); setCatInput("");
+      setRhInput(""); setOpen(false);
+    };
+  }
   const acTimer = useRef(null);
 
   async function handleCatFocus() {
