@@ -74,6 +74,8 @@ async function downloadWorker() {
     const res = await fetch(WORKER_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
+    // Applica patch: esponi normalizeTTL su globalThis dopo la sua definizione
+    text = text.split("})();\n// ─").join("})();\nif(typeof normalizeTTL==="function") globalThis.normalizeTTL=normalizeTTL;\n// ─");
     writeFileSync(WORKER_PATH, text, "utf-8");
     console.log(`[rdf-mcp] worker.js aggiornato (${text.length} bytes)`);
     return true;
