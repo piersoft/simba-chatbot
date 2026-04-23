@@ -464,6 +464,49 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
     return { datasets, query, offset };
   }
 
+  // ── Conta il totale SPARQL per una query ─────────────────────────────────
+  async function doCount(query, dove = "") {
+    const sanitized = sanitizeSparql(query.toLowerCase());
+    const words = sanitized.trim().split(/\s+/).filter(w => w.length > 1).slice(0, 6);
+    if (!words.length) return null;
+    const doveFilter = dove
+      ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
+  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")
+`
+      : "";
+    const filterStr = words.map(w => `(CONTAINS(LCASE(STR(?title)),"${w}"))`).join("||");
+    const countQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT (COUNT(DISTINCT ?d) AS ?total) WHERE {
+  ?d a dcat:Dataset .
+  ?d dct:title ?title .
+  FILTER(LANG(?title)='it'||LANG(?title)='')
+${doveFilter}  FILTER(${filterStr})
+}`;
+    try {
+      const directUrl = `${SPARQL_EP}?query=${encodeURIComponent(countQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+      const r = await fetch(directUrl, { headers: { Accept: "application/sparql-results+json" } });
+      if (r.ok) {
+        const j = await r.json();
+        const val = j.results?.bindings?.[0]?.total?.value;
+        return val ? parseInt(val) : null;
+      }
+    } catch {}
+    try {
+      const r = await fetch(`${BACKEND_URL}/api/sparql`, {
+        method: "POST", headers: apiHeaders(),
+        body: JSON.stringify({ query: countQ }),
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const val = j.results?.bindings?.[0]?.total?.value;
+        return val ? parseInt(val) : null;
+      }
+    } catch {}
+    return null;
+  }
+
   // ── Validazione CSV ───────────────────────────────────────────────────────
   async function doValidate(url, datasetTitle = "", datasetDescription = "", csvText = null) {
     const title = datasetTitle || url.split("/").pop().split("?")[0] || url;
@@ -768,11 +811,23 @@ SELECT ?ipaCode WHERE {
         return;
       }
 
-      addMsg("assistant", `Trovati risultati per **"${displayQuery}"** — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
+      const msgId = Date.now();
+      addMsg("assistant", `Trovati **${datasets.length}** dataset per **"${displayQuery}"** — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
         type: "search_results",
         datasets,
         query,
         offset: 0,
+        msgId,
+      });
+      // Conta il totale in background e aggiorna il messaggio
+      doCount(query).then(total => {
+        if (total !== null && total > datasets.length) {
+          setMessages(prev => prev.map(m =>
+            m.msgId === msgId
+              ? { ...m, content: m.content.replace(/Trovati \*\*\d+\*\*/, `Trovati **${datasets.length}** di **${total.toLocaleString("it")}** totali`) }
+              : m
+          ));
+        }
       });
 
     } catch (e) {
@@ -1574,8 +1629,9 @@ SELECT ?ipaCode WHERE {
                 if (!datasets.length) {
                   addMsg("assistant", `Nessun dataset trovato per **"${userMsg}"**.`);
                 } else {
-                  addMsg("assistant", `Trovati risultati per **"${userMsg}"**:`, {
-                    type: "search_results", datasets, query: userMsg, offset,
+                  const wizMsgId = Date.now();
+                  addMsg("assistant", `Trovati **${datasets.length}** dataset per **"${userMsg}"**:`, {
+                    type: "search_results", datasets, query: userMsg, offset, msgId: wizMsgId,
                   });
                 }
               } catch(e) {
