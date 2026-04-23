@@ -10,3 +10,21 @@ simba-intent-test.mjs
 ckan-chat/backend/simba-intent-results*.csv
 ckan-chat/backend/simba-intent-results*.json
 .env
+
+# Backup del compose
+docker-compose*.bak-*
+docker-compose*.originale
+docker-compose*.vulnerabile-*
+docker-compose*.new*
+
+# Report di VA
+va-reports/
+va-llm-reports/
+va-garak-reports/
+incident-*/
+
+# Log di rollout
+pre-rollout-*.txt
+
+# Script di hardening (decidi se vuoi includerli, vedi sotto)
+# rollout-security-fix*.sh
