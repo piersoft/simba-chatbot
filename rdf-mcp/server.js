@@ -101,14 +101,19 @@ async function loadWorker() {
 
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
-  // Fix: normalizeTTL è una no-op nel worker — inietta ttl-normalizer.js come stringa
-  const normalizerSrc = readFileSync(path.join(__dirname, "ttl-normalizer.js"), "utf-8");
-  // Estrai la factory UMD e ottieni la funzione
-  const normalizerFn = new Function("module", "exports", normalizerSrc + "\nreturn module.exports;")({exports:{}}, {});
+  // Fix: normalizeTTL è una no-op nel worker
+  // Sostituisci con identity e inietta ttl-normalizer DOPO come override
   src = src.replace(
     /var normalizeTTL=\(function\(\)[\s\S]*?\}\)\(\);/,
-    "var normalizeTTL = " + normalizerFn.toString() + ";"
+    "var normalizeTTL = function(ttl){ return ttl; };"
   );
+  // Inietta ttl-normalizer.js alla fine del sorgente — sovrascrive normalizeTTL
+  const normalizerSrc = readFileSync(path.join(__dirname, "ttl-normalizer.js"), "utf-8");
+  // Adatta UMD per il contesto new Function: usa var invece di module.exports
+  const normalizerWrapped = normalizerSrc
+    .replace("if (typeof module !== 'undefined' && module.exports) {\n    module.exports = factory();", "{ var normalizeTTL = factory();")
+    .replace("} else if (typeof define === 'function' && define.amd) {\n    define([], factory);\n  } else {\n    root.TTLNormalizer = factory();\n  }", "}");
+  src += "\n" + normalizerWrapped + "\n";
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
