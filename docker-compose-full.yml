@@ -1,3 +1,4 @@
+root@MCP-SERVER:/home/ubuntu/ckan-mcp-server-docker-ollama# cat docker-compose-full.yml
 # ── Log rotation policy (YAML anchors) ──────────────────────────────────────
 # Limita lo spazio occupato dai log Docker su disco. Senza questi blocchi,
 # i file json-log crescerebbero indefinitamente.
@@ -24,8 +25,8 @@ services:
     restart: unless-stopped
     profiles:
       - ollama-local
-    ports:
-      - "11434:11434"
+    expose:
+      - "11434"
     volumes:
       - ollama_data:/root/.ollama
     environment:
@@ -62,8 +63,8 @@ services:
       dockerfile: Dockerfile
     container_name: validatore-mcp
     restart: unless-stopped
-    ports:
-      - "3002:3002"
+    expose:
+      - "3002"
     logging: *logging-default
 
   # ── RDF MCP — CSV to RDF/TTL ────────────────────────────────────────────────
@@ -73,15 +74,11 @@ services:
       dockerfile: Dockerfile
     container_name: rdf-mcp
     restart: unless-stopped
-    ports:
-      - "3003:3003"
+    expose:
+      - "3003"
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    # Healthcheck: rdf-mcp scarica worker.js al boot prima di diventare responsivo
-    # (vedi log '[rdf-mcp] pronto su http://0.0.0.0:3003'). Senza questo, il backend
-    # parte prima che rdf-mcp sia pronto e fallisce [tools] interrogo con ECONNREFUSED.
-    # Uso node+fetch (Node 20 nativo) — evita dipendenze wget/curl sull'immagine alpine.
     healthcheck:
       # Qualsiasi risposta HTTP (anche 400/500) significa che il server ascolta:
       # rdf-mcp è un proxy catch-all al worker Cloudflare, 'GET /' senza param
@@ -104,7 +101,7 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      - "127.0.0.1:${BACKEND_PORT:-3001}:3001"
     environment:
       PORT: 3001
       SERVER_IP: ${SERVER_IP:-localhost}
@@ -163,8 +160,8 @@ services:
       dockerfile: Dockerfile
     container_name: analytics-service
     restart: unless-stopped
-    ports:
-      - "${ANALYTICS_PORT:-3004}:3004"
+    expose:
+      - "3004"
     environment:
       PORT: 3004
       CHATBOT_ORIGIN: ${CHATBOT_ORIGIN:?CHATBOT_ORIGIN deve essere definita in .env (es. https://tuo-dominio.it)}
@@ -180,3 +177,4 @@ volumes:
   blocklist_data:
   ollama_data:
   analytics_data:
+root@MCP-SERVER:/home/ubuntu/ckan-mcp-server-docker-ollama# 
