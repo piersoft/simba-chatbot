@@ -107,12 +107,18 @@ async function loadWorker() {
     /var normalizeTTL=\(function\(\)[\s\S]*?\}\)\(\);/,
     "var normalizeTTL = function(ttl){ return ttl; };"
   );
-  // Inietta ttl-normalizer.js alla fine del sorgente — sovrascrive normalizeTTL
+  // Inietta ttl-normalizer: estrai la factory e chiama normalizeTTL
   const normalizerSrc = readFileSync(path.join(__dirname, "ttl-normalizer.js"), "utf-8");
-  // Adatta UMD per il contesto new Function: usa var invece di module.exports
-  const normalizerWrapped = normalizerSrc
-    .replace("if (typeof module !== 'undefined' && module.exports) {\n    module.exports = factory();", "{ var normalizeTTL = factory();")
-    .replace("} else if (typeof define === 'function' && define.amd) {\n    define([], factory);\n  } else {\n    root.TTLNormalizer = factory();\n  }", "}");
+  // Avvolgi in IIFE che simula CJS e assegna normalizeTTL
+  const normalizerWrapped = [
+    "(function() {",
+    "  var module = { exports: {} };",
+    "  var exports = module.exports;",
+    "  var self = {};",
+    normalizerSrc,
+    "  normalizeTTL = module.exports.normalizeTTL || module.exports;",
+    "})();"
+  ].join("\n");
   src += "\n" + normalizerWrapped + "\n";
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
