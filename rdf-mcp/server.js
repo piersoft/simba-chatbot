@@ -105,9 +105,10 @@ async function loadWorker() {
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
 
-  // Eseguo in un contesto isolato usando Function()
+  // Eseguo il worker — usa eval indiretto per preservare lo scope delle var
   try {
-    new Function(src)();
+    const execFn = new Function("globalThis", src);
+    execFn(globalThis);
     workerHandler = globalThis.__workerHandler;
     console.log("[rdf-mcp] worker.js caricato OK");
   } catch (e) {
