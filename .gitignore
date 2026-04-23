@@ -9,3 +9,4 @@ simba-intent-results*.json
 simba-intent-test.mjs
 ckan-chat/backend/simba-intent-results*.csv
 ckan-chat/backend/simba-intent-results*.json
+.env
