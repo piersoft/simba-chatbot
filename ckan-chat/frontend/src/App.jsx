@@ -272,23 +272,6 @@ export default function App() {
       });
     }
 
-    async function countQuery(words, useOr) {
-      // Query COUNT semplificata (solo titolo) — Virtuoso-safe, senza EXISTS
-      const titleFilter = words.map(w =>
-        `CONTAINS(LCASE(?title),"${sanitizeSparql(w.toLowerCase())}")`
-      ).join(useOr ? " || " : " && ");
-      const doveClause = dove
-        ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")\n`
-        : "";
-      const cq = `PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nSELECT (COUNT(DISTINCT ?d) AS ?total) WHERE {\n  ?d a dcat:Dataset .\n  ?d dct:title ?title .\n  FILTER(LANG(?title)='it'||LANG(?title)='')\n${doveClause}  FILTER(${titleFilter})\n}`;
-      try {
-        const u = `${SPARQL_EP}?query=${encodeURIComponent(cq)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-        const resp = await fetch(u, { headers: { Accept: "application/sparql-results+json" } });
-        if (resp.ok) return parseInt((await resp.json()).results?.bindings?.[0]?.total?.value || "0");
-      } catch {}
-      return 0;
-    }
-
     async function runQuery(words, useOr, off) {
       const doveFilter = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .
@@ -785,9 +768,6 @@ SELECT ?ipaCode WHERE {
         return;
       }
 
-      const _totLabel = datasets.length >= FETCH_SIZE
-        ? ` — ${datasets.length}+ risultati`
-        : ` — ${datasets.length} risultati`;
       addMsg("assistant", `Trovati risultati per **"${displayQuery}"** — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
         type: "search_results",
         datasets,
