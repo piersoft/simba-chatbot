@@ -125,6 +125,21 @@ async function loadWorker() {
     /^(function computeSemanticScore\()/m,
     "globalThis.computeSemanticScore = function computeSemanticScore("
   );
+  // Fix: scoreOntologie rileva le ontologie ma non le restituisce — patcha per includerle
+  src = src.replace(
+    "return { score, blockers, warnings, matched_ontos: [] };",
+    "return { score, blockers, warnings, matched_ontos: [] };"
+  );
+  // Patcha scoreOntologie return per includere resolvedOntos
+  src = src.replace(
+    /return \{ score, blockers, warnings \};(\s*\/\/ ── Generazione suggerimenti)/,
+    "return { score, blockers, warnings, matched_ontos: resolvedOntos };$1"
+  );
+  // Fix: generateSuggestions usa ontos passate ma scoreOntologie rileva le ontologie reali
+  src = src.replace(
+    "const { suggestions, renamed_headers } = generateSuggestions(headers, ontos, stato);",
+    "const _effOntos = (ontos && ontos.length > 0) ? ontos : (O.matched_ontos || []); const { suggestions, renamed_headers } = generateSuggestions(headers, _effOntos, stato);"
+  );
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
