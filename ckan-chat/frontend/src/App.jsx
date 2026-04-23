@@ -785,10 +785,7 @@ SELECT ?ipaCode WHERE {
         return;
       }
 
-      const _totLabel = datasets.length >= FETCH_SIZE
-        ? ` — ${datasets.length}+ risultati`
-        : ` — ${datasets.length} risultati`;
-      addMsg("assistant", `Trovati risultati per **"${displayQuery}"**${_totLabel}. Clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
+      addMsg("assistant", `Trovati risultati per **"${displayQuery}"** — ${datasets.length} risultati. Clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
         type: "search_results",
         datasets,
         query,
