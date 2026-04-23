@@ -101,9 +101,11 @@ async function loadWorker() {
 
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
-  // Fix: rinomina IIFE normalizeTTL con named function expression per auto-riferimento in new Function()
-  src = src.replace(/var normalizeTTL=\(function\(\)\{/, "var normalizeTTL=(function _nTTL(){");
-  src = src.replace(/return normalizeTTL;\n\}\)\(\);/, "return _nTTL;\n})();");
+  // Fix: normalizeTTL è una no-op nel worker attuale — sostituisci con identity function
+  src = src.replace(
+    /var normalizeTTL=\(function\(\)[\s\S]*?\}\)\(\);/,
+    "var normalizeTTL = function(ttl) { return ttl; };"
+  );
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
