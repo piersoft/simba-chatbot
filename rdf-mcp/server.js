@@ -74,15 +74,6 @@ async function downloadWorker() {
     const res = await fetch(WORKER_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    // Fix: normalizeTTL IIFE si auto-referenzia, rinomina funzione interna
-    text = text.replace(
-      /var normalizeTTL=\(function\(\)\{/,
-      "var normalizeTTL=(function _normTTL(){"
-    );
-    text = text.replace(
-      /return normalizeTTL;\n\}\)\(\);/,
-      "return _normTTL;\n})();"
-    );
     writeFileSync(WORKER_PATH, text, "utf-8");
     console.log(`[rdf-mcp] worker.js aggiornato (${text.length} bytes)`);
     return true;
@@ -96,14 +87,12 @@ async function downloadWorker() {
 let workerHandler = null;
 
 async function loadWorker() {
-  // Scarica sempre all'avvio per garantire l'ultima versione
-  const downloaded = await downloadWorker();
-  if (!downloaded && !existsSync(WORKER_PATH)) {
+  // Usa worker.js dalla repo (già patchato con fix normalizeTTL)
+  // Il cron notturno scaricherà aggiornamenti ma riapplica il patch
+  if (!existsSync(WORKER_PATH)) {
     console.error("[rdf-mcp] worker.js non disponibile — uscita"); process.exit(1);
   }
-  if (!downloaded) {
-    console.warn("[rdf-mcp] Download fallito, uso worker.js in cache");
-  }
+  console.log("[rdf-mcp] Uso worker.js dalla repo");
   // Leggo il sorgente e converto l'export Cloudflare in funzione eseguibile
   let src = readFileSync(WORKER_PATH, "utf-8");
 

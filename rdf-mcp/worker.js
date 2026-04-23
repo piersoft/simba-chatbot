@@ -202,7 +202,7 @@ const SAFE_PREFIXES = new Set(['rdf','rdfs','owl','xsd','dct','dcat','foaf','geo
 
 
 // ── TTL Normalizer (auto-injected) ─────────────────────────────────
-var normalizeTTL=(function(){
+var normalizeTTL=(function _normTTL(){
 const CLASS_REMAP = {
     'park:ParkingFacility':          'park:CarPark',
     'rpo:RoleInOrganization':        'ro:Role',
@@ -367,7 +367,7 @@ const CLASS_REMAP = {
 
   
 
-return normalizeTTL;
+return _normTTL;
 })();
 globalThis.normalizeTTL = normalizeTTL;
 // ─────────────────────────────────────────────────────────────────────
