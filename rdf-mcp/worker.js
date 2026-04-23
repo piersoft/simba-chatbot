@@ -201,8 +201,171 @@ const ONTO_MAIN_CLASS = {
 const SAFE_PREFIXES = new Set(['rdf','rdfs','owl','xsd','dct','dcat','foaf','geo','skos','vcard','schema','qb','sdmx-dimension','sdmx-measure','sdmx-attribute','clv','cov','cpv','l0','poi','ro','ti','sm','cultural-on','acco','gtfs','park','cpsv','adms','muapit','iot','smapit','dcatapit','cis','pc','route','rpo','learn','tr','indicator','pot','mu','cpev']);
 
 
-// ── TTL Normalizer (auto-injected) ──────────────────────────────────
+// ── TTL Normalizer (auto-injected) ─────────────────────────────────
 var normalizeTTL=(function(){
+const CLASS_REMAP = {
+    'park:ParkingFacility':          'park:CarPark',
+    'rpo:RoleInOrganization':        'ro:Role',
+    'learn:Course':                  'learning:DegreeCourse',
+    'learning:Course':               'learning:DegreeCourse',
+  };
+
+  // `null` come valore → il predicato va convertito in rdfs:comment
+  // conservando il local name come etichetta.
+  const PROP_REMAP = {
+    'rpo:holdsRole':                 'ro:holdsRole',
+    'tr:hasTransparencyObligation':  'tr:regulationReference',
+    'tr:transparencyCategory':       'tr:hasTransparencyActivityTypology',
+    'tr:mandatoryData':               null,
+    'indicator:baseline':             null,
+    'indicator:target':               null,
+    'indicator:indicatorType':       'indicator:hasIndicatorType',
+    'pc:description':                'dct:description',
+    'clv:streetName':                'clv:officialStreetName',
+    'learn:duration':                 null,
+    'learn:hours':                    null,
+    'learn:ects':                    'learning:credit',
+    'learn:awardedTitle':            'learning:achievedTitleName',
+    'learning:duration':              null,
+    'learning:hours':                 null,
+    'learning:ects':                 'learning:credit',
+    'learning:awardedTitle':         'learning:achievedTitleName',
+  };
+
+  const PREFIX_ALIAS = { 'learn': 'learning' };
+
+  const ONTO_URI = {
+    'ro':       'https://w3id.org/italia/onto/RO/',
+    'learning': 'https://w3id.org/italia/onto/Learning/',
+  };
+
+  // --- Regex helpers --------------------------------------------------------
+
+  // S1 — virgolette URL non escapate (tipico output cpsv/ndc/transparency)
+  const RE_S1 = /rdfs:comment\s+"([^"]+?):\s+"([^"]+?)"@it([^"\n]*?)"@it/g;
+
+  // S2 — rdfs:comment chiave: valore (no quote, no @it)
+  const RE_S2 = /^(\s+)rdfs:comment\s+([a-zA-Z_][\w]*)\s*:\s*([^"\n;.]+?)\s*([;.])\s*$/gm;
+
+  // S3 — person chiuso con . seguito da rpo:holdsRole orfano
+  const RE_S3 = /(<[^>]+\/person\/[^>]+>\s+a\s+cpv:Person\s*;\s*\n\s+rdfs:label\s+"[^"]+"@it\s*)\.\s*\n(\s+rpo:holdsRole\s+<[^>]+>\s*)\./g;
+
+  // S5 — geo:lat/long "N.M"@it → "N.M"^^xsd:decimal
+  const RE_S5 = /(geo:(?:lat|long))\s+"([\d.\-+]+)"@it/g;
+
+  function escLit(s) {
+    return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  }
+
+  function reEsc(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // --- Fix steps ------------------------------------------------------------
+
+  function fixS1(ttl) {
+    return ttl.replace(RE_S1, function (_m, k, url, tail) {
+      const full = escLit(k + ': ' + url + (tail || ''));
+      return 'rdfs:comment "' + full + '"@it';
+    });
+  }
+
+  function fixS2(ttl) {
+    return ttl.replace(RE_S2, function (_m, indent, key, val, sep) {
+      const esc = escLit(val.trim());
+      return indent + 'rdfs:comment "' + key + ': ' + esc + '"@it ' + sep;
+    });
+  }
+
+  function fixS3(ttl) {
+    return ttl.replace(RE_S3, function (_m, a, b) { return a + ';\n' + b + '.'; });
+  }
+
+  function fixS5(ttl) {
+    return ttl.replace(RE_S5, function (_m, p, n) {
+      return p + ' "' + n + '"^^xsd:decimal';
+    });
+  }
+
+  function remapPrefixes(ttl) {
+    Object.keys(PREFIX_ALIAS).forEach(function (oldP) {
+      const newP = PREFIX_ALIAS[oldP];
+      const uri = ONTO_URI[newP];
+      // Sostituisce @prefix learn: <...> .
+      ttl = ttl.replace(
+        new RegExp('@prefix\\s+' + reEsc(oldP) + ':\\s*<[^>]+>\\s*\\.', 'g'),
+        '@prefix ' + newP + ': <' + uri + '> .'
+      );
+      // Sostituisce usi inline: learn:X → learning:X
+      ttl = ttl.replace(new RegExp('\\b' + reEsc(oldP) + ':', 'g'), newP + ':');
+    });
+    return ttl;
+  }
+
+  function remapClasses(ttl) {
+    Object.keys(CLASS_REMAP).forEach(function (oldC) {
+      const newC = CLASS_REMAP[oldC];
+      if (oldC === newC) return;
+      ttl = ttl.replace(new RegExp('\\b' + reEsc(oldC) + '\\b', 'g'), newC);
+    });
+    return ttl;
+  }
+
+  function remapProperties(ttl) {
+    const lines = ttl.split('\n');
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let done = false;
+      for (const oldP in PROP_REMAP) {
+        const newP = PROP_REMAP[oldP];
+        const re = new RegExp('^(\\s*)(' + reEsc(oldP) + ')\\s+(.*?)(\\s*[;.])\\s*$');
+        const m = line.match(re);
+        if (!m) continue;
+        const indent = m[1], rest = m[3], sep = m[4];
+        if (newP === null) {
+          const local = oldP.split(':', 2)[1];
+          let val = rest
+            .replace(/\^\^xsd:\w+$/, '').trim()
+            .replace(/@\w+$/, '').trim()
+            .replace(/^["']|["']$/g, '');
+          val = escLit(val);
+          out.push(indent + 'rdfs:comment "' + local + ': ' + val + '"@it' + sep);
+        } else {
+          out.push(indent + newP + ' ' + rest + sep);
+        }
+        done = true;
+        break;
+      }
+      if (!done) out.push(line);
+    }
+    return out.join('\n');
+  }
+
+  function ensurePrefixes(ttl) {
+    const toAdd = [];
+    Object.keys(ONTO_URI).forEach(function (pfx) {
+      const used = new RegExp('(?:^|[\\s<;.])' + pfx + ':').test(ttl);
+      const declared = ttl.indexOf('@prefix ' + pfx + ':') >= 0;
+      if (used && !declared) toAdd.push('@prefix ' + pfx + ': <' + ONTO_URI[pfx] + '> .');
+    });
+    if (!toAdd.length) return ttl;
+    const lines = ttl.split('\n');
+    let lastPfx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim().indexOf('@prefix') === 0) lastPfx = i;
+    }
+    if (lastPfx >= 0) {
+      lines.splice.apply(lines, [lastPfx + 1, 0].concat(toAdd));
+    } else {
+      Array.prototype.unshift.apply(lines, toAdd);
+    }
+    return lines.join('\n');
+  }
+
+  // --- Pipeline pubblica ----------------------------------------------------
+
+  
 
 return normalizeTTL;
 })();
@@ -2269,7 +2432,7 @@ export default {
     const reqUrl = new URL(request.url);
 
     if (reqUrl.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok', version: 'v2026.04.19.01' }), {
+      return new Response(JSON.stringify({ status: 'ok', version: 'v2026.04.22.03' }), {
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
       });
     }
