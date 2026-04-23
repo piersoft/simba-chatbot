@@ -63,6 +63,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const TTLNormalizer = createRequire(import.meta.url)(path.join(__dirname, "ttl-normalizer.js"));
 const WORKER_PATH = path.join(__dirname, "worker.js");
 const WORKER_URL  = "https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/worker.js";
 const PORT        = process.env.PORT || 3003;
@@ -101,11 +102,12 @@ async function loadWorker() {
 
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
-  // Fix: normalizeTTL è una no-op nel worker attuale — sostituisci con identity function
+  // Fix: normalizeTTL è una no-op nel worker — sostituisci con ttl-normalizer.js
   src = src.replace(
     /var normalizeTTL=\(function\(\)[\s\S]*?\}\)\(\);/,
-    "var normalizeTTL = function(ttl) { return ttl; };"
+    "var normalizeTTL = globalThis.__ttlNormalizer;"
   );
+  globalThis.__ttlNormalizer = TTLNormalizer;
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   // Esponi computeSemanticScore per /validate-semantic
