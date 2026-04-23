@@ -69,18 +69,9 @@ const PORT        = process.env.PORT || 3003;
 
 // ── Scarica/aggiorna worker.js ───────────────────────────────────────────────
 async function downloadWorker() {
-  try {
-    console.log("[rdf-mcp] Scarico worker.js aggiornato...");
-    const res = await fetch(WORKER_URL);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    writeFileSync(WORKER_PATH, text, "utf-8");
-    console.log(`[rdf-mcp] worker.js aggiornato (${text.length} bytes)`);
-    return true;
-  } catch (e) {
-    console.warn("[rdf-mcp] Impossibile scaricare worker.js:", e.message);
-    return false;
-  }
+  // Download disabilitato — usa il worker.js dalla repo SIMBA (include fix globalThis)
+  console.log("[rdf-mcp] Uso worker.js dalla repo (download automatico disabilitato)");
+  return false;
 }
 
 // ── Carica il worker come modulo Cloudflare Worker emulato ──────────────────
