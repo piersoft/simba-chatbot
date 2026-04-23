@@ -81,7 +81,7 @@ function extractFromReport(report, csvText) {
   return { headers, rows, ontos };
 }
 
-export default function ValidateReport({ report, url, csvText, csvHeaders, onEnrich, onEnrichText }) {
+export default function ValidateReport({ report, url, csvText, csvHeaders, onEnrich, onEnrichText, datasetTitle }) {
   const [showAll, setShowAll] = useState(false);
   const [showStandards, setShowStandards] = useState(false);
   const [gateResult, setGateResult] = useState(null);
@@ -134,7 +134,7 @@ export default function ValidateReport({ report, url, csvText, csvHeaders, onEnr
         return fetch(`${BACKEND_URL}/api/validate-semantic`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ headers, rows, ontos: effectiveOntos, title: url || "" }),
+          body: JSON.stringify({ headers, rows, ontos: effectiveOntos, title: datasetTitle || url || "" }),
         });
       })
       .then(r => r && r.ok ? r.json() : null)
