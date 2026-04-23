@@ -232,5 +232,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`[rdf-mcp] pronto su http://0.0.0.0:${PORT}`);
   console.log(`[rdf-mcp] Uso: GET http://localhost:${PORT}/?url=<csv_url>&ipa=<ipa>&pa=<nome>`);
   scheduleNightlyUpdate();
-  } // fine if(false)
 });
