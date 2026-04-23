@@ -1031,6 +1031,21 @@ app.get("/api/resources/:datasetId", async (req, res) => {
 // ─── Validate endpoint diretto ───────────────────────────────────────────────
 // Chiama validatore-mcp direttamente senza passare per Ollama.
 
+app.post("/api/detect-ontos", async (req, res) => {
+  try {
+    const r = await fetch(`${RDF_MCP_URL}/detect-ontos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body || {}),
+      signal: AbortSignal.timeout(5000)
+    });
+    const data = await r.json();
+    res.json(data);
+  } catch (e) {
+    res.json({ ontos: [] });
+  }
+});
+
 app.post("/api/validate-semantic", async (req, res) => {
   // Proxy verso rdf-mcp /validate-semantic
   // Body: { headers, rows, ontos, title }

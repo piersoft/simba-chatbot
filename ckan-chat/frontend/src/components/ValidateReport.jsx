@@ -122,12 +122,22 @@ export default function ValidateReport({ report, url, csvText, csvHeaders, onEnr
     if (!headers.length && !ontos.length) return;
 
     setGateLoading(true);
-    fetch(`${BACKEND_URL}/api/validate-semantic`, {
+    // Prima rileva le ontologie corrette con detectOntologiesDeterministic
+    fetch(`${BACKEND_URL}/api/detect-ontos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ headers, rows, ontos, title: url || "" }),
+      body: JSON.stringify({ headers, rows }),
     })
-      .then(r => r.ok ? r.json() : null)
+      .then(r => r.ok ? r.json() : { ontos: [] })
+      .then(({ ontos: detectedOntos }) => {
+        const effectiveOntos = (detectedOntos && detectedOntos.length > 0) ? detectedOntos : ontos;
+        return fetch(`${BACKEND_URL}/api/validate-semantic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ headers, rows, ontos: effectiveOntos, title: url || "" }),
+        });
+      })
+      .then(r => r && r.ok ? r.json() : null)
       .then(data => { if (data) setGateResult(data); })
       .catch(() => {})
       .finally(() => setGateLoading(false));

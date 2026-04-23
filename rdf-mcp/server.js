@@ -120,6 +120,11 @@ async function loadWorker() {
     "})();"
   ].join("\n");
   src += "\n" + normalizerWrapped + "\n";
+  // Esponi detectOntologiesDeterministic su globalThis
+  src = src.replace(
+    /^(function detectOntologiesDeterministic\()/m,
+    "globalThis.detectOntologiesDeterministic = function detectOntologiesDeterministic("
+  );
   // Esponi computeSemanticScore su globalThis prima che export default venga rinominato
   src = src.replace(
     /^(function computeSemanticScore\()/m,
@@ -166,6 +171,19 @@ app.use((req, res, next) => {
 });
 
 app.options("*", (req, res) => res.sendStatus(204));
+
+// ── Endpoint /detect-ontos ───────────────────────────────────────────────────
+app.post("/detect-ontos", express.json(), async (req, res) => {
+  try {
+    const { headers, rows } = req.body || {};
+    const fn = globalThis.detectOntologiesDeterministic;
+    if (typeof fn !== "function") return res.status(503).json({ ontos: [] });
+    const ontos = fn(headers || [], rows || []);
+    res.json({ ontos });
+  } catch (e) {
+    res.status(500).json({ ontos: [] });
+  }
+});
 
 // ── Endpoint /validate-semantic ──────────────────────────────────────────────
 app.post("/validate-semantic", express.json(), async (req, res) => {
