@@ -14,4 +14,7 @@ COPY ttl-normalizer.js .
 # Il server scaricherà aggiornamenti notturni ma il fix viene riapplicato
 
 EXPOSE 3003
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && chown -R appuser:appgroup /app
+USER appuser
 CMD ["node", "server.js"]
