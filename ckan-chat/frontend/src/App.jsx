@@ -276,22 +276,11 @@ export default function App() {
       const doveFilter = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")\n`
         : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n`;
-      const countQ = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT (COUNT(DISTINCT ?d) AS ?total) WHERE {
-  ?d a dcat:Dataset .
-  ?d dct:title ?title .
-  FILTER(LANG(?title)='it'||LANG(?title)='')
-${doveFilter}  FILTER(${kwFilter(words, useOr)})
-}`;
+      const cq = `PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nSELECT (COUNT(DISTINCT ?d) AS ?total) WHERE {\n  ?d a dcat:Dataset .\n  ?d dct:title ?title .\n  FILTER(LANG(?title)='it'||LANG(?title)='')\n${doveFilter}  FILTER(${kwFilter(words, useOr)})\n}`;
       try {
-        const url = `${SPARQL_EP}?query=${encodeURIComponent(countQ)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-        const r = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
-        if (r.ok) {
-          const data = await r.json();
-          return parseInt(data.results?.bindings?.[0]?.total?.value || "0");
-        }
+        const u = `${SPARQL_EP}?query=${encodeURIComponent(cq)}&format=${encodeURIComponent("application/sparql-results+json")}`;
+        const r = await fetch(u, { headers: { Accept: "application/sparql-results+json" } });
+        if (r.ok) return parseInt((await r.json()).results?.bindings?.[0]?.total?.value || "0");
       } catch {}
       return 0;
     }
@@ -792,16 +781,15 @@ SELECT ?ipaCode WHERE {
         return;
       }
 
-      // Conta il totale in parallelo
-      let totalFound = 0;
-      try { totalFound = await countQuery(useWords, false); } catch {}
-      const totalLabel = totalFound > 0 ? ` (${totalFound.toLocaleString("it")} dataset trovati)` : "";
-      addMsg("assistant", `Trovati risultati per **"${displayQuery}"**${totalLabel} — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
+      let _total = 0;
+      try { _total = await countQuery(useWords, false); } catch {}
+      const _totLabel = _total > 0 ? ` (${_total.toLocaleString("it")} dataset trovati)` : "";
+      addMsg("assistant", `Trovati risultati per **"${displayQuery}"**${_totLabel} — clicca ▼ su un dataset per vedere le risorse CSV e validarle:`, {
         type: "search_results",
         datasets,
         query,
         offset: 0,
-        totalFound,
+        totalFound: _total,
       });
 
     } catch (e) {
