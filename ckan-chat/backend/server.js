@@ -1034,6 +1034,8 @@ app.get("/api/resources/:datasetId", async (req, res) => {
 app.post("/api/validate-semantic", async (req, res) => {
   // Proxy verso rdf-mcp /validate-semantic
   // Body: { headers, rows, ontos, title }
+  const { headers: h, ontos: o } = req.body || {};
+  console.log(`[validate-semantic] headers=${JSON.stringify(h?.slice(0,3))} ontos=${JSON.stringify(o)}`);
   try {
     const r = await fetch(`${RDF_MCP_URL}/validate-semantic`, {
       method: "POST",
@@ -1042,6 +1044,7 @@ app.post("/api/validate-semantic", async (req, res) => {
       signal: AbortSignal.timeout(10000)
     });
     const data = await r.json();
+    console.log(`[validate-semantic] stato=${data.stato} suggestions=${data.suggestions?.length||0}`);
     res.status(r.status).json(data);
   } catch (e) {
     res.status(503).json({ error: "gate non disponibile: " + e.message });
