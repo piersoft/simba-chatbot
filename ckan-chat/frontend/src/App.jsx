@@ -273,14 +273,18 @@ export default function App() {
     }
 
     async function countQuery(words, useOr) {
-      const doveFilter = dove
+      // Query COUNT semplificata (solo titolo) — Virtuoso-safe, senza EXISTS
+      const titleFilter = words.map(w =>
+        `CONTAINS(LCASE(?title),"${sanitizeSparql(w.toLowerCase())}")`
+      ).join(useOr ? " || " : " && ");
+      const doveClause = dove
         ? `  ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName .\n  FILTER(LCASE(STR(?rhName)) = "${sanitizeSparql(dove.toLowerCase())}")\n`
-        : `  OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }\n`;
-      const cq = `PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nSELECT (COUNT(DISTINCT ?d) AS ?total) WHERE {\n  ?d a dcat:Dataset .\n  ?d dct:title ?title .\n  FILTER(LANG(?title)='it'||LANG(?title)='')\n${doveFilter}  FILTER(${kwFilter(words, useOr)})\n}`;
+        : "";
+      const cq = `PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nSELECT (COUNT(DISTINCT ?d) AS ?total) WHERE {\n  ?d a dcat:Dataset .\n  ?d dct:title ?title .\n  FILTER(LANG(?title)='it'||LANG(?title)='')\n${doveClause}  FILTER(${titleFilter})\n}`;
       try {
         const u = `${SPARQL_EP}?query=${encodeURIComponent(cq)}&format=${encodeURIComponent("application/sparql-results+json")}`;
-        const r = await fetch(u, { headers: { Accept: "application/sparql-results+json" } });
-        if (r.ok) return parseInt((await r.json()).results?.bindings?.[0]?.total?.value || "0");
+        const resp = await fetch(u, { headers: { Accept: "application/sparql-results+json" } });
+        if (resp.ok) return parseInt((await resp.json()).results?.bindings?.[0]?.total?.value || "0");
       } catch {}
       return 0;
     }
