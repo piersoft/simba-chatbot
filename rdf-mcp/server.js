@@ -131,10 +131,7 @@ async function loadWorker() {
     "globalThis.computeSemanticScore = function computeSemanticScore("
   );
   // Fix: scoreOntologie rileva le ontologie ma non le restituisce — patcha per includerle
-  src = src.replace(
-    "return { score, blockers, warnings, matched_ontos: [] };",
-    "return { score, blockers, warnings, matched_ontos: [] };"
-  );
+  // patch rimossa: stringa matched_ontos non più presente nel worker
   // Patcha scoreOntologie return per includere resolvedOntos
   src = src.replace(
     /return \{ score, blockers, warnings \};(\s*\/\/ ── Generazione suggerimenti)/,
