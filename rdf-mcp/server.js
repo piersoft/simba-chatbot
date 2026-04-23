@@ -107,6 +107,11 @@ async function loadWorker() {
     'var normalizeTTL=(function(){',
     'globalThis.normalizeTTL=(function(){'
   );
+  // Patch anche il "return normalizeTTL" dentro l'IIFE
+  src = src.replace(
+    'return normalizeTTL;\n})()',
+    'return globalThis.normalizeTTL;\n})()'
+  );
   src += "\n globalThis.__workerHandler = __workerExport;\n";
   src += "\n if(typeof normalizeTTL!=='undefined') globalThis.normalizeTTL=normalizeTTL;\n";
   src += "\n if(typeof buildDeterministicTTL==='function') globalThis.buildDeterministicTTL=buildDeterministicTTL;\n";
