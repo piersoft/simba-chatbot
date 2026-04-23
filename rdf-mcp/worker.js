@@ -202,7 +202,7 @@ const SAFE_PREFIXES = new Set(['rdf','rdfs','owl','xsd','dct','dcat','foaf','geo
 
 
 // ── TTL Normalizer (auto-injected) ─────────────────────────────────
-var normalizeTTL=(function _normTTL(){
+var normalizeTTL=(function(){
 const CLASS_REMAP = {
     'park:ParkingFacility':          'park:CarPark',
     'rpo:RoleInOrganization':        'ro:Role',
@@ -367,9 +367,9 @@ const CLASS_REMAP = {
 
   
 
-return _normTTL;
+return normalizeTTL;
 })();
-globalThis.normalizeTTL = normalizeTTL;
+if(typeof normalizeTTL==="function") globalThis.normalizeTTL=normalizeTTL;
 // ─────────────────────────────────────────────────────────────────────
 
 var DET_COL_NORM={'osm_id':'id','osm_type':'_skip','osm_url':'sitoweb','indoor':'_skip','level':'_skip','ref':'_skip','access':'_skip','opening_hours':'_skip','name':'denominazione','operator':'gestore',coory:'lat',coorx:'lon',indirizzo_e_mail_autonomia:'email',indirizzo_e_mail_sede_corsi:'email',indirizzo_pec_sede_corsi:'email',e_mail:'email',email_scuola:'email',mail_scuola:'email',indirizzo_email_autonomia:'email',indirizzo_pec_autonomia:'email',telefono_sede_autonomia:'telefono',tipologia:'tipo',tipologia_sede:'tipo','tipo evento':'tipo_evento','tipologia scheda':'tipologia_scheda','tipologia attivita':'tipo',macrotipologia_autonomia:'tipo',tipologia_autonomia:'tipo',caratteristica_scuola:'tipo',codice:'id',localita:'comune',distr:'_skip',num_sedi_autonomia:'_skip',organico_autonomia:'_skip',organico_sede:'_skip',location:'_skip',codice_sede_riferimento:'_skip',codice_sede_di_direttivo:'_skip',indirizzo_sede_di_direttivo:'_skip',cod_comune_sede_dir:'_skip',comune_sede_di_direttivo:'_skip',cap_sede_dir:'_skip',s_comune_montano:'_skip',denominazione_sede_direttivo:'_skip',nome_poi:'nome',tipo_poi:'tipo',accessibile_h24:'accessibile',ident:'id',cod:'id',ident:'id',nome_poi:'nome',tipo_poi:'tipo',tipo_struttura:'tipo',nome_struttura:'nome',accessibile_h24:'accessibile',accessibilita:'accessibile',cod:'id',codice:'id',code:'id',pk:'id',meccanografico:'codice_meccanografico',indirizzo_completo:'indirizzo',email_referente:'email',latitudine:'lat',lat_wgs84:'lat',coordy:'lat',geo_lat:'lat',longitudine:'lon',lon_wgs84:'lon',coordx:'lon',geo_lon:'lon',lng:'lon',stop_lat:'lat',stop_lon:'lon',denominazionescuola:'denominazione',denominazione_scuola:'denominazione',nome_dataset:'denominazione',label:'denominazione',titolo:'denominazione',stop_name:'denominazione',nome_sensore:'denominazione',denominazioneistitutoriferimento:'denominazione',istituzione_scolastica:'denominazione',amministrazione:'denominazione',indirizzoscuola:'indirizzo',indirizzo_scuola:'indirizzo',ubicazione:'indirizzo',localizzazione:'indirizzo',address:'indirizzo',descrizionecomune:'comune',citta:'comune',city:'comune',capscuola:'cap',cap_scuola:'cap',postcode:'cap',codicescuola:'id',codice_scuola:'id',slug:'id',cig:'id',fid:'id',codiceistitutoriferimento:'id',codice_istituzione:'id',codice_ente_bdap:'id',id_consigliere:'id',id_sensore:'id',idsensore:'id',node_id:'id',remoteid:'id',pec:'email',mail:'email',sito_web:'sitoweb',website:'sitoweb',web:'sitoweb',url:'sitoweb',data_inizio:'inizio',data_da:'inizio',data_inizio_evento:'inizio',quando:'inizio',published:'inizio',creation_date:'inizio',issued:'inizio',data_fine:'termine',data_a:'termine',data_fine_evento:'termine',fine:'termine',last_edit_date:'modified',ultimamodifica:'modified',occorrenze:'valore',numero:'valore',totale:'valore',popolazione_residente:'valore',importo:'valore',tipologia:'tipo',tipo_bene:'tipo',tipo_evento:'tipo',tipo_struttura:'tipo',tipo_scuola:'tipo',descrizionetipologiagradoistruzione:'tipo',informazioni:'descrizione',note:'descrizione',oggetto:'descrizione',tel:'telefono',phone:'telefono',anno_rilevazione:'anno',annoscolastico:'anno',anno_scolastico:'anno',longitude:'lon',latitude:'lat'};
