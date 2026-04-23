@@ -903,7 +903,7 @@ SELECT ?ipaCode WHERE {
     finally { setLoading(false); setCsvFile(null); }
   }
 
-  async function doEnrichText(csv_text, filename, fmt = "ttl", paName = "") {
+  async function doEnrichText(csv_text, filename, fmt = "ttl", paName = "", ipaCode = "ente") {
     // Conversione diretta da testo CSV (file già caricato) — niente box IPA/PA
     const title = paName || filename.replace(/\.csv$/i,"");
 
@@ -922,7 +922,7 @@ SELECT ?ipaCode WHERE {
       const r = await fetch(`${BACKEND_URL}/api/enrich`, {
         method: "POST",
         headers: apiHeaders(),
-        body: JSON.stringify({ csv_text, pa: title, ipa: "ente", fmt, filename: filename }),
+        body: JSON.stringify({ csv_text, pa: title, ipa: ipaCode || "ente", fmt, filename: filename }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const ttl = await r.text();
@@ -1020,7 +1020,12 @@ SELECT ?ipaCode WHERE {
       const gateBlocked = await runGateCheck(ttlCsvText, pa);
       if (gateBlocked) { return; }
     }
-    await doEnrich(ttlUrl.trim(), pa, ipa, ttlFmt);
+    if (ttlCsvText) {
+      // CSV già in memoria — usa doEnrichText invece di doEnrich con URL
+      await doEnrichText(ttlCsvText, ttlUrl.trim() || pa, ttlFmt, pa, ipa);
+    } else {
+      await doEnrich(ttlUrl.trim(), pa, ipa, ttlFmt);
+    }
     setTtlUrl(""); setTtlIpa(""); setTtlPa(""); setTtlFmt("ttl");
   }
 
