@@ -618,8 +618,19 @@ ${doveFilter}  FILTER(${filterStr})
       addMsg("assistant", `Nessun dataset trovato per **"${label}"**.`);
       return;
     }
-    addMsg("assistant", `Trovati risultati per **"${label}"**:`, {
-      type: "search_results", datasets, query: label, offset: 0,
+    const advMsgId = Date.now();
+    addMsg("assistant", `Trovati **${datasets.length}** dataset per **"${label}"**:`, {
+      type: "search_results", datasets, query: label, offset: 0, msgId: advMsgId,
+    });
+    // Conta il totale in background
+    doCount(label).then(total => {
+      if (total !== null && total > datasets.length) {
+        setMessages(prev => prev.map(m =>
+          m.msgId === advMsgId
+            ? { ...m, content: m.content.replace(/Trovati \*\*\d+\*\* dataset/, `Trovati **${datasets.length}** di **${total.toLocaleString("it")}** totali`) }
+            : m
+        ));
+      }
     });
   }
 
