@@ -73,11 +73,15 @@ async function downloadWorker() {
     console.log("[rdf-mcp] Scarico worker.js aggiornato...");
     const res = await fetch(WORKER_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    let text = await res.text();
-    // Fix: aggiungi globalThis.normalizeTTL dopo la chiusura dell'IIFE
+    const text = await res.text();
+    // Fix: normalizeTTL IIFE si auto-referenzia, rinomina funzione interna
     text = text.replace(
-      "return normalizeTTL;\n})();",
-      "return normalizeTTL;\n})();\nglobalThis.normalizeTTL = normalizeTTL;"
+      /var normalizeTTL=\(function\(\)\{/,
+      "var normalizeTTL=(function _normTTL(){"
+    );
+    text = text.replace(
+      /return normalizeTTL;\n\}\)\(\);/,
+      "return _normTTL;\n})();"
     );
     writeFileSync(WORKER_PATH, text, "utf-8");
     console.log(`[rdf-mcp] worker.js aggiornato (${text.length} bytes)`);
@@ -106,26 +110,13 @@ async function loadWorker() {
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
-  // Fix: normalizeTTL IIFE si auto-referenzia — rinomina la funzione interna
-  src = src.replace(
-    "var normalizeTTL=(function(){",
-    "var normalizeTTL=(function _normTTL(){"
-  );
-  src = src.replace(
-    "return normalizeTTL;\n})();",
-    "return _normTTL;\n})();\nglobalThis.normalizeTTL=normalizeTTL;"
-  );
   src += "\n globalThis.__workerHandler = __workerExport;\n";
-  src += "\n if(typeof normalizeTTL!=='undefined') globalThis.normalizeTTL=normalizeTTL;\n";
-  src += "\n if(typeof buildDeterministicTTL==='function') globalThis.buildDeterministicTTL=buildDeterministicTTL;\n";
-  src += "\n if(typeof detectOntologiesDeterministic==='function') globalThis.detectOntologiesDeterministic=detectOntologiesDeterministic;\n";
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
 
-  // Eseguo il worker con vm.runInThisContext() — preserva le var nel contesto globale
-  const vm = createRequire(import.meta.url)("vm");
+  // Eseguo in un contesto isolato usando Function()
   try {
-    vm.runInThisContext(src);
+    new Function(src)();
     workerHandler = globalThis.__workerHandler;
     console.log("[rdf-mcp] worker.js caricato OK");
   } catch (e) {
