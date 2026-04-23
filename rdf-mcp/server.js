@@ -101,7 +101,16 @@ async function loadWorker() {
   // Cloudflare Worker usa "export default { fetch(request, env, ctx) {...} }"
   // Lo wrapping: rimuovo l'export default e assegno a una variabile
   src = src.replace(/^export default\s*\{/m, "const __workerExport = {");
+  // Patch: assegna normalizeTTL a globalThis dopo la sua definizione IIFE
+  // Necessario perché new Function() isola le var dal contesto globale
+  src = src.replace(
+    'var normalizeTTL=(function(){',
+    'globalThis.normalizeTTL=(function(){'
+  );
   src += "\n globalThis.__workerHandler = __workerExport;\n";
+  src += "\n if(typeof normalizeTTL!=='undefined') globalThis.normalizeTTL=normalizeTTL;\n";
+  src += "\n if(typeof buildDeterministicTTL==='function') globalThis.buildDeterministicTTL=buildDeterministicTTL;\n";
+  src += "\n if(typeof detectOntologiesDeterministic==='function') globalThis.detectOntologiesDeterministic=detectOntologiesDeterministic;\n";
   // Esponi computeSemanticScore per /validate-semantic
   src += '\n if(typeof computeSemanticScore==="function") globalThis.computeSemanticScore=computeSemanticScore;\n';
 
