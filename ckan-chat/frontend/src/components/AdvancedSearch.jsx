@@ -165,7 +165,7 @@ SELECT DISTINCT ?d ?title ?description ?modified ?rhName ?landingPage WHERE {
   ?d dct:title ?title .
   FILTER(LANG(?title)='it'||LANG(?title)='')
   FILTER(EXISTS { <${catalogUri}> dcat:dataset ?d })
-${format ? `  ?d dcat:distribution ?distFmt . ?distFmt <http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/${format}> .\n` : ""}  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
+  OPTIONAL { ?d dct:description ?description FILTER(LANG(?description)='it'||LANG(?description)='') }
   OPTIONAL { ?d dct:modified ?modified }
   OPTIONAL { ?d dcat:landingPage ?landingPage }
   OPTIONAL { ?d dct:rightsHolder ?rh . ?rh foaf:name ?rhName }
@@ -277,7 +277,7 @@ export default function AdvancedSearch({ onResults, onLoading, onLoadingMsg, onR
     try {
       const rows = await sparqlFetch(
         catalog
-          ? buildCatalogQuery(catalog, effectiveQ, offset)
+          ? buildCatalogQuery(catalog, effectiveQ, offset, format)
           : buildAdvQuery(effectiveQ, theme, hvd, rh, format, license, sort, offset)
       );
       const seen = new Map();
