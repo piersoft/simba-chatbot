@@ -28,3 +28,4 @@ pre-rollout-*.txt
 
 # Script di hardening (decidi se vuoi includerli, vedi sotto)
 # rollout-security-fix*.sh
+.env
