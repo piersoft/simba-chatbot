@@ -113,7 +113,11 @@ export default function ValidateReport({ report, url, csvText, csvHeaders, onEnr
     const extracted = extractFromReport(report, effectiveCsvText);
     // Combina: se abbiamo csvHeaders dal backend e non headers da csvText, usali
     const headers = extracted.headers.length > 0 ? extracted.headers : (backendHeaders || []);
-    const rows = extracted.rows.length > 0 ? extracted.rows : (headers.length > 0 ? [{},{},{}] : []);
+    // Se non abbiamo rows reali, crea righe dummy con le chiavi degli header
+    let rows = extracted.rows;
+    if (rows.length === 0 && headers.length > 0) {
+      rows = [0,1,2].map(() => Object.fromEntries(headers.map(h => [h, "valore"])));
+    }
     const ontos = extracted.ontos;
     if (!headers.length && !ontos.length) return;
 
