@@ -1069,7 +1069,9 @@ SELECT ?ipaCode WHERE {
   async function validateFromBox() {
     if (!csvUrl.trim()) return;
     setShowCsvBox(false);
-    await validateFromCard(csvUrl.trim(), "CSV fornito");
+    // Usa il nome del file dall'URL invece di "CSV fornito"
+    const csvTitle = csvUrl.trim().split("/").pop().split("?")[0] || "CSV fornito";
+    await validateFromCard(csvUrl.trim(), csvTitle);
     setCsvUrl("");
   }
 
