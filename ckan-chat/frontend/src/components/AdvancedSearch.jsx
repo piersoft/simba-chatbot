@@ -121,7 +121,6 @@ ${filters}} ORDER BY ${orderBy} LIMIT ${FETCH_SIZE} OFFSET ${offset}`;
 // Carica lista cataloghi (una sola volta) ordinati per numero dataset
 async function loadCatalogs() {
   const q = `SELECT ?catalog (COUNT(?s) AS ?count) WHERE {
-  ?catalog a <http://www.w3.org/ns/dcat#Catalog> .
   ?catalog <http://www.w3.org/ns/dcat#dataset> ?s .
 } GROUP BY ?catalog ORDER BY DESC(?count) LIMIT 500`;
   // Tenta prima dal browser, poi proxy backend
