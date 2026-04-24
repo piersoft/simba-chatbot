@@ -1271,7 +1271,7 @@ SELECT ?ipaCode WHERE {
         <div className="sidebar-logo">
           <img src="/chatbot/logo-agid.png" alt="AgID" className="sidebar-agid-logo" />
           <div className="sidebar-agid-title">
-            <span className="sidebar-agid-name">SIMBA</span>
+            <span className="sidebar-agid-name">SIMBA <span className="sidebar-beta-tag">BETA</span></span>
             <span className="sidebar-agid-sub">Open Data · dati.gov.it</span>
           </div>
         </div>
@@ -1333,9 +1333,10 @@ SELECT ?ipaCode WHERE {
         <div className="messages">
           {messages.length === 0 && (
             <div className="welcome">
-              <h2>SIMBA</h2>
+              <h2>SIMBA <span className="home-beta-tag">BETA</span></h2>
               <p className="welcome-acronym"><span className="simba-letter">S</span>istema <span className="simba-letter">I</span>ntelligente per la ricerca di <span className="simba-letter">M</span>etadati, <span className="simba-letter">B</span>onifica e <span className="simba-letter">A</span>rricchimento semantico</p>
               <p>Ricerca, valida e arricchisce i dataset della PA.</p>
+              <p className="welcome-beta-version">Beta Version</p>
               <div className="welcome-chips">
                 <span className="chip" onClick={() => sendMessage("Cerca dataset sulla qualità dell'aria")}>Cerca dataset</span>
                 <span className="chip" onClick={() => { resetChat(); setShowCsvBox(true); setSidebarOpen(false); }}>Valida CSV</span>

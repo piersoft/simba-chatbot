@@ -1193,6 +1193,13 @@ body {
   font-family: 'Titillium Web', Arial, sans-serif;
   font-size: 12px; font-weight: 300; color: #5c6f82; line-height: 1.2;
 }
+.sidebar-beta-tag {
+  font-size: 9px; font-weight: 700; color: #fff;
+  background: #cc2b00; border-radius: 3px;
+  padding: 1px 4px; vertical-align: middle;
+  letter-spacing: 0.05em; margin-left: 4px;
+  font-family: 'Titillium Web', Arial, sans-serif;
+}
 
 .dataset-org {
   font-size: 13px; color: var(--text2); font-weight: 500;
@@ -1311,6 +1318,18 @@ body {
 .simba-letter {
   font-weight: 700; font-size: 16px; color: var(--primary);
   font-style: normal;
+}
+.home-beta-tag {
+  font-size: 13px; font-weight: 700; color: #fff;
+  background: #cc2b00; border-radius: 4px;
+  padding: 2px 7px; vertical-align: middle;
+  letter-spacing: 0.06em; margin-left: 6px;
+  font-family: 'Titillium Web', Arial, sans-serif;
+}
+.welcome-beta-version {
+  font-size: 11px; font-weight: 600; color: #cc2b00;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin: 0 0 10px 0; font-family: 'Titillium Web', Arial, sans-serif;
 }
 
 /* ── Status bar compatta in fondo alla sidebar ────────────────────────────── */
