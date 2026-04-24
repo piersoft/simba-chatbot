@@ -159,8 +159,8 @@ services:
       dockerfile: Dockerfile
     container_name: analytics-service
     restart: unless-stopped
-    expose:
-      - "3004"
+    ports:
+      - "127.0.0.1:3004:3004"
     environment:
       PORT: 3004
       CHATBOT_ORIGIN: ${CHATBOT_ORIGIN:?CHATBOT_ORIGIN deve essere definita in .env (es. https://tuo-dominio.it)}
