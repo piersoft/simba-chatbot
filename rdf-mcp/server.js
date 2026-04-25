@@ -64,7 +64,7 @@ import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_PATH = path.join(__dirname, "worker.js");
-const WORKER_URL  = "https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/worker.js";
+const WORKER_URL  = process.env.WORKER_JS_URL || "https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/worker.js";
 const PORT        = process.env.PORT || 3003;
 
 // ── Scarica/aggiorna worker.js ───────────────────────────────────────────────
@@ -262,6 +262,7 @@ function scheduleNightlyUpdate() { return; }
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 (async () => {
+  await downloadWorker(); // scarica sempre worker aggiornato all'avvio
   await loadWorker();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[rdf-mcp] pronto su http://0.0.0.0:${PORT}`);
