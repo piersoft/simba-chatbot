@@ -209,6 +209,7 @@ export default function App() {
         headers: apiHeaders(),
         body: JSON.stringify({ message: text }),
       });
+      if (r.status === 403) return { intent: "BLOCKED", aiUsed: false };
       if (!r.ok) return { intent: "SEARCH", aiUsed: false };
       const data = await r.json();
       return { intent: data.intent ?? "SEARCH", aiUsed: data.ai_used ?? false };
@@ -768,6 +769,11 @@ SELECT ?ipaCode WHERE {
       if (intent === "SEARCH") setPageTitle("Ricerca Dataset");
       else if (intent === "VALIDATE") setPageTitle("Validazione CSV");
       else if (intent === "ENRICH") setPageTitle("Conversione RDF");
+
+      if (intent === "BLOCKED") {
+        addMsg("assistant", "Richiesta non consentita. SIMBA risponde esclusivamente a domande sugli open data della Pubblica Amministrazione italiana.");
+        return;
+      }
 
       if (intent === "OFF_TOPIC") {
         addMsg("assistant", `Mi dispiace, posso aiutarti solo con:\n- Ricerca dataset open data italiani\n- Validazione file CSV per la PA\n- Conversione CSV → RDF Linked Data\n\nProva con: *"Cerca defibrillatori nel Comune di Mesagne"*`);
