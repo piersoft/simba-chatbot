@@ -73,6 +73,8 @@ services:
       dockerfile: Dockerfile
     container_name: rdf-mcp
     restart: unless-stopped
+    env_file:
+      - .env
     expose:
       - "3003"
     dns:

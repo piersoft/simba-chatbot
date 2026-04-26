@@ -72,25 +72,25 @@ const BLOCKLIST_PATH = process.env.BLOCKLIST_PATH || "/app/data/blocklist.json";
 const DEFAULT_BLOCKLIST = [
   // Prompt injection / jailbreak
   "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
-  "ignore instructions","disregard","bypass",
+  "ignore instructions","disregard","bypass","pwn","pwned",
+  "developer_mode","modalità developer","senza filtri","uncensored",
   // Contenuto sessuale esplicito
-  "porno","pornografia","sesso esplicito","xxx","nude","naked","escort",
-  "cumshot","blowjob","handjob","gangbang","creampie","onlyfans","dildo","vibrat",
+  "porn","porno","pornograph","pornografia","sesso esplicito","xxx","nude","naked","escort",
+  "prostitut","cumshot","blowjob","handjob","gangbang","creampie","onlyfans","dildo","vibrat",
   "cazzo","figa","scopare","troia","puttana","bordello",
   // Pedofilia / abusi
   "pedofil","pedophil","child abuse","snuff","gore",
   // Violenza esplicita / autolesionismo
-  "come uccidere","come fare una bomba","come costruire un'arma",
-  "suicidarsi","ammazzarsi","come morire","farsi del male",
+  "bomba","come uccidere","come fare una bomba",
+  "suicidarsi","ammazzarsi",
   // Attacchi informatici
-  "sql injection","ddos attack","come hackerare","come bucare",
-  "ransomware","malware","exploit kit","phishing kit",
+  "sql injection","ddos attack","come hackerare",
+  "ransomware","malware","phishing kit",
   // Hate speech
-  "negro","frocio","terrone di merda","zingaro di merda","ritardato di merda",
-  // Droghe sintetiche / spaccio (non dataset PA)
+  "negro","frocio",
+  // Droghe sintetiche / spaccio
   "drug deal","narcotic","cocain","eroina","metanfetamin","spaccio di droga"
 ];
-
 function loadBlocklist() {
   try {
     if (existsSync(BLOCKLIST_PATH)) {
