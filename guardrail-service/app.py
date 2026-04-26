@@ -10,7 +10,6 @@ import hashlib
 import sqlite3
 import logging
 from contextlib import contextmanager
-from datetime import datetime
 from typing import Optional
 
 import numpy as np
@@ -21,26 +20,27 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 # ── Configurazione ────────────────────────────────────────────────────────────
-DB_PATH            = os.environ.get("DB_PATH", "/app/data/guardrail.db")
-ADMIN_TOKEN        = os.environ.get("ADMIN_TOKEN", "")
-TOXICITY_THRESHOLD = float(os.environ.get("TOXICITY_THRESHOLD", "0.85"))
+DB_PATH              = os.environ.get("DB_PATH", "/app/data/guardrail.db")
+ADMIN_TOKEN          = os.environ.get("ADMIN_TOKEN", "")
+TOXICITY_THRESHOLD   = float(os.environ.get("TOXICITY_THRESHOLD", "0.85"))
 SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.78"))
-CORPUS_STATIC_PATH = os.environ.get("CORPUS_STATIC_PATH", "/app/corpus_static.json")
+CORPUS_STATIC_PATH   = os.environ.get("CORPUS_STATIC_PATH", "/app/corpus_static.json")
+CORPUS_DYNAMIC_PATH  = os.environ.get("CORPUS_DYNAMIC_PATH", "/app/corpus_dynamic_backup.json")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("guardrail")
 
 app = FastAPI(title="SIMBA Guardrail Service", version="1.0.0")
 
-# ── Stato globale (caricato una volta al boot) ────────────────────────────────
+# ── Stato globale ─────────────────────────────────────────────────────────────
 class GuardrailState:
     def __init__(self):
-        self.toxicity_tokenizer = None
-        self.toxicity_model     = None
-        self.sim_model          = None
-        self.corpus_embeddings  = None   # np.ndarray shape (N, D)
-        self.corpus_ids         = []     # lista di id SQLite corrispondenti
-        self.toxicity_threshold  = TOXICITY_THRESHOLD
+        self.toxicity_tokenizer   = None
+        self.toxicity_model       = None
+        self.sim_model            = None
+        self.corpus_embeddings    = None
+        self.corpus_ids           = []
+        self.toxicity_threshold   = TOXICITY_THRESHOLD
         self.similarity_threshold = SIMILARITY_THRESHOLD
 
 state = GuardrailState()
@@ -56,9 +56,10 @@ def get_db():
         conn.close()
 
 def init_db():
-    """Crea tabelle se non esistono (idempotente)."""
+    """Crea tabelle se non esistono."""
     with get_db() as conn:
         conn.executescript("""
+            PRAGMA journal_mode=WAL;
             CREATE TABLE IF NOT EXISTS guardrail_corpus (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               prompt TEXT NOT NULL,
@@ -70,7 +71,6 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_guardrail_corpus_active
               ON guardrail_corpus(active);
-
             CREATE TABLE IF NOT EXISTS guardrail_logs (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               prompt_hash TEXT NOT NULL,
@@ -88,30 +88,37 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_guardrail_logs_decision
               ON guardrail_logs(decision);
         """)
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.commit()
+    log.info("DB inizializzato: %s", DB_PATH)
 
-def seed_static_corpus():
-    """Inserisce il corpus statico se non già presente."""
-    if not os.path.exists(CORPUS_STATIC_PATH):
-        log.warning("corpus_static.json non trovato, skip seed")
-        return
-    with open(CORPUS_STATIC_PATH, "r", encoding="utf-8") as f:
+def seed_corpus_from_file(path: str, source: str):
+    """Importa prompt da un file JSON se non già presenti."""
+    if not os.path.exists(path):
+        log.info("File corpus non trovato, skip: %s", path)
+        return 0
+    with open(path, "r", encoding="utf-8") as f:
         items = json.load(f)
+    added = 0
     with get_db() as conn:
-        existing = conn.execute(
-            "SELECT COUNT(*) FROM guardrail_corpus WHERE source='static'"
-        ).fetchone()[0]
-        if existing == 0:
-            for item in items:
-                conn.execute(
-                    "INSERT INTO guardrail_corpus (prompt, category, source, added_by) VALUES (?,?,?,?)",
-                    (item["prompt"], item["category"], "static", "system")
-                )
-            conn.commit()
-            log.info(f"Seeded {len(items)} static corpus entries")
-        else:
-            log.info(f"Static corpus già presente ({existing} voci), skip seed")
+        for item in items:
+            prompt   = item.get("prompt", "").strip()
+            category = item.get("category", "other")
+            if not prompt:
+                continue
+            existing = conn.execute(
+                "SELECT id FROM guardrail_corpus WHERE prompt=? AND active=1",
+                (prompt,)
+            ).fetchone()
+            if existing:
+                continue
+            conn.execute(
+                "INSERT INTO guardrail_corpus (prompt, category, source, added_by) VALUES (?,?,?,?)",
+                (prompt, category, source, "system")
+            )
+            added += 1
+        conn.commit()
+    log.info("Importati %d prompt da %s (source=%s)", added, path, source)
+    return added
 
 def rebuild_corpus_index():
     """Ricalcola gli embedding del corpus attivo."""
@@ -122,11 +129,11 @@ def rebuild_corpus_index():
     if not rows:
         state.corpus_embeddings = None
         state.corpus_ids = []
-        log.info("Corpus vuoto, index non costruito")
+        log.info("Corpus vuoto")
         return
     prompts = [r["prompt"] for r in rows]
     state.corpus_ids = [r["id"] for r in rows]
-    log.info(f"Building corpus index per {len(prompts)} voci...")
+    log.info("Building corpus index per %d voci...", len(prompts))
     state.corpus_embeddings = state.sim_model.encode(
         prompts, convert_to_numpy=True, normalize_embeddings=True, show_progress_bar=False
     )
@@ -162,11 +169,9 @@ def classify_toxicity(text: str) -> float:
     with torch.no_grad():
         logits = state.toxicity_model(**inputs).logits
     probs = torch.softmax(logits, dim=-1)
-    # toxic-bert: label 0=non-toxic, label 1=toxic
     return float(probs[0][1].item())
 
-def classify_similarity(text: str) -> tuple[float, Optional[int]]:
-    """Ritorna (max_similarity, matched_corpus_id) o (0.0, None) se corpus vuoto."""
+def classify_similarity(text: str) -> tuple:
     if state.corpus_embeddings is None or len(state.corpus_ids) == 0:
         return 0.0, None
     emb = state.sim_model.encode(
@@ -181,7 +186,10 @@ def classify_similarity(text: str) -> tuple[float, Optional[int]]:
 async def startup():
     load_models()
     init_db()
-    seed_static_corpus()
+    # 1. Corpus statico (sempre)
+    seed_corpus_from_file(CORPUS_STATIC_PATH, "static")
+    # 2. Corpus dinamico backup (se esiste — per migrazione o primo deploy)
+    seed_corpus_from_file(CORPUS_DYNAMIC_PATH, "dynamic_backup")
     rebuild_corpus_index()
     log.info("guardrail-service pronto")
 
@@ -219,26 +227,20 @@ async def classify(req: ClassifyRequest):
         return ClassifyResponse(block=False, reason=None,
                                 toxicity_score=0.0, similarity_score=0.0,
                                 matched_corpus_id=None)
-
     tox_score = classify_toxicity(prompt)
     sim_score, matched_id = classify_similarity(prompt)
-
     block = False
     reason = None
-
     if tox_score >= state.toxicity_threshold:
         block = True
         reason = "toxicity"
     elif sim_score >= state.similarity_threshold:
         block = True
         reason = "jailbreak_similarity"
-
     log_decision(prompt, "block" if block else "pass", reason,
                  tox_score, sim_score, matched_id if block else None)
-
     return ClassifyResponse(
-        block=block,
-        reason=reason,
+        block=block, reason=reason,
         toxicity_score=round(tox_score, 4),
         similarity_score=round(sim_score, 4),
         matched_corpus_id=matched_id if block else None,
@@ -262,20 +264,12 @@ async def health():
 
 # ── Admin: corpus ─────────────────────────────────────────────────────────────
 @app.get("/admin/corpus")
-async def list_corpus(
-    include_inactive: bool = False,
-    x_admin_token: str = Header(None)
-):
+async def list_corpus(include_inactive: bool = False, x_admin_token: str = Header(None)):
     require_admin(x_admin_token)
     with get_db() as conn:
-        if include_inactive:
-            rows = conn.execute(
-                "SELECT * FROM guardrail_corpus ORDER BY added_at DESC"
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT * FROM guardrail_corpus WHERE active=1 ORDER BY added_at DESC"
-            ).fetchall()
+        q = "SELECT * FROM guardrail_corpus ORDER BY added_at DESC" if include_inactive \
+            else "SELECT * FROM guardrail_corpus WHERE active=1 ORDER BY added_at DESC"
+        rows = conn.execute(q).fetchall()
     return [dict(r) for r in rows]
 
 @app.post("/admin/corpus", status_code=201)
@@ -298,12 +292,20 @@ async def add_corpus(req: CorpusAddRequest, x_admin_token: str = Header(None)):
 async def delete_corpus(item_id: int, x_admin_token: str = Header(None)):
     require_admin(x_admin_token)
     with get_db() as conn:
-        conn.execute(
-            "UPDATE guardrail_corpus SET active=0 WHERE id=?", (item_id,)
-        )
+        conn.execute("UPDATE guardrail_corpus SET active=0 WHERE id=?", (item_id,))
         conn.commit()
     rebuild_corpus_index()
     return {"message": f"Voce {item_id} disattivata (soft-delete)"}
+
+@app.get("/admin/export")
+async def export_corpus(x_admin_token: str = Header(None)):
+    """Esporta tutto il corpus attivo in JSON — per backup/migrazione."""
+    require_admin(x_admin_token)
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT prompt, category, source FROM guardrail_corpus WHERE active=1 ORDER BY id"
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 # ── Admin: logs ───────────────────────────────────────────────────────────────
 @app.get("/admin/logs")
@@ -321,8 +323,7 @@ async def get_logs(
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM guardrail_logs ORDER BY created_at DESC LIMIT ?",
-                (limit,)
+                "SELECT * FROM guardrail_logs ORDER BY created_at DESC LIMIT ?", (limit,)
             ).fetchall()
     return [dict(r) for r in rows]
 
@@ -331,16 +332,12 @@ async def get_logs(
 async def get_stats(x_admin_token: str = Header(None)):
     require_admin(x_admin_token)
     with get_db() as conn:
-        total = conn.execute("SELECT COUNT(*) FROM guardrail_logs").fetchone()[0]
-        blocks = conn.execute(
-            "SELECT COUNT(*) FROM guardrail_logs WHERE decision='block'"
-        ).fetchone()[0]
+        total  = conn.execute("SELECT COUNT(*) FROM guardrail_logs").fetchone()[0]
+        blocks = conn.execute("SELECT COUNT(*) FROM guardrail_logs WHERE decision='block'").fetchone()[0]
         by_reason = conn.execute(
             "SELECT reason, COUNT(*) as cnt FROM guardrail_logs WHERE decision='block' GROUP BY reason"
         ).fetchall()
-        corpus_size = conn.execute(
-            "SELECT COUNT(*) FROM guardrail_corpus WHERE active=1"
-        ).fetchone()[0]
+        corpus_size = conn.execute("SELECT COUNT(*) FROM guardrail_corpus WHERE active=1").fetchone()[0]
     return {
         "total_classified": total,
         "total_blocked": blocks,
@@ -357,10 +354,7 @@ async def get_stats(x_admin_token: str = Header(None)):
 @app.get("/admin/threshold")
 async def get_threshold(x_admin_token: str = Header(None)):
     require_admin(x_admin_token)
-    return {
-        "toxicity": state.toxicity_threshold,
-        "similarity": state.similarity_threshold,
-    }
+    return {"toxicity": state.toxicity_threshold, "similarity": state.similarity_threshold}
 
 @app.post("/admin/threshold")
 async def set_threshold(req: ThresholdRequest, x_admin_token: str = Header(None)):
