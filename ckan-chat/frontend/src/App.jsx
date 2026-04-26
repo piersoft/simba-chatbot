@@ -159,7 +159,7 @@ export default function App() {
 
   // Carica blocklist dinamica dal backend all'avvio
   useEffect(() => {
-    fetch(`${BACKEND_URL}/api/admin/blocklist`)
+    fetch(`${BACKEND_URL}/api/blocklist`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.blocklist?.length) setBlocklist(data.blocklist); })
       .catch(() => {}); // fallback alla BLOCKLIST hardcodata

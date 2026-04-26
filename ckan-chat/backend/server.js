@@ -1076,6 +1076,11 @@ app.get("/api/resources/:datasetId", async (req, res) => {
 // ─── Validate endpoint diretto ───────────────────────────────────────────────
 // Chiama validatore-mcp direttamente senza passare per Ollama.
 
+// Endpoint pubblico per la blocklist — espone solo le parole, senza auth
+app.get("/api/blocklist", (req, res) => {
+  res.json({ blocklist: dynamicBlocklist });
+});
+
 app.post("/api/detect-ontos", async (req, res) => {
   try {
     const r = await fetch(`${RDF_MCP_URL}/detect-ontos`, {
