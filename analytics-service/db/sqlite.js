@@ -33,6 +33,32 @@ function init() {
     CREATE INDEX IF NOT EXISTS idx_type ON events(type);
     CREATE INDEX IF NOT EXISTS idx_ts   ON events(ts);
     CREATE INDEX IF NOT EXISTS idx_sess ON events(session_id);
+
+    CREATE TABLE IF NOT EXISTS guardrail_corpus (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      prompt TEXT NOT NULL,
+      category TEXT NOT NULL,
+      source TEXT NOT NULL,
+      added_by TEXT,
+      added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      active INTEGER DEFAULT 1
+    );
+    CREATE INDEX IF NOT EXISTS idx_guardrail_corpus_active ON guardrail_corpus(active);
+
+    CREATE TABLE IF NOT EXISTS guardrail_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      prompt_hash TEXT NOT NULL,
+      prompt_preview TEXT,
+      decision TEXT NOT NULL,
+      reason TEXT,
+      toxicity_score REAL,
+      similarity_score REAL,
+      matched_corpus_id INTEGER,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (matched_corpus_id) REFERENCES guardrail_corpus(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_guardrail_logs_created ON guardrail_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_guardrail_logs_decision ON guardrail_logs(decision);
   `);
   console.log('SQLite analytics DB pronto:', DB_PATH);
 }

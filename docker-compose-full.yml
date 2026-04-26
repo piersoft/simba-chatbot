@@ -122,6 +122,7 @@ services:
       ANALYTICS_URL: http://analytics-service:3004
       ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
       BLOCKLIST_PATH: /app/data/blocklist.json
+      GUARDRAIL_URL: http://guardrail-service:8000
       SPARQL_ENDPOINT: ${SPARQL_ENDPOINT:-https://lod.dati.gov.it/sparql}
       # Load test bypass (lasciare vuoto in produzione)
       LOADTEST_BYPASS_IP: ${LOADTEST_BYPASS_IP:-}
@@ -155,6 +156,23 @@ services:
     logging: *logging-default
 
   # ── Analytics Service ───────────────────────────────────────────────────────
+  guardrail-service:
+    build:
+      context: ./guardrail-service
+      dockerfile: Dockerfile
+    container_name: guardrail-service
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
+      DB_PATH: /app/data/analytics.db
+      TOXICITY_THRESHOLD: ${TOXICITY_THRESHOLD:-0.85}
+      SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.78}
+    volumes:
+      - analytics_data:/app/data
+    logging: *logging-default
+
   analytics-service:
     build:
       context: ./analytics-service

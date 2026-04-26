@@ -68,7 +68,8 @@ const app = express();
 const SPARQL_ENDPOINT = process.env.SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
 
 // ── Blocklist dinamica ────────────────────────────────────────────────────────
-const BLOCKLIST_PATH = process.env.BLOCKLIST_PATH || "/app/data/blocklist.json";
+const BLOCKLIST_PATH  = process.env.BLOCKLIST_PATH  || "/app/data/blocklist.json";
+const GUARDRAIL_URL   = process.env.GUARDRAIL_URL   || "http://guardrail-service:8000";
 const DEFAULT_BLOCKLIST = [
   // Prompt injection / jailbreak
   "ignore previous","system prompt","forget instructions","jailbreak","prompt injection",
@@ -107,6 +108,23 @@ function saveBlocklist(list) {
 }
 
 let dynamicBlocklist = loadBlocklist();
+
+// ── Guardrail semantico (fail-open) ───────────────────────────────────────────
+async function checkGuardrail(prompt) {
+  try {
+    const r = await fetch(`${GUARDRAIL_URL}/classify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+      signal: AbortSignal.timeout(2000),   // fail-open dopo 2s
+    });
+    if (!r.ok) return { block: false };
+    return await r.json();
+  } catch (e) {
+    console.warn("[guardrail] timeout/down, fail-open:", e.message);
+    return { block: false };
+  }
+}
 
 app.set("trust proxy", 1);
 
@@ -1364,7 +1382,14 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Messaggio non valido o troppo lungo" });
   }
   if (dynamicBlocklist.some(p => lastMsg.toLowerCase().includes(p))) {
-    return res.status(400).json({ error: "Input non consentito" });
+    return res.status(403).json({ error: "Richiesta non consentita.", reason: "blocklist" });
+  }
+
+  // ── guardrail semantico (fail-open: se down, passa) ──────────────────────
+  const guardrailResult = await checkGuardrail(lastMsg);
+  if (guardrailResult.block) {
+    console.log(`[guardrail-service] bloccato: ${guardrailResult.reason} sim=${guardrailResult.similarity_score}`);
+    return res.status(403).json({ error: "Richiesta non consentita.", reason: guardrailResult.reason || "guardrail" });
   }
   if (LLM_PROVIDER === "mistral" && !MISTRAL_API_KEY) {
     return res.status(500).json({ error: "MISTRAL_API_KEY non impostata nel .env" });
