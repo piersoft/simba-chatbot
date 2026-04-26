@@ -1363,7 +1363,7 @@ app.post("/api/chat", async (req, res) => {
   if (typeof lastMsg !== "string" || lastMsg.length > 2000) {
     return res.status(400).json({ error: "Messaggio non valido o troppo lungo" });
   }
-  if (BLOCKLIST.some(p => lastMsg.toLowerCase().includes(p))) {
+  if (dynamicBlocklist.some(p => lastMsg.toLowerCase().includes(p))) {
     return res.status(400).json({ error: "Input non consentito" });
   }
   if (LLM_PROVIDER === "mistral" && !MISTRAL_API_KEY) {
