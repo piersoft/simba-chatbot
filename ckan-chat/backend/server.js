@@ -773,8 +773,16 @@ function preFilterIntent(text) {
     "dimmi una barzelletta","dimmi un indovinello","dimmi una curiosità",
     "dimmi qualcosa","dimmi tutto","dimmi di te","parlami di te",
     "dimentica la tua","dimentica chi sei","dimentica tutto","dimentica le tue",
-    "reimposta il tuo","comportati come se","agisci senza restrizioni",
-    "agisci liberamente","senza filtri","senza restrizioni","senza limitazioni","fai un riassunto","riassumi","riassumimi","fammi un riassunto",
+    "reimposta il tuo","resetta il tuo","resetta il sistema","resetta te stesso",
+    "comportati come se","agisci senza restrizioni","agisci liberamente",
+    "senza filtri","senza restrizioni","senza limitazioni","senza vincoli",
+    "sei libero di rispondere","libero di rispondere","rispondimi senza",
+    "istruzioni abituali","istruzioni precedenti","le tue istruzioni",
+    "pretend you","act as if","forget your training","override your",
+    "without restrictions","without filters","without limitations",
+    "you are now a","no restrictions","no filters","no rules","no guidelines",
+    "ignore all previous","ignore your rules","ignore your instructions",
+    "as a dan","do anything now","without any filters","safety guidelines","fai un riassunto","riassumi","riassumimi","fammi un riassunto",
     // Prompt injection / meta-LLM: pattern che indicano tentativo di manipolare
     // il classificatore stesso (non interrogazione su dati). Nessuna query PA
     // legittima contiene queste sequenze. Bypass totale di SPARQL ASK e LLM.
