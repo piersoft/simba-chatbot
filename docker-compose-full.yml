@@ -166,7 +166,7 @@ services:
       - "8000"
     environment:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
-      DB_PATH: /app/data/analytics.db
+      DB_PATH: /app/data/guardrail.db
       TOXICITY_THRESHOLD: ${TOXICITY_THRESHOLD:-0.85}
       SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.78}
     volumes:

@@ -21,7 +21,7 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 # ── Configurazione ────────────────────────────────────────────────────────────
-DB_PATH            = os.environ.get("DB_PATH", "/app/data/analytics.db")
+DB_PATH            = os.environ.get("DB_PATH", "/app/data/guardrail.db")
 ADMIN_TOKEN        = os.environ.get("ADMIN_TOKEN", "")
 TOXICITY_THRESHOLD = float(os.environ.get("TOXICITY_THRESHOLD", "0.85"))
 SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.78"))
