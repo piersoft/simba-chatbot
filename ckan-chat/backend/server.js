@@ -1026,6 +1026,12 @@ app.post("/api/intent", strictLimiter, async (req, res) => {
   if (message.length > 500) return res.status(400).json({ error: "Messaggio troppo lungo (max 500 caratteri)." });
   const msgLower = message.toLowerCase();
   if (dynamicBlocklist.some(p => msgLower.includes(p.toLowerCase()))) return res.status(400).json({ error: "Richiesta non consentita." });
+  // Guardrail semantico anche sull'intent — blocca hate speech e jailbreak prima della classificazione
+  const intentGuardrail = await checkGuardrail(message);
+  if (intentGuardrail.block) {
+    console.log(`[intent] guardrail block: ${intentGuardrail.reason} sim=${intentGuardrail.similarity_score}`);
+    return res.status(403).json({ error: "Richiesta non consentita.", reason: intentGuardrail.reason });
+  }
   const { intent, aiUsed } = await classifyIntent(message);
   console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
   res.json({ intent, ai_used: aiUsed });
