@@ -170,9 +170,7 @@ services:
       TOXICITY_THRESHOLD: ${TOXICITY_THRESHOLD:-0.85}
       SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.78}
     volumes:
-      - analytics_data:/app/data
-    depends_on:
-      - analytics-service
+      - guardrail_data:/app/data
     logging: *logging-default
 
   analytics-service:
@@ -198,3 +196,4 @@ volumes:
   blocklist_data:
   ollama_data:
   analytics_data:
+  guardrail_data:
