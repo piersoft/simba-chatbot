@@ -171,6 +171,8 @@ services:
       SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.78}
     volumes:
       - analytics_data:/app/data
+    depends_on:
+      - analytics-service
     logging: *logging-default
 
   analytics-service:
