@@ -1034,6 +1034,13 @@ app.post("/api/intent", strictLimiter, async (req, res) => {
   }
   const { intent, aiUsed } = await classifyIntent(message);
   console.log(`[intent] "${message.slice(0,60)}" → ${intent}`);
+  // Emetti evento analytics per i messaggi off-topic (classificatore LLM o deterministico)
+  if (intent === "OFF_TOPIC") {
+    emitEvent("off_topic", {
+      query_preview: message.slice(0, 100),
+      guardrail_layer: "classifier",
+    }, req);
+  }
   res.json({ intent, ai_used: aiUsed });
 });
 
