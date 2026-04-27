@@ -1574,18 +1574,10 @@ app.get("/api/preview-csv", async (req, res) => {
     if (ct.includes("text/html") || ct.includes("application/xhtml")) {
       return res.status(415).json({ error: "il publisher ha restituito HTML" });
     }
-    const reader = r.body.getReader();
-    let received = 0;
-    const chunks = [];
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      received += value.length;
-      if (received > PREVIEW_MAX_BYTES) { reader.cancel(); break; }
-      chunks.push(value);
-    }
-    const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
-    const text = buf.toString("utf8");
+    // Usa arrayBuffer compatibile con Node < 18
+    const buf = await r.arrayBuffer();
+    const received = buf.byteLength;
+    const text = Buffer.from(buf.slice(0, PREVIEW_MAX_BYTES)).toString("utf8");
     const allRows = parseCSVPreview(text);
     if (allRows.length < 2) return res.status(422).json({ error: "CSV vuoto o non parsabile" });
     const headers = allRows[0].map((h, i) => h.trim() || `col${i}`);
