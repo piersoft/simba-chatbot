@@ -57,7 +57,7 @@ function emitEvent(type, payload, req) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(event),
-    signal: AbortSignal.timeout(2000),
+    signal: AbortSignal.timeout(5000),
   }).catch(() => {});
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ async function checkGuardrail(prompt) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
-      signal: AbortSignal.timeout(2000),   // fail-open dopo 2s
+      signal: AbortSignal.timeout(5000),   // fail-open dopo 5s
     });
     if (!r.ok) return { block: false };
     return await r.json();
