@@ -269,18 +269,13 @@ function CsvPreviewControlled({ url, format, onChange }) {
         throw new Error("il server ha restituito HTML");
       }
 
-      const text = await r.text();
-      let rows = parseCSV(text);
-      if (isTsv && rows[0] && rows[0].length === 1 && text.includes("\t")) {
-        rows = text.split(/\r?\n/).filter(l => l.trim()).map(l => l.split("\t").map(c => c.trim()));
-      }
-      if (rows.length < 2) throw new Error("vuoto");
-
+      const data = await r.json();
+      if (!data.headers || !data.rows || data.rows.length === 0) throw new Error("vuoto");
       const ok = {
         status: "ok",
-        headers: rows[0],
-        rows: rows.slice(1, 11),
-        total: rows.length - 1,
+        headers: data.headers,
+        rows: data.rows,
+        total: data.totalRows,
       };
       setState(ok);
       onChange(ok);
