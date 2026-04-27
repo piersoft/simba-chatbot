@@ -1560,6 +1560,10 @@ app.get("/api/preview-csv", async (req, res) => {
   if (u.protocol !== "https:" && u.protocol !== "http:") {
     return res.status(400).json({ error: "protocollo non consentito" });
   }
+  // Link accorciati non più funzionanti
+  if (/goo\.gl|bit\.ly|tinyurl\.com/.test(u.hostname)) {
+    return res.status(400).json({ error: "URL accorciato non supportato — usa il link diretto al CSV" });
+  }
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), PREVIEW_TIMEOUT_MS);
