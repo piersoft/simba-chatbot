@@ -1453,7 +1453,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 app.get("/api/health", rateLimit({ windowMs: 60000, max: 10, message: { error: "Too many requests" } }), async (req, res) => {
-  const status = { backend: "ok", ollama: "n/a", validatore: "unknown", rdf: "unknown" };
+  const status = { backend: "ok", ollama: "n/a", validatore: "unknown", rdf: "unknown", guardrail: "unknown" };
   if (LLM_PROVIDER === "ollama") {
     try {
       await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
@@ -1468,6 +1468,10 @@ app.get("/api/health", rateLimit({ windowMs: 60000, max: 10, message: { error: "
     const r = await fetch("http://rdf-mcp:3003/health", { signal: AbortSignal.timeout(3000) });
     status.rdf = r.ok ? "ok" : "error";
   } catch { status.rdf = "error"; }
+  try {
+    const r = await fetch(`${GUARDRAIL_URL}/health`, { signal: AbortSignal.timeout(3000) });
+    status.guardrail = r.ok ? "ok" : "error";
+  } catch { status.guardrail = "error"; }
   res.json(status);
 });
 

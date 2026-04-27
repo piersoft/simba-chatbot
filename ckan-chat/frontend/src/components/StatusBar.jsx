@@ -15,6 +15,9 @@ export default function StatusBar({ health, onRefresh, compact }) {
             {dot(health?.validatore)} <span>Validatore</span>
             {dot(health?.rdf)} <span>RDF</span>
           </div>
+          <div className="status-compact-line">
+            {dot(health?.guardrail)} <span>Guardrail</span>
+          </div>
         </div>
         <button className="refresh-btn-compact" onClick={onRefresh} title="Aggiorna stato">↻</button>
       </div>
@@ -27,6 +30,7 @@ export default function StatusBar({ health, onRefresh, compact }) {
       <div className="status-row">{dot(health?.ollama)} <span>AI</span></div>
       <div className="status-row">{dot(health?.validatore)} <span>Validatore</span></div>
       <div className="status-row">{dot(health?.rdf)} <span>RDF</span></div>
+      <div className="status-row">{dot(health?.guardrail)} <span>Guardrail</span></div>
       <button className="refresh-btn" onClick={onRefresh} title="Aggiorna stato">↻</button>
     </div>
   );
