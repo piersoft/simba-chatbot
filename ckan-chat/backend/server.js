@@ -1547,53 +1547,32 @@ app.delete("/api/admin/blocklist/:word", adminLimiter, requireAdminToken, (req, 
   res.json({ ok: true, blocklist: dynamicBlocklist });
 });
 
-// ── /api/preview-csv — proxy server-side per anteprima CSV ──────────────────
-// Da inserire in ckan-chat/backend/server.js, accanto agli altri endpoint.
-// Risolve mixed-content (HTTP da HTTPS) e CORS dei publisher.
-//
-// Hardening (linea 2026-04-23):
-//   - SSRF defense: allowlist host PA italiani
-//   - Cap 5 MB sul download
-//   - Timeout 15 s
-//   - Content-Type check (rifiuta HTML)
-//   - Solo http/https, niente file:// gopher:// ecc.
 
+// ── /api/preview-csv — proxy server-side per anteprima CSV ──────────────────
 const PREVIEW_MAX_BYTES = 5 * 1024 * 1024;
 const PREVIEW_TIMEOUT_MS = 15000;
-
-// Allowlist host: aggiusta in base ai cataloghi che vuoi supportare
-const PREVIEW_ALLOWED_HOSTS = /^([a-z0-9-]+\.)*(dati\.gov\.it|dati\.comune\.[a-z]+\.it|dati\.regione\.[a-z]+\.it|opendata\.[a-z0-9-]+\.it|dati\.[a-z0-9-]+\.it|www\.dati\.[a-z0-9-]+\.it)$/i;
 
 app.get("/api/preview-csv", async (req, res) => {
   const url = String(req.query.url || "");
   if (!url) return res.status(400).json({ error: "url mancante" });
-
   let u;
   try { u = new URL(url); } catch { return res.status(400).json({ error: "url non valido" }); }
-
   if (u.protocol !== "https:" && u.protocol !== "http:") {
     return res.status(400).json({ error: "protocollo non consentito" });
   }
-  // allowlist disabilitata — tutti i publisher CSV PA italiani consentiti
-
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), PREVIEW_TIMEOUT_MS);
     const r = await fetch(url, {
-      signal: ctrl.signal,
-      redirect: "follow",
+      signal: ctrl.signal, redirect: "follow",
       headers: { "User-Agent": "SIMBA-preview/1.0" },
     });
     clearTimeout(t);
-
     if (!r.ok) return res.status(502).json({ error: `HTTP ${r.status} dal publisher` });
-
     const ct = r.headers.get("content-type") || "";
     if (ct.includes("text/html") || ct.includes("application/xhtml")) {
       return res.status(415).json({ error: "il publisher ha restituito HTML" });
     }
-
-    // Stream con cap 5 MB
     const reader = r.body.getReader();
     let received = 0;
     const chunks = [];
@@ -1606,36 +1585,25 @@ app.get("/api/preview-csv", async (req, res) => {
     }
     const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
     const text = buf.toString("utf8");
-
-    const allRows = parseCSVServer(text);
-    if (allRows.length < 2) {
-      return res.status(422).json({ error: "CSV vuoto o non parsabile" });
-    }
-
+    const allRows = parseCSVPreview(text);
+    if (allRows.length < 2) return res.status(422).json({ error: "CSV vuoto o non parsabile" });
     const headers = allRows[0].map((h, i) => h.trim() || `col${i}`);
     const rows = allRows.slice(1, 11);
     const totalRows = allRows.length - 1;
-
-    res.json({
-      headers,
-      rows,
-      totalRows,
-      truncated: received >= PREVIEW_MAX_BYTES,
-    });
+    res.json({ headers, rows, totalRows, truncated: received >= PREVIEW_MAX_BYTES });
   } catch (e) {
     const msg = e.name === "AbortError" ? "timeout" : (e.message || "errore di rete");
     res.status(502).json({ error: msg });
   }
 });
 
-function parseCSVServer(text) {
+function parseCSVPreview(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (!lines.length) return [];
   const counts = { ";": 0, ",": 0, "\t": 0 };
   for (const ch of lines[0]) if (ch in counts) counts[ch]++;
   let sep = ";", max = 0;
   for (const k of Object.keys(counts)) if (counts[k] > max) { max = counts[k]; sep = k; }
-
   return lines.map(line => {
     const out = []; let cur = "", q = false;
     for (let i = 0; i < line.length; i++) {
@@ -1648,7 +1616,6 @@ function parseCSVServer(text) {
     return out;
   });
 }
-
 
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Backend pronto su http://localhost:${PORT}`);
