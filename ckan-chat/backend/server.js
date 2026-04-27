@@ -63,6 +63,7 @@ function emitEvent(type, payload, req) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const app = express();
+app.set("etag", false); // disabilita ETag per evitare 304 su preview-csv
 
 // ─── Endpoint SPARQL configurabile ───────────────────────────────────────────
 const SPARQL_ENDPOINT = process.env.SPARQL_ENDPOINT || "https://lod.dati.gov.it/sparql";
@@ -1582,7 +1583,6 @@ app.get("/api/preview-csv", async (req, res) => {
     const headers = allRows[0].map((h, i) => h.trim() || `col${i}`);
     const rows = allRows.slice(1, 11);
     const totalRows = allRows.length - 1;
-    res.set("Cache-Control", "no-store");
     res.json({ headers, rows, totalRows, truncated: received >= PREVIEW_MAX_BYTES });
   } catch (e) {
     const msg = e.name === "AbortError" ? "timeout" : (e.message || "errore di rete");
