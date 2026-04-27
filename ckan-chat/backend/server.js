@@ -1582,6 +1582,7 @@ app.get("/api/preview-csv", async (req, res) => {
     const headers = allRows[0].map((h, i) => h.trim() || `col${i}`);
     const rows = allRows.slice(1, 11);
     const totalRows = allRows.length - 1;
+    res.set("Cache-Control", "no-store");
     res.json({ headers, rows, totalRows, truncated: received >= PREVIEW_MAX_BYTES });
   } catch (e) {
     const msg = e.name === "AbortError" ? "timeout" : (e.message || "errore di rete");
