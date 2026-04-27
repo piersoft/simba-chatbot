@@ -1574,9 +1574,6 @@ app.get("/api/preview-csv", async (req, res) => {
     if (ct.includes("text/html") || ct.includes("application/xhtml")) {
       return res.status(415).json({ error: "il publisher ha restituito HTML" });
     }
-    if (ct.includes("application/zip") || ct.includes("application/octet-stream") || ct.includes("application/x-zip")) {
-      return res.status(415).json({ error: "il publisher ha restituito un file ZIP — scarica e apri manualmente" });
-    }
     const reader = r.body.getReader();
     let received = 0;
     const chunks = [];
@@ -1588,7 +1585,9 @@ app.get("/api/preview-csv", async (req, res) => {
       chunks.push(value);
     }
     const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
-    const text = buf.toString("utf8");
+    // Prova utf-8, fallback a latin-1 per CSV con encoding italiano
+    let text = buf.toString("utf8");
+    if (text.includes("\uFFFD")) text = buf.toString("latin1");
     const allRows = parseCSVPreview(text);
     if (allRows.length < 2) return res.status(422).json({ error: "CSV vuoto o non parsabile" });
     const headers = allRows[0].map((h, i) => h.trim() || `col${i}`);
