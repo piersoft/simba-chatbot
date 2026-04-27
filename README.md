@@ -8,7 +8,7 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
 
 ```
 [Browser]
-    ↓ HTTP :80 / :443 (nginx) oppure :8080 (diretto)
+    ↓ HTTP :80 / :443 (nginx) 
 [Frontend React :8080]
     ├── /api/          → [Backend Node.js :3001]
     │                       ├── Ollama :11434          ← classificazione intenzione
