@@ -71,11 +71,7 @@ const PORT        = process.env.PORT || 3003;
 async function downloadWorker() {
   try {
     console.log("[rdf-mcp] Scarico worker.js aggiornato...");
-    const isGitHubApi = WORKER_URL.includes("api.github.com");
-    const fetchHeaders = isGitHubApi
-      ? { "Accept": "application/vnd.github.raw", "Cache-Control": "no-cache" }
-      : { "Cache-Control": "no-cache" };
-    const res = await fetch(WORKER_URL, { headers: fetchHeaders });
+    const res = await fetch(WORKER_URL, { headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let text = await res.text();
     // Applica patch: esponi normalizeTTL su globalThis dopo la sua definizione
@@ -266,7 +262,13 @@ function scheduleNightlyUpdate() { return; }
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 (async () => {
-  await downloadWorker(); // scarica sempre worker aggiornato all'avvio
+  // Scarica worker solo se non esiste già su disco
+  const { existsSync } = await import('fs');
+  if (!existsSync(WORKER_PATH)) {
+    await downloadWorker();
+  } else {
+    console.log('[rdf-mcp] Uso worker.js dalla repo');
+  }
   await loadWorker();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[rdf-mcp] pronto su http://0.0.0.0:${PORT}`);
