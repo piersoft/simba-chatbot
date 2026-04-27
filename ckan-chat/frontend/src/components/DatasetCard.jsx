@@ -125,21 +125,14 @@ function CsvPreview({ url, format }) {
         throw new Error("il server ha restituito una pagina HTML");
       }
 
-      const text = await r.text();
-      let rows = parseCSV(text);
-
-      // Se forzato TSV ma l'auto-detect ha scelto altro, riprova con \t
-      if (isTsv && rows[0] && rows[0].length === 1 && text.includes("\t")) {
-        rows = text.split(/\r?\n/).filter(l => l.trim()).map(l => l.split("\t").map(c => c.trim()));
-      }
-
-      if (rows.length < 2) throw new Error("file vuoto o non parsabile");
-
+      // Il proxy backend risponde con JSON {headers, rows, totalRows}
+      const data = await r.json();
+      if (!data.headers || !data.rows) throw new Error("file vuoto o non parsabile");
       setState({
         status: "ok",
-        headers: rows[0],
-        rows: rows.slice(1, 11),
-        total: rows.length - 1,
+        headers: data.headers,
+        rows: data.rows,
+        total: data.totalRows,
       });
     } catch (e) {
       let msg = "anteprima non disponibile";
