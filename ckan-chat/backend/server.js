@@ -1574,11 +1574,18 @@ app.get("/api/preview-csv", async (req, res) => {
     if (ct.includes("text/html") || ct.includes("application/xhtml")) {
       return res.status(415).json({ error: "il publisher ha restituito HTML" });
     }
-    // arrayBuffer() — compatibile con tutte le versioni Node
-    const rawBuf = await r.arrayBuffer();
-    const received = rawBuf.byteLength;
-    const buf = Buffer.from(rawBuf.slice(0, PREVIEW_MAX_BYTES));
-    // Prova utf-8, fallback a latin-1
+    const reader = r.body.getReader();
+    let received = 0;
+    const chunks = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.length;
+      if (received > PREVIEW_MAX_BYTES) { reader.cancel(); break; }
+      chunks.push(value);
+    }
+    const buf = Buffer.concat(chunks.map(c => Buffer.from(c)));
+    // Prova utf-8, fallback a latin-1 per CSV con encoding italiano
     let text = buf.toString("utf8");
     if (text.includes("\uFFFD")) text = buf.toString("latin1");
     const allRows = parseCSVPreview(text);
