@@ -91,7 +91,8 @@ const DEFAULT_BLOCKLIST = [
   // Hate speech
   "negro","frocio",
   // Droghe sintetiche / spaccio
-  "drug deal","narcotic","cocain","eroina","metanfetamin","spaccio di droga"
+  "drug deal","narcotic","cocain","eroina","metanfetamin","spaccio di droga",
+  "forget your","new instructions","say hacked","say pwned","sudo -i"
 ];
 function loadBlocklist() {
   try {
