@@ -71,7 +71,7 @@ const PORT        = process.env.PORT || 3003;
 async function downloadWorker() {
   try {
     console.log("[rdf-mcp] Scarico worker.js aggiornato...");
-    const res = await fetch(WORKER_URL);
+    const res = await fetch(WORKER_URL, { headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let text = await res.text();
     // Applica patch: esponi normalizeTTL su globalThis dopo la sua definizione
