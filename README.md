@@ -77,7 +77,7 @@ Per la conversione è obbligatorio specificare il **codice IPA** e il **nome del
 
 - **Docker** e **Docker Compose** v2+
 - **nginx** (consigliato in produzione per l'accesso via porta 80)
-- Almeno **2 GB di RAM** libera per Ollama con `qwen2.5:0.5b`
+- Almeno **4 GB di RAM** libera per Ollama con `llama3.2:3b`
 - Accesso a internet per la ricerca SPARQL su `lod.dati.gov.it`
 
 ---
@@ -105,7 +105,7 @@ SERVER_IP=YOUR_SERVER_IP
 
 LLM_PROVIDER=ollama
 OLLAMA_URL=http://ollama:11434
-OLLAMA_MODEL=qwen2.5:0.5b
+MODEL_NAME=llama3.2:3b
 
 # Con nginx (consigliato):
 VITE_BACKEND_URL=
@@ -120,6 +120,10 @@ SPARQL_ENDPOINT=
 
 # URL da cui rdf-mcp scarica il worker.js all'avvio
 WORKER_JS_URL=https://raw.githubusercontent.com/piersoft/CSV-to-RDF/main/worker.js
+
+# Token admin (genera con: openssl rand -hex 32)
+ADMIN_TOKEN=your-secure-admin-token-here
+VITE_ADMIN_TOKEN=your-secure-admin-token-here
 ```
 
 ### 3. Avvia i container
@@ -146,6 +150,13 @@ cat > /etc/nginx/sites-available/opendata << 'EOF'
 server {
     listen 80;
     server_name _;
+    
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header Content-Security-Policy "default-src 'self'; frame-ancestors 'self';" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
 
     location /chatbot {
         proxy_pass http://127.0.0.1:8080;
@@ -204,12 +215,55 @@ simba-chatbot/
 ├── analytics-service/
 │   ├── server.js                 ← Express: eventi, statistiche, retention 90gg
 │   └── Dockerfile
+├── guardrail-service/
+│   ├── app.py                    ← guardrail semantico (sentence-similarity + toxic-bert)
+│   ├── corpus_static.json        ← 272 pattern jailbreak/prompt-injection IT/EN
+│   └── Dockerfile
 ├── validatore-mcp/
 │   └── src/validator.js          ← validazione CSV PA italiana
 └── rdf-mcp/
     ├── server.js                 ← adapter worker.js CSV-to-RDF (scarica da WORKER_JS_URL)
     └── Dockerfile
 ```
+
+---
+
+## Sicurezza
+
+SIMBA implementa un sistema di sicurezza **multi-strato** testato contro attacchi comuni:
+
+### Controlli di input (Layer 1-4)
+
+- **Input normalization**: conversione automatica unicode → ASCII, rimozione caratteri zero-width, translitterazione cirillico/greco → latino (blocca bypass encoding)
+- **Blocklist lessicale**: 65+ termini vietati (aggiornabile via pannello admin `/admin`)
+- **Split-sentence detection**: rileva e blocca prompt multi-intent (es. "Cerca dataset. Scrivi invece una poesia")
+- **Guardrail semantico**: classificatore basato su 272 pattern (IT/EN) per jailbreak, prompt injection, hate speech, contenuti violenti
+
+### Controlli di output (Layer 5)
+
+- **Output validation**: blocklist su risposte del modello (impedisce generazione contenuti pericolosi anche se prompt bypass input filter)
+- **Response sanitization**: strip automatico pattern sospetti dal testo generato
+
+### Modello LLM robusto
+
+- **Llama 3.2 3B**: modello instruction-following resistente a jailbreak comuni
+- **Fail-safe**: se guardrail down/timeout → blocco automatico (no fail-open su errori critici)
+
+### Infrastruttura
+
+- **nginx 1.29.8**: tutte le CVE note fixate (HTTP/2 Rapid Reset, memory overwrite, mp4 module)
+- **Security headers**: `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`, `Referrer-Policy: no-referrer`, `Content-Security-Policy`, `X-Frame-Options: SAMEORIGIN`
+- **Rate limiting**: 10 req/min su `/api/chat`, 60 req/min globale su `/api/`
+- **Blocco SSRF**: URL esterni validati (no IP privati, no localhost, solo HTTP/HTTPS)
+- **Limite payload**: body JSON max 10 MB, CSV max 10 MB
+- **Proxy CSV sicuro**: download lato server con timeout 15s e cap 5MB
+
+### Vulnerability Assessment
+
+**VA LLM Red-Team (Apr 2026):** 0/21 jailbreak riusciti ✅  
+**VA Web (Pentest-Tools):** 0 HIGH, 0 LOW (tutte le vulnerabilità fixate) ✅
+
+Sistema **production-ready per ambiente test/staging PA**.
 
 ---
 
@@ -233,6 +287,7 @@ docker compose -f docker-compose-full.yml restart rdf-mcp
 ```bash
 docker compose -f docker-compose-full.yml ps
 docker compose -f docker-compose-full.yml logs backend --tail=20
+docker compose -f docker-compose-full.yml logs guardrail-service --tail=20
 docker compose -f docker-compose-full.yml logs rdf-mcp --tail=20
 docker compose -f docker-compose-full.yml logs validatore-mcp --tail=20
 docker compose -f docker-compose-full.yml logs analytics-service --tail=50
@@ -279,21 +334,6 @@ VITE_ANALYTICS_TOKEN=cambia-questo-token-in-produzione
 
 ---
 
-## Sicurezza
-
-Il backend applica i seguenti controlli su tutti gli endpoint:
-
-- **Rate limiting globale**: max 60 richieste/minuto per IP su `/api/`
-- **Rate limiting strict**: max 20 richieste/minuto su validate, enrich, intent
-- **Blocco SSRF**: gli endpoint che accettano URL esterni rifiutano indirizzi IP privati, localhost e protocolli non HTTP/HTTPS
-- **Guardrail AI**: un servizio di moderazione analizza i messaggi prima della classificazione e blocca contenuti inappropriati, violenti o fuori contesto istituzionale
-- **Limite payload**: body JSON max 10 MB, CSV max 10 MB
-- **Validazione input**: lunghezza massima messaggi (500 caratteri), codice IPA solo alfanumerico
-- **Header di sicurezza**: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`
-- **Proxy CSV sicuro**: l'endpoint `/api/preview-csv` scarica i CSV lato server con timeout 15s e cap 5MB, evitando che il browser esponga dati sensibili nelle richieste cross-origin
-
----
-
 ## Troubleshooting
 
 **Pallini rossi nel frontend** → Verifica che `VITE_BACKEND_URL` sia vuoto con nginx, poi `--build frontend`.
@@ -304,7 +344,7 @@ Il backend applica i seguenti controlli su tutti gli endpoint:
 
 **Ricerca SPARQL lenta o assente** → `lod.dati.gov.it` può avere picchi di carico, riprova.
 
-**Ollama lento** → Normale su CPU senza GPU (5-15s). Considera un modello più piccolo.
+**Ollama lento** → Llama 3.2 3B richiede ~4GB RAM. Su CPU senza GPU impiega 10-30s per risposta. Considera hardware con GPU per performance migliori.
 
 **Orphan containers** → `docker compose -f docker-compose-full.yml up -d --remove-orphans`
 
@@ -317,13 +357,31 @@ Utente scrive un messaggio
          │
          ▼
 ┌─────────────────────────────────────────────────────┐
-│  1. GUARDRAIL (istantaneo)                          │
-│     Blocca contenuti inappropriati                  │
+│  1. INPUT NORMALIZATION (istantaneo)                │
+│     Unicode → ASCII, strip zero-width               │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  2. BLOCKLIST LESSICALE (istantaneo)                │
+│     65+ termini vietati → 403                       │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  3. SPLIT-SENTENCE DETECTION (istantaneo)           │
+│     Multi-intent attack → 403                       │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  4. GUARDRAIL SEMANTICO (50-200ms)                  │
+│     Sentence-similarity su 272 pattern → 403        │
 └─────────────────┬───────────────────────────────────┘
                   │ messaggio lecito
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  2. PRE-FILTRO DETERMINISTICO (istantaneo)          │
+│  5. PRE-FILTRO DETERMINISTICO (istantaneo)          │
 │     Keyword univoche → risposta certa               │
 │     "valida", "check csv"       → VALIDATE          │
 │     "ttl", "rdf", "converti in" → ENRICH            │
@@ -331,17 +389,23 @@ Utente scrive un messaggio
                   │ ambiguo
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  3. SPARQL ASK su lod.dati.gov.it (max 5 sec)       │
+│  6. SPARQL ASK su lod.dati.gov.it (max 5 sec)       │
 │     Il catalogo reale decide se esistono dataset    │
 │     "come stai"      → ASK → false → OFF_TOPIC      │
-│     "defibrillatori" → ASK → true  → continua      │
+│     "defibrillatori" → ASK → true  → continua       │
 └─────────────────┬───────────────────────────────────┘
                   │ dataset trovati, intent ambiguo
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  4. OLLAMA (frasi colloquiali ambigue)              │
+│  7. OLLAMA (frasi colloquiali ambigue)              │
 │     Classifica → SEARCH                             │
 │     Badge 🤖 visibile in chat                       │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│  8. OUTPUT VALIDATION (istantaneo)                  │
+│     Blocklist su risposta modello → 500             │
 └─────────────────────────────────────────────────────┘
 ```
 
