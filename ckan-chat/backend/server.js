@@ -696,6 +696,9 @@ async function chatWithTools(messages, model) {
     mcpResult = await callTool(route.tool, route.args);
     toolCallsLog.push({ tool: route.tool, args: route.args });
     console.log(`[router] risultato MCP: ${mcpResult.slice(0, 150)}`);
+  if (mcpResult.includes("Tool sconosciuto")) {
+    return { reply: "Mi dispiace, posso aiutarti solo con la ricerca di dataset aperti della Pubblica Amministrazione italiana. Prova a cercare dati su ambiente, trasporti, sanità, bilanci pubblici, appalti o altri dati PA.", toolCalls: toolCallsLog };
+  }
   } catch (e) {
     console.error(`[router] errore MCP: ${e.message}`);
     return { reply: `Errore nel recupero dei dati: ${e.message}`, toolCalls: toolCallsLog };
