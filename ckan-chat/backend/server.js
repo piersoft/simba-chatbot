@@ -112,6 +112,25 @@ function saveBlocklist(list) {
 let dynamicBlocklist = loadBlocklist();
 
 // ── Guardrail semantico (fail-open) ───────────────────────────────────────────
+// ── Input normalization ───────────────────────────────────────────────────────
+function normalizeInput(text) {
+  if (typeof text !== 'string') return text;
+  
+  return text
+    .normalize('NFKD')                     // Unicode decomposition
+    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
+    .replace(/[а-яА-ЯёЁ]/g, (c) => {        // Cirillico → latino
+      const map = {
+        'а':'a','А':'A','е':'e','Е':'E','о':'o','О':'O',
+        'р':'p','Р':'P','с':'c','С':'C','х':'x','Х':'X',
+        'у':'y','У':'Y','к':'k','К':'K','н':'n','Н':'N',
+        'в':'v','В':'V','м':'m','М':'M','т':'t','Т':'T'
+      };
+      return map[c] || c;
+    })
+    .replace(/[^\x00-\x7F]/g, '');          // Strip non-ASCII residuo
+}
+
 async function checkGuardrail(prompt) {
   // ── Split-sentence attack detection ────────────────────────────────────────
   // Blocca prompt con struttura: "[legit]. [invece/però/ma] [altra istruzione]"
@@ -1426,7 +1445,8 @@ app.post("/api/chat", async (req, res) => {
   const { messages, model } = req.body;
   if (!messages?.length) return res.status(400).json({ error: "messages required" });
 
-  const lastMsg = messages[messages.length - 1]?.content ?? "";
+  let lastMsg = messages[messages.length - 1]?.content ?? "";
+  lastMsg = normalizeInput(lastMsg);  // Normalize before all checks
   if (typeof lastMsg !== "string" || lastMsg.length > 2000) {
     return res.status(400).json({ error: "Messaggio non valido o troppo lungo" });
   }
@@ -1459,6 +1479,22 @@ app.post("/api/chat", async (req, res) => {
       datasets_found: toolCalls?.length || 0,
       latency_ms: Date.now() - t0chat,
     }, req);
+  // ── Output validation ──────────────────────────────────────────────────────
+  const RESPONSE_BLOCKLIST = [
+    'assemblare ordigno','costruire esplosivo','sintesi droga','produzione bomba',
+    'fabbricare arma','preparare veleno','creare malware','costruire bomba',
+    'assemble explosive','build bomb','drug synthesis','bomb making',
+    'create weapon','prepare poison','make explosive','fabricate firearm'
+  ];
+  
+  if (RESPONSE_BLOCKLIST.some(term => reply.toLowerCase().includes(term))) {
+    console.log(`[output-filter] risposta bloccata: ${reply.slice(0, 80)}`);
+    return res.status(500).json({ 
+      error: "Risposta non disponibile per policy di sicurezza",
+      reason: "output_validation"
+    });
+  }
+  
     res.json({ reply, toolCalls });
   } catch (e) {
     console.error(e);
