@@ -277,12 +277,15 @@ function scheduleNightlyUpdate() { return; }
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 (async () => {
-  // Scarica worker solo se non esiste già su disco
-  const { existsSync } = await import('fs');
-  if (!existsSync(WORKER_PATH)) {
-    await downloadWorker();
-  } else {
-    console.log('[rdf-mcp] Uso worker.js dalla repo');
+  // Scarica sempre l'ultima versione di worker.js da GitHub all'avvio
+  const downloaded = await downloadWorker();
+  if (!downloaded) {
+    const { existsSync } = await import('fs');
+    if (!existsSync(WORKER_PATH)) {
+      console.error('[rdf-mcp] worker.js non disponibile - impossibile continuare');
+      process.exit(1);
+    }
+    console.log('[rdf-mcp] Download fallito, uso worker.js locale come fallback');
   }
   await loadWorker();
   app.listen(PORT, "0.0.0.0", () => {

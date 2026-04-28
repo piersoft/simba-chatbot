@@ -7,11 +7,8 @@ RUN npm install --production
 
 # Copia server, worker e normalizer
 COPY server.js .
-COPY worker.js .
 COPY ttl-normalizer.js .
 
-# worker.js è incluso nella repo con fix per normalizeTTL
-# Il server scaricherà aggiornamenti notturni ma il fix viene riapplicato
 
 EXPOSE 3003
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
