@@ -783,7 +783,7 @@ SELECT ?ipaCode WHERE {
       if (intent === "VALIDATE") {
         const url = text.match(/https?:\/\/[^\s]+/)?.[0];
         if (!url) {
-          addMsg("assistant", "Per validare un CSV dimmi l'URL del file.\n\nOppure usa il box qui sotto per incollarlo:");
+          addMsg("assistant", "Per validare un CSV fornisci l'URL del file oppure caricalo usando il pulsante qui sotto:");
           setShowCsvBox(true);
           return;
         }
