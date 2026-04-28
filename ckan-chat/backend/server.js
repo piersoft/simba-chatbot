@@ -113,6 +113,21 @@ let dynamicBlocklist = loadBlocklist();
 
 // ── Guardrail semantico (fail-open) ───────────────────────────────────────────
 async function checkGuardrail(prompt) {
+  // ── Split-sentence attack detection ────────────────────────────────────────
+  // Blocca prompt con struttura: "[legit]. [invece/però/ma] [altra istruzione]"
+  const splitPatterns = [
+    /\.\s+(invece|però|ma|tuttavia|piuttosto|anzi)\s+\w/i,
+    /\.\s+(however|but|instead|rather|actually)\s+\w/i,
+    /\.\s+\w{0,50}(scrivi|genera|crea|dimmi|racconta|spiega|descrivi)\b/i,
+    /\.\s+\w{0,50}(write|generate|create|tell|explain|describe)\b/i
+  ];
+  
+  if (splitPatterns.some(p => p.test(prompt))) {
+    console.log(`[guardrail] multi-intent rilevato: ${prompt.slice(0, 100)}`);
+    return { block: true, reason: "multi_intent_attack" };
+  }
+  
+  // ── Semantic classifier ────────────────────────────────────────────────────
   try {
     const r = await fetch(`${GUARDRAIL_URL}/classify`, {
       method: "POST",
