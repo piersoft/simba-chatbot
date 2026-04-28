@@ -7,6 +7,7 @@ RUN npm install --production
 
 # Copia server, worker e normalizer
 COPY server.js .
+COPY worker.js .
 COPY ttl-normalizer.js .
 
 

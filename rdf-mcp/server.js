@@ -277,16 +277,8 @@ function scheduleNightlyUpdate() { return; }
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 (async () => {
-  // Scarica sempre l'ultima versione di worker.js da GitHub all'avvio
-  const downloaded = await downloadWorker();
-  if (!downloaded) {
-    const { existsSync } = await import('fs');
-    if (!existsSync(WORKER_PATH)) {
-      console.error('[rdf-mcp] worker.js non disponibile - impossibile continuare');
-      process.exit(1);
-    }
-    console.log('[rdf-mcp] Download fallito, uso worker.js locale come fallback');
-  }
+  // Usa worker.js dalla repo locale (non scaricare - il file GitHub è transpilato)
+  console.log('[rdf-mcp] Uso worker.js dalla repo locale');
   await loadWorker();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[rdf-mcp] pronto su http://0.0.0.0:${PORT}`);
