@@ -199,7 +199,22 @@ app.post("/validate-semantic", express.json(), async (req, res) => {
     if (typeof fn !== "function") {
       return res.status(503).json({ error: "computeSemanticScore non disponibile" });
     }
-    const result = fn(headers, rows || [], ontos || [], title || "", "", null);
+    let result = fn(headers, rows || [], ontos || [], title || "", "", null);
+    
+    // Fix: rimuovi suggerimenti per colonne già corrette (value/stazione sono in DET_COL_RULES)
+    if (result.suggestions) {
+      result.suggestions = result.suggestions.map(s => {
+        if (s.renames) {
+          s.renames = s.renames.filter(r => r.da !== "stazione");
+          if (s.renames.length === 0) s.renames = null;
+        }
+        return s;
+      }).filter(s => s.renames || s.aggiungi);
+    }
+    if (result.renamed_headers) {
+      delete result.renamed_headers.stazione;
+    }
+    
     res.json(result);
   } catch (e) {
     console.error("[rdf-mcp] /validate-semantic errore:", e.message);
