@@ -70,6 +70,9 @@ const SPARQL_ENDPOINT = process.env.SPARQL_ENDPOINT || "https://lod.dati.gov.it/
 
 // ── Blocklist dinamica ────────────────────────────────────────────────────────
 const BLOCKLIST_PATH  = process.env.BLOCKLIST_PATH  || "/app/data/blocklist.json";
+
+// ── Risposta generica per domande fuori contesto ──────────────────────────────
+const OFF_TOPIC_REPLY = "Mi dispiace, posso aiutarti solo con la ricerca di dataset aperti della Pubblica Amministrazione italiana. Prova a cercare dati su ambiente, trasporti, sanità, bilanci pubblici, appalti o altri dati PA.";
 const GUARDRAIL_URL   = process.env.GUARDRAIL_URL   || "http://guardrail-service:8000";
 const DEFAULT_BLOCKLIST = [
   // Prompt injection / jailbreak
@@ -557,9 +560,10 @@ async function isQuestionOnTopic(userMessage) {
       const raw = data.message?.content ?? "";
       const stripped = stripThinkTags(raw).toUpperCase();
       // Cerca SI o NO ovunque nel testo (qwen3 a volte aggiunge punteggiatura)
-      const hasNo  = /NO/.test(stripped);
-      const hasSi  = /SI/.test(stripped) || stripped.includes("YES");
+      const hasNo  = /NO/.test(stripped);
+      const hasSi  = /SI/.test(stripped) || stripped.includes("YES");
       const answer = stripped.slice(0, 10); // per il log
+      console.log(`[DEBUG] hasNo=${hasNo}, hasSi=${hasSi}, stripped="${stripped}"`);
       console.log(`[guardrail] raw="${raw.slice(0,60).replace(/\n/g," ")}" → stripped="${answer}"`);
       if (!stripped) return true; // fallback permissivo se vuoto
       if (hasNo && !hasSi) return false;
@@ -1465,6 +1469,7 @@ app.post("/api/chat", async (req, res) => {
   }
 
   const onTopic = await isQuestionOnTopic(lastMsg);
+  console.log(`[DEBUG] onTopic=${onTopic}, type=${typeof onTopic}`);
   if (!onTopic) {
     console.log(`[guardrail] domanda fuori tema bloccata: "${lastMsg.slice(0, 80)}"`);
     emitEvent("off_topic", { query_preview: lastMsg.slice(0, 100), guardrail_layer: "classifier" }, req);
