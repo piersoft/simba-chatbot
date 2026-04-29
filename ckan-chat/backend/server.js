@@ -1463,6 +1463,9 @@ const BLOCKLIST = ["ignore previous", "system prompt", "forget instructions",
                    "new instructions", "disregard", "jailbreak"];
 
 app.post("/api/chat", async (req, res) => {
+  // Endpoint legacy disabilitato per sicurezza
+  return res.status(404).json({ error: "Endpoint non disponibile" });
+  /*
   const { messages, model } = req.body;
   if (!messages?.length) return res.status(400).json({ error: "messages required" });
 
@@ -1523,6 +1526,9 @@ app.post("/api/chat", async (req, res) => {
     emitEvent("error", { error_type: "chat_error", error_message: e.message.slice(0, 300), endpoint: "/api/chat" }, req);
     res.status(500).json({ error: e.message });
   }
+});
+
+*/
 });
 
 app.get("/api/health", rateLimit({ windowMs: 60000, max: 10, message: { error: "Too many requests" } }), async (req, res) => {
