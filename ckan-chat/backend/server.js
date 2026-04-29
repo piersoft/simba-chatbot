@@ -517,6 +517,20 @@ function stripThinkTags(text) {
 }
 
 async function isQuestionOnTopic(userMessage) {
+  // SPARQL ASK preventivo: se esistono dataset → on-topic (bypass LLM)
+  // Fix per query multi-parola tipo "ricette tipiche" che Ollama blocca ma hanno dataset
+  if (typeof sparqlAsk === 'function') {
+    try {
+      const hasDatasets = await sparqlAsk(userMessage);
+      if (hasDatasets) {
+        console.log(`[guardrail] SPARQL ASK trovato dataset → ON-TOPIC (bypass LLM)`);
+        return true;
+      }
+    } catch (e) {
+      console.log(`[guardrail] SPARQL ASK errore, fallback a LLM:`, e.message);
+    }
+  }
+  
   try {
     if (LLM_PROVIDER === "mistral") {
       const response = await fetch(MISTRAL_API_URL, {
@@ -1041,8 +1055,8 @@ async function classifyIntent(userMessage) {
       // significativa → il catalogo è più affidabile del modello per termini singoli PA
       // Se Ollama dice OFF_TOPIC ma SPARQL ASK ha trovato dataset e il messaggio è breve → SEARCH
       const _sigWords = userMessage.toLowerCase().replace(/[^a-zàèéìòù\s]/g," ").split(/\s+/).filter(w => w.length > 3);
-      if (parsed === "OFF_TOPIC" && _sigWords.length === 1) {
-        console.log(`[intent] Ollama dice OFF_TOPIC su parola singola ma SPARQL ASK ha trovato dataset → SEARCH`);
+      if (parsed === "OFF_TOPIC" && _sigWords.length <= 3) {
+        console.log(`[intent] Ollama dice OFF_TOPIC su query breve (${_sigWords.length} parole) ma SPARQL ASK ha trovato dataset → SEARCH`);
         intentCacheSet(userMessage, "SEARCH");
         return { intent: "SEARCH", aiUsed: true };
       }
