@@ -11,7 +11,7 @@ Chatbot locale per esplorare, validare e convertire i dati aperti della Pubblica
     ↓ HTTP :80 / :443 (nginx) 
 [Frontend React :8080]
     ├── /api/          → [Backend Node.js :3001]
-    │                       ├── Ollama :11434          ← classificazione intenzione
+    │                       ├── Ollama :11434          ← classificazione intent
     │                       ├── validatore-mcp :3002   ← validazione CSV PA
     │                       └── rdf-mcp :3003          ← CSV → RDF/TTL
     └── /analytics-api/ → [Analytics Service :3004]   ← eventi, statistiche, dashboard
@@ -398,7 +398,7 @@ Utente scrive un messaggio
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │  7. OLLAMA (frasi colloquiali ambigue)              │
-│     Classifica → SEARCH                             │
+│     Classifica intent: SEARCH/VALIDATE/OFF_TOPIC    │
 │     Badge 🤖 visibile in chat                       │
 └─────────────────┬───────────────────────────────────┘
                   │
