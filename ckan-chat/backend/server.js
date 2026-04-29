@@ -1104,7 +1104,7 @@ app.post("/api/intent", strictLimiter, async (req, res) => {
   const words = message.toLowerCase().match(/[a-z]{4,}/g) || [];
   for (const word of words) {
     const consonants = word.replace(/[aeiouy]/g, '').length;
-    if (consonants / word.length > 0.7) {
+    if (consonants / word.length > 0.8) {
       console.log(`[intent] blocked: cipher pattern (word: ${word})`);
       return res.status(403).json({ error: "Richiesta non consentita.", reason: "encoding" });
     }
