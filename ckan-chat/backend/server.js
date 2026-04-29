@@ -1083,6 +1083,33 @@ app.post("/api/intent", strictLimiter, async (req, res) => {
   if (message.length > 500) return res.status(400).json({ error: "Messaggio troppo lungo (max 500 caratteri)." });
   const msgLower = message.toLowerCase();
   if (dynamicBlocklist.some(p => msgLower.includes(p.toLowerCase()))) return res.status(400).json({ error: "Richiesta non consentita." });
+  
+  // Filtri deterministici anti-encoding/obfuscation
+  // Blocca command injection patterns
+  if (/\$\(|\`|;\s*\w+|&&|\|\|/.test(message)) {
+    console.log(`[intent] blocked: command injection pattern`);
+    return res.status(403).json({ error: "Richiesta non consentita.", reason: "injection" });
+  }
+  // Blocca caratteri non-latini (cinese, arabo, cirillico non normalizzato)
+  if (/[一-鿿؀-ۿЀ-ӿ]/.test(message)) {
+    console.log(`[intent] blocked: non-latin chars`);
+    return res.status(403).json({ error: "Richiesta non consentita.", reason: "encoding" });
+  }
+  // Blocca pattern base64 lunghi sospetti (20+ char alfanumerici puri)
+  if (/[A-Za-z0-9+\/]{20,}={0,2}/.test(message)) {
+    console.log(`[intent] blocked: base64 pattern`);
+    return res.status(403).json({ error: "Richiesta non consentita.", reason: "encoding" });
+  }
+  // Blocca testo con troppe consonanti consecutive (possibile cipher/ROT13)
+  const words = message.toLowerCase().match(/[a-z]{4,}/g) || [];
+  for (const word of words) {
+    const consonants = word.replace(/[aeiouy]/g, '').length;
+    if (consonants / word.length > 0.7) {
+      console.log(`[intent] blocked: cipher pattern (word: ${word})`);
+      return res.status(403).json({ error: "Richiesta non consentita.", reason: "encoding" });
+    }
+  }
+  
   // Guardrail semantico anche sull'intent — blocca hate speech e jailbreak prima della classificazione
   const intentGuardrail = await checkGuardrail(message);
   if (intentGuardrail.block) {
